@@ -13,3 +13,5 @@ third_party/
 *.qcow2
 *.raw
 golden.log
+docs/thesis/tools/node_modules/
+docs/thesis/build/
