@@ -1,6 +1,6 @@
 # Состояние работы и как продолжить
 
-Последнее обновление: 01.11.2026, ~20:15.
+Последнее обновление: 01.11.2026, ~22:15.
 
 ## Что уже сделано
 
@@ -44,12 +44,14 @@
 
 ## С чего продолжить (по приоритету)
 
-Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Порядок на ближайшее время:
+Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Состояние на 01.11.2026, ~22:15:
 
-1. Дождаться очередей `P:\vm\pilot-q1.log` (TOCTOU, перестановки SWUpdate с `--region-at env --settle 35`) и `P:\vm\pilot-b6.log` (B5: перестановки по всему окну).
-2. На **тихом** хосте (одна ВМ) повторить окна: `rauc-grub window:ext4-c5`; `rauc1.15.2-grub window:ext4-c5,ext4-exponly,ext4-wbonly`; `swupdate-grub window:ext4-c5`. Прогоны под нагрузкой дали RAUC 1.15.2 «старое до +20 с», SWUpdate «до +6 с» — не доверять.
-3. Внести результаты в `docs/pilot-ab.md` и гл. 4 (новые п. 4.3.9–4.3.11: RAUC 1.15.2 и SWUpdate, корень только для чтения, подпись и TOCTOU), обновить табл. 4.1, 4.3, выводы и п. 4.5; затем заключение и `scored-draft.md` (пометки [rerun]/[pending]).
-4. Добавить `ab:toctou` в каталог (OTA-INST-04) и пересчитать покрытие (ожидается 26 / 15 / 10).
+1. **Идут фоновые очереди** (журналы в `P:\vm`): `pilot-q1.log` (перестановки RAUC вокруг записи окружения), `pilot-q2.log` (резервированное окружение в модели разрыва), затем `quiet-batch.sh` → `pilot-quiet.log` — **окна на тихом хосте** (ждёт, пока не останется ни одного `pilot_ab.py`/`replay_state.py`; одна ВМ за раз): `net-slow:stream`, `rauc-grub window:ext4-c5,ext4-redundant`, `rauc1.15.2-grub window:ext4-c5,ext4-exponly,ext4-wbonly`, `swupdate-grub window:ext4-c5,vfat` с метками до 90 с, повтор реплея `replay-rauc18-1535b.log`; после неё `q5.sh` → `pilot-q5.log` (`reorder:ext4-inplace-rootro --torn` с повторной загрузкой BRICK).
+2. **Текст главы 4 почти готов в заготовках** (папка scratchpad сессии: `ch4_new_43.md`, `ch4_new_43_net.md`, `ch4_tail.md`, `fill_values.json`, `fill.py`, `ch4_patch_b.py`). После очередей: вписать в `fill_values.json` значения меток `W_RAUC1152`, `W_SWU`, `RAUC_SLOW`, `T418_RAUC_SLOW`, `RED_RESULT`, `T418_RED`, `CONCL_RED`, `CONCL_RAUC_NET`; `python fill.py` (должно остаться 0 меток); `python ch4_patch_b.py`. Если scratchpad недоступен — написать п. 4.3.9–4.3.12 заново по `docs/pilot-ab.md`.
+3. Вставить в `docs/pilot-ab.md` новые разделы (заготовка `pilot_new_sections.md`), обновить сводную матрицу (`otabench threats … --out results/threat-matrix-2026-11-02`), примеры соответствия, `scored-draft.md` (окна), заключение (окна SWUpdate/RAUC 1.15.2), Word-сборку.
+4. Не публиковать черновики в `docs/upstream/` (RAUC, SWUpdate, tuf-conformance, go-tuf, tough, libcsuit) без согласия автора.
+
+Новое с прошлого обновления: TOCTOU (контроль FAIL, апдейтеры PASS); подпись бандла > 2 ГиБ (RAUC 1.8 принимает подмену); tough (4-й клиент TUF); фаззинг метаданных TUF (паника go-tuf v2.4.2, исправлена в master, не выпущена) и конверта SUIT; сетевые атаки на SWUpdate и потоковую установку RAUC (ложное сообщение SWUpdate о неудаче); выпадение из OTA на ext4 (RAUC 1.15.2, 1.8) и у SWUpdate на ext2/vfat; корень только для чтения и fsck в initramfs против OTA-PWR-06; две копии окружения; B5 (всё окно, 222 состояния); ложный BRICK под нагрузкой → повторная загрузка (Р24); пороги сервера по сумме байтов (Р25).
 
 ## Проверить перед тем, как писать главы
 * ✅ (01.11) Названия тестов `mcuboot-sim`, `mender-integration`, `aktualizr-tests` в каталоге существуют (сверено с коммитами, см. шапку `threats.yaml`). Что проверяет каждый тест — `docs/external-tests.md` (01.11).
