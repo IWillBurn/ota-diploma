@@ -151,7 +151,7 @@ def test_extends_inherits_and_overrides(tmp_path: Path) -> None:
 def test_real_rauc_upgrade_adapter() -> None:
     d = Device("rauc1.15.2-grub")
     assert d.cmd_install == Device("rauc-grub").cmd_install
-    assert "minver" in d.variants and set(d.variants) == set(Device("rauc-grub").variants) | {"minver"}
+    assert "minver" in d.variants and set(d.variants) == set(Device("rauc-grub").variants) | {"minver", "stream"}
 
 
 def test_install_path_override_and_slot_digest(tmp_path: Path) -> None:

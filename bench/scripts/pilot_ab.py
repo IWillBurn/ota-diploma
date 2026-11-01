@@ -30,8 +30,10 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import secrets
+import shlex
 import subprocess
 import sys
 import time
@@ -41,6 +43,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from otabench import __version__  # noqa: E402
+from otabench.bundleserver import BundleServer  # noqa: E402
 from otabench.device import Device  # noqa: E402
 from otabench.vm import VM, make_overlay, qemu_exe  # noqa: E402
 from otabench.writelog import WriteLog  # noqa: E402
@@ -51,6 +54,16 @@ VARIANT_DIR = Path(r"P:\vm\variants")
 VERDICTS = ("OK", "DEGRADED", "INCONSISTENT", "BRICK")
 # a 4 KiB block with a unique tag, written with O_DIRECT: finds a moment in the write log
 ENV_HEADER = b"# GRUB Environment Block"
+# network scenarios (B8): the guest reaches the host's loopback as 10.0.2.2 (QEMU user net)
+NET_HOST = "10.0.2.2"
+NET_CAP_S = 600       # the server gives up on one response after this long
+NET_SLOW_BPS = 64     # trickle rate of the slow scenario, as for TUF artifacts (Table 4.2)
+# policy: how long the bench waits for the install per scenario; slow uses the client
+# profile's 120 s, endless the artifact time plus margin
+NET_LIMIT_S = {"ok": 900.0, "tamper": 900.0, "drop": 900.0, "slow": 150.0, "endless": 300.0}
+UPLOAD = ("python3 -c \"import os,sys,urllib.request as u; p=sys.argv[1]; f=open(p,'rb'); "
+          "r=u.Request(sys.argv[2], data=f, method='PUT', headers={{'Content-Length': str(os.path.getsize(p))}}); "
+          "print(u.urlopen(r, timeout=900).status)\" {path} {url}")
 # toctou: (how the attacker gets write access, seconds after the install starts)
 TOCTOU_TRIALS = (("held", 2.0), ("held", 6.0), ("held", 12.0), ("late", 6.0))
 # Runs as `nobody` in the guest. held: a writable descriptor opened BEFORE the install
@@ -104,16 +117,17 @@ class Pilot:
         self.sample_intervals = 15  # reorder --region-at window: intervals sampled
         self.updater_version: str | None = None
         self.base_override: Path | None = None  # system scenarios on a variant
+        self.netsrv: BundleServer | None = None  # network scenarios (B8)
 
     # ---------------------------------------------------------------- helpers
     def fresh(self, name: str, base: Path | None = None, base_fmt: str = "qcow2",
-              log: Path | None = None) -> VM:
+              log: Path | None = None, net: bool = False) -> VM:
         self.n += 1
         d = self.work / name
         d.mkdir(exist_ok=True)
         ov = make_overlay(base or self.base_override or self.dev.image,
                           d / f"{name}-{self.n}.qcow2", base_fmt)
-        return VM(ov, d, log_writes=log, name=f"{name}-{self.n}", uefi=self.uefi).start()
+        return VM(ov, d, log_writes=log, name=f"{name}-{self.n}", uefi=self.uefi, net=net).start()
 
     def boot_runs(self, vm: VM) -> list[dict]:
         return self.dev.boot_runs(vm.serial_text())
@@ -574,6 +588,92 @@ class Pilot:
                           "all trials safe: " + ", ".join(f"{t['trial']} {t['outcome']}" for t in trials),
                 "control": ctl, "trials": trials}
 
+    # ---------------------------------------------------------------- network (B8)
+    def _artifact_server(self, vm: VM) -> tuple[BundleServer, str]:
+        """The adversarial artifact server on the host, holding this adapter's v2 (uploaded
+        from the guest once and cached, keyed by adapter, image and artifact path)."""
+        art = self.dev.artifact("v2").path
+        base = self.base_override or self.dev.image  # a variant may carry its own v2
+        st = base.stat()
+        key = hashlib.sha256(f"{self.dev.name}|{base}|{st.st_size}|{st.st_mtime_ns}|{art}"
+                             .encode()).hexdigest()[:10]
+        store = self.variant_dir.parent / "artifacts" / f"{self.dev.name}-{key}-v2{Path(art).suffix}"
+        if self.netsrv is None or self.netsrv.store != store:
+            if self.netsrv:
+                self.netsrv.stop()
+            self.netsrv = BundleServer(store, cap_s=NET_CAP_S).start()
+        if not store.exists():
+            up = f"http://{NET_HOST}:{self.netsrv.port}/upload"
+            rc, out, err = vm.agent.sh(f"for i in 1 2 3 4 5 6 7 8 9 10; do {UPLOAD.format(path=shlex.quote(art), url=up)} "
+                                       "&& exit 0; sleep 3; done; exit 1", 900)
+            if rc != 0 or not store.exists():
+                raise RuntimeError(f"precondition: uploading the artifact to the host failed: {(out + err)[-200:]}")
+        return self.netsrv, f"http://{NET_HOST}:{self.netsrv.port}/v2{Path(art).suffix}"
+
+    def net(self, kind: str) -> dict:
+        """Install over the network from the adversarial server (OTA-AUTH-01/02 in transit,
+        OTA-NET-01, OTA-DOS-02, OTA-DOS-04 for A/B updaters)."""
+        vm = self.fresh(f"net-{kind}", net=True)
+        limit = NET_LIMIT_S[kind]
+        try:
+            if not self.boot_confirmed(vm):
+                raise RuntimeError("precondition: the initial slot did not come up confirmed")
+            s0 = self.state(vm)
+            srv, url = self._artifact_server(vm)
+            size = srv.size
+            srv.set_mode({"ok": "ok", "tamper": f"tamper:{size // 2}", "drop": f"drop:{size // 2}",
+                          "slow": f"slow:{NET_SLOW_BPS}:{size // 4}", "endless": "endless"}[kind])
+            t0 = time.monotonic()
+            try:
+                rc, t_inst, last = self.dev.install_url(vm, url, timeout=limit)
+            except TimeoutError:
+                rc, t_inst, last = None, time.monotonic() - t0, f"still running after {limit:.0f} s"
+                vm.agent.sh("pkill -KILL -f 'swupdate|rauc install' ; sleep 2", 30)
+            tail = self.dev.last_output if rc is not None else ""
+            reqs = [{"range": r.range, "status": r.status, "sent": r.sent, "closed_by": r.closed_by,
+                     "s": round((r.t1 or time.monotonic()) - r.t0, 1)} for r in srv.log]
+            s1 = self.state(vm)
+            ctl = None
+            if kind != "ok" and rc != 0:  # control: the same device still installs an honest download
+                srv.set_mode("ok")
+                rc_c, t_c, last_c = self.dev.install_url(vm, url, timeout=600)
+                ctl = {"rc": rc_c, "s": round(t_c, 1), "msg": last_c}
+                if rc_c != 0:
+                    raise RuntimeError(f"precondition: an honest network install failed as well ({last_c[:120]})")
+            t_rb = self.reboot(vm)
+            s2 = self.state(vm) if t_rb else {}
+        finally:
+            vm.power_cut()
+        t = self.dev.target_slot
+        boot = lambda s: (s.get("order"), s.get("env", {}).get(f"{t}_OK"))  # noqa: E731
+        pair = (s2.get("slot"), s2.get("version"))
+        untouched = boot(s1) == boot(s0)
+        extra = sum(r["sent"] for r in reqs) - size
+        if kind == "ok":
+            ok, why = rc == 0 and pair == self.dev.updated, f"installed and booted {pair[0]}/{pair[1]}"
+        elif kind == "tamper":
+            ok = rc not in (0, None) and untouched
+            why = "tampered download rejected, boot state untouched" if ok else \
+                f"rc={rc}, boot state {'untouched' if untouched else 'CHANGED'}"
+        elif kind == "drop":
+            ok = (rc == 0 and pair == self.dev.updated) or (rc not in (0, None) and untouched)
+            why = ("connection cut at 50%: recovered within the same install" if rc == 0 else
+                   "connection cut at 50%: install failed safely, an honest retry installed") if ok else \
+                f"rc={rc}, after reboot {pair[0]}/{pair[1]}"
+        elif kind == "slow":
+            ok = rc not in (0, None) and untouched
+            why = (f"slow download ({NET_SLOW_BPS} B/s) aborted after {t_inst:.0f} s" if ok else
+                   f"no abort within {limit:.0f} s at {NET_SLOW_BPS} B/s" if rc is None else f"rc={rc}")
+        else:  # endless
+            ok = rc is not None and (rc == 0 and pair == self.dev.updated or rc != 0 and untouched)
+            why = (f"install returned after {t_inst:.0f} s, {extra / 2**20:.0f} MiB past the artifact"
+                   if ok else f"still reading after {limit:.0f} s ({extra / 2**20:.0f} MiB past the artifact)")
+        return {"verdict": "PASS" if ok else "FAIL", "detail": why, "mode": srv.mode if kind == "ok" else kind,
+                "install_rc": rc, "install_s": round(t_inst, 1), "install_msg": last, "install_tail": tail,
+                "requests": reqs, "bytes_past_artifact": extra, "artifact_size": size,
+                "boot_untouched_after_failure": untouched, "control_install": ctl,
+                "after_reboot": f"{pair[0]}/{pair[1]}", "before": s0, "after": s1}
+
     def cut_firstboot(self, delay: float = 3.0, confirm: bool = True) -> dict:
         vm = self.fresh("cutfb" if confirm else "cutfb-unconf")
         disk = vm.disk
@@ -765,6 +865,7 @@ def main() -> int:
     RUN_INFO.update(params=vars(a), git_commit=_git_commit(), check_ready_s=CHECK_READY_S)
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
             "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot, "toctou": p.toctou,
+            **{f"net:{k}": (lambda k: lambda: p.net(k))(k) for k in ("ok", "tamper", "drop", "slow", "endless")},
             "broken-unconfirmed": lambda: p.broken(confirm=False),
             "cut-unconfirmed": lambda: p.cut_firstboot(confirm=False),
             "crash-replay": lambda: p.crash_replay(
@@ -777,6 +878,8 @@ def main() -> int:
         for sname, fn in (("broken", p.broken), ("attacker", p.attacker),
                           ("downgrade", p.downgrade), ("cut-firstboot", p.cut_firstboot)):
             plan[f"{sname}:{cfg}"] = (lambda c, f: lambda: p.on_variant(c, f))(cfg, fn)
+        for k in ("ok", "tamper", "drop", "slow", "endless"):
+            plan[f"net-{k}:{cfg}"] = (lambda c, k: lambda: p.on_variant(c, lambda: p.net(k)))(cfg, k)
     names = a.only.split(",") if a.only else list(plan)
     unknown = [n for n in names if n not in plan]
     if unknown:

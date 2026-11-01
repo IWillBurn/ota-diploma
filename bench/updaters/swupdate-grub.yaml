@@ -28,6 +28,11 @@ commands:
     N=""
     if [ -e /etc/otabench-nodowngrade ]; then N="-N $(cat /etc/otabench-semver)"; fi
     swupdate -v -B grub -H otabench:1.0 -k /etc/swupdate/dev.cert.pem $N -e "stable,copy$T" -i {artifact}
+  # network scenarios (B8): SWUpdate's own downloader, default retries and timeouts
+  install_url: |
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    if [ "$S" = A ]; then T=B; else T=A; fi
+    swupdate -v -B grub -H otabench:1.0 -k /etc/swupdate/dev.cert.pem -e "stable,copy$T" -d "-u {url}"
   reboot: systemctl reboot
   status: |
     E=/boot-ab/grub/grubenv

@@ -73,6 +73,7 @@ class Device:
         self.cmd_debug = c.get("debug")
         self.cmd_unconfirm = c.get("unconfirm")
         self.cmd_slot_digest = c.get("slot_digest")
+        self.cmd_install_url = c.get("install_url")
         self.last_output = ""
         bl = raw.get("bootlog") or {}
         run, rescue = bl.get("run"), bl.get("rescue")
@@ -130,6 +131,20 @@ class Device:
         rc, out, err = vm.agent.sh(cmd, timeout)
         lines = (out + err).strip().splitlines()
         self.last_output = "\n".join(lines[-8:])  # the reason is often not on the last line
+        return rc, time.monotonic() - t, lines[-1] if lines else ""
+
+    def install_url(self, vm, url: str, timeout: float = 1200) -> tuple[int, float, str]:
+        """Install from a URL (adapter command `install_url`, placeholder {url}); the
+        network scenarios serve the artifact from an adversarial server on the host."""
+        if not self.cmd_install_url:
+            raise AdapterError(f"adapter {self.name} has no 'install_url' command")
+        # not shell-quoted: adapters may nest it in another quoted argument (SWUpdate -d "-u URL")
+        if not re.fullmatch(r"https?://[A-Za-z0-9.:/_-]+", url):
+            raise AdapterError(f"refusing to pass URL {url!r} to the guest shell")
+        t = time.monotonic()
+        rc, out, err = vm.agent.sh(str(self.cmd_install_url).replace("{url}", url), timeout)
+        lines = (out + err).strip().splitlines()
+        self.last_output = "\n".join(lines[-8:])
         return rc, time.monotonic() - t, lines[-1] if lines else ""
 
     def status(self, vm, timeout: float = 60) -> dict:
