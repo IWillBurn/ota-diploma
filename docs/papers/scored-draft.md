@@ -138,7 +138,7 @@ existence of a scenario, not by its execution in every ecosystem of the entry (Â
 
 **Black box through adapters.** An implementation is reached only through an adapter. *Update
 clients* use the tuf-conformance protocol unchanged: an executable with `init`, `refresh` and
-`download`; python-tuf and go-tuf need no code of ours, tuf-js needs 53 significant lines.
+`download`; python-tuf and go-tuf need no code of ours, tuf-js needs 58 significant lines.
 *A/B updaters* are described by a YAML device adapter (protocol v2): artifact roles and paths,
 shell commands executed in the QEMU guest through qemu-guest-agent (`install`, `status` as
 `key=value` lines, `reboot`, `unconfirm`, `slot_digest`), and a regular expression that extracts
@@ -312,7 +312,7 @@ untouched.
 | Implementation | Adapter | Artifact driver |
 |---|---|---|
 | python-tuf, go-tuf | 0 (tuf-conformance clients) | repository simulator |
-| tuf-js | 53 | repository simulator |
+| tuf-js | 58 | repository simulator |
 | libcsuit | example + 3 patches | library test manifests |
 | RAUC 1.8 + GRUB | 49 | image build script (125) |
 | RAUC 1.15.2 + GRUB | 4 (`extends`) | upgrade script (105) |
