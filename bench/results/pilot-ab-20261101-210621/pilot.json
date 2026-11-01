@@ -1,0 +1,294 @@
+{
+  "started": "20261101-210621",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "rauc-grub",
+    "only": "toctou,happy:ext4-redundant,happy:vfat-redundant",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "settle": 0.0,
+    "sample_intervals": 15,
+    "region_at": "end",
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "cdbe325",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "rauc-grub",
+    "file": "updaters\\rauc-grub.yaml",
+    "version": "rauc 1.8",
+    "image": "P:\\vm\\ab-v1.qcow2"
+  },
+  "results": {
+    "toctou": {
+      "verdict": "PASS",
+      "metric": "census",
+      "detail": "all trials safe: held-2 blocked, held-6 blocked, held-12 blocked, late-6 genuine",
+      "control": {
+        "trial": "control",
+        "install_rc": 0,
+        "install_s": 23.6,
+        "install_msg": "Installing `/data/otabench-toctou/update.raucb` succeeded",
+        "install_tail": " 80% Checking slot rootfs.1\n 90% Checking slot rootfs.1 done.\n 90% Copying image to rootfs.1\n 99% Copying image to rootfs.1 done.\n 99% Updating slots done.\n100% Installing done.\nidle\nInstalling `/data/otabench-toctou/update.raucb` succeeded",
+        "attacker": "",
+        "slot_digest": "fc102efb1ea7d1b56142535b918589e628d66daf89f4b6aabefec3206f5c47de",
+        "outcome": "genuine",
+        "safe": true,
+        "boot_before": [
+          "A B",
+          "0",
+          "0"
+        ],
+        "boot_after": [
+          "B A",
+          "1",
+          "0"
+        ]
+      },
+      "trials": [
+        {
+          "trial": "held-2",
+          "install_rc": 1,
+          "install_s": 0.2,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` failed",
+          "install_tail": "  0% Installing\n  0% Determining slot states\n 20% Determining slot states done.\n 20% Checking bundle\n 40% Checking bundle failed.\n100% Installing failed.\nLastError: could not ensure exclusive bundle access (F_SETLEASE): EAGAIN: existing open file descriptor\nInstalling `/data/otabench-toctou/update.raucb` failed",
+          "attacker": "",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-6",
+          "install_rc": 1,
+          "install_s": 0.1,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` failed",
+          "install_tail": "  0% Installing\n  0% Determining slot states\n 20% Determining slot states done.\n 20% Checking bundle\n 40% Checking bundle failed.\n100% Installing failed.\nLastError: could not ensure exclusive bundle access (F_SETLEASE): EAGAIN: existing open file descriptor\nInstalling `/data/otabench-toctou/update.raucb` failed",
+          "attacker": "",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-12",
+          "install_rc": 1,
+          "install_s": 0.2,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` failed",
+          "install_tail": "  0% Installing\n  0% Determining slot states\n 20% Determining slot states done.\n 20% Checking bundle\n 40% Checking bundle failed.\n100% Installing failed.\nLastError: could not ensure exclusive bundle access (F_SETLEASE): EAGAIN: existing open file descriptor\nInstalling `/data/otabench-toctou/update.raucb` failed",
+          "attacker": "",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "late-6",
+          "install_rc": 0,
+          "install_s": 29.7,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` succeeded",
+          "install_tail": " 80% Checking slot rootfs.1\n 90% Checking slot rootfs.1 done.\n 90% Copying image to rootfs.1\n 99% Copying image to rootfs.1 done.\n 99% Updating slots done.\n100% Installing done.\nidle\nInstalling `/data/otabench-toctou/update.raucb` succeeded",
+          "attacker": "swap failed at +6.00s: [Errno 13] Permission denied: '/data/otabench-toctou/update.raucb'",
+          "slot_digest": "fc102efb1ea7d1b56142535b918589e628d66daf89f4b6aabefec3206f5c47de",
+          "outcome": "genuine",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "B A",
+            "1",
+            "0"
+          ]
+        }
+      ],
+      "wall_s": 260.4
+    },
+    "happy:ext4-redundant": {
+      "verdict": "PASS",
+      "boot_s": 10.1,
+      "install_s": 19.7,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 16.8,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0",
+            "SEQ": "3"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0",
+            "SEQ": "5"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1",
+            "SEQ": "5"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1",
+            "SEQ": "6"
+          }
+        }
+      ],
+      "wall_s": 343.6
+    },
+    "happy:vfat-redundant": {
+      "verdict": "PASS",
+      "boot_s": 15.9,
+      "install_s": 110.8,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 20.5,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0",
+            "SEQ": "3"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0",
+            "SEQ": "5"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1",
+            "SEQ": "5"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1",
+            "SEQ": "6"
+          }
+        }
+      ],
+      "wall_s": 428.4
+    }
+  }
+}
