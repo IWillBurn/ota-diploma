@@ -26,8 +26,9 @@ all, so a client that buffers the whole response before checking it would still 
 
 We prototyped these tests in an external harness (same client-under-test CLI, a small HTTP
 server wrapper around `RepositorySimulator`) and ran them against python-tuf 7.0.1,
-go-tuf v2.4.2 and tuf-js 6.0.1. All three pass, and a deliberately naive control client fails
-them. That suggests the tests discriminate and are cheap to keep green:
+go-tuf v2.4.2 and tuf-js 6.0.1. All three pass. A deliberately naive control client fails the
+endless-data tests, and mutants of it (no hash check, keeps a bad file) fail the
+interrupted-transfer test. That suggests the tests discriminate and are cheap to keep green:
 
 | Proposed test | Server behaviour | Expectation |
 |---|---|---|
@@ -36,8 +37,8 @@ them. That suggests the tests discriminate and are cheap to keep green:
 | `test_endless_artifact` | artifact keeps streaming past the length in targets metadata | download fails, nothing longer than the signed length is stored |
 | `test_truncated_artifact_then_retry` | connection closed half-way through the artifact once | first download fails, no partial file is reported as success, the next download succeeds with the correct content |
 
-Measured in our run: clients closed the connection after 0.07–0.45 s, having received
-448–832 KiB, mostly socket buffering. The naive control accepted 64 MiB, which was our cap.
+Measured in two runs: clients closed the connection after 0.07–0.64 s, having received
+320–960 KiB, mostly socket buffering. The naive control accepted 64 MiB, which was our cap.
 
 Implementation sketch: the simulator server would need an option to stream a body
 (chunked or close-delimited) and to close the socket after N bytes. The assertion
