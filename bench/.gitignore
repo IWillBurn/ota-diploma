@@ -14,3 +14,5 @@ __pycache__/
 !results/pilot-ab-20261101-110921/
 !results/pilot-ab-20261101-111300/
 results/*.log
+!results/pilot-ab-20261101-124934/
+!results/pilot-ab-20261101-125344/

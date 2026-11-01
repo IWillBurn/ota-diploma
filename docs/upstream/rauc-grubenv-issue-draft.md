@@ -1,7 +1,9 @@
 # Draft issue for rauc/rauc
 
 > **Status: draft, not posted.** Post only after the author has reviewed it and, ideally,
-> after reproducing on current RAUC (1.15+) and on a UEFI boot with grubenv on the ESP.
+> after reproducing on current RAUC (1.15+). UEFI with grubenv on the ESP: reproduced
+> 2026-11-01 (OVMF, unsigned GRUB on the ESP; torn grubenv → `rauc install` refuses;
+> the in-place backend removes it) — see docs/pilot-ab.md «Проверка на UEFI».
 > Checked 2026-11-01: no existing RAUC issue on grubenv power-loss robustness
 > (search "grubenv OR grub-editenv OR grub env"); master `src/bootloaders/grub.c` still
 > writes via `grub-editenv <path> set ...`; the GRUB integration docs suggest the EFI
@@ -25,8 +27,10 @@ following the documented `ORDER`/`<slot>_OK`/`<slot>_TRY` scheme. We see two eff
    with `vm.dirty_writeback_centisecs=100`. Our explanation: the rewritten file gets a new
    block, and GRUB reads the stale on-disk inode because it does not replay the journal.
    No brick, but bootloader and OS disagree and the update is silently not applied.
-2. **vfat or ext2 holds grubenv (no journal): an empty file.** If the disk cache loses or
-   reorders unflushed writes during the rewrite, grubenv can end up 0 bytes. The device
+2. **vfat or ext2 holds grubenv (no journal), including the ESP on UEFI as the GRUB
+   integration docs suggest: an unreadable file.** If power is lost during the rewrite
+   (on the ESP even without reordering of unflushed writes; with reordering also on ext2),
+   grubenv can end up empty (0 bytes) or as an invalid environment block. The device
    still boots (GRUB falls back to defaults or reads the old block), but
    `rauc status` cannot determine the primary, and every `rauc install` fails immediately:
    `Failed marking slot rootfs.1 non-bootable: grub backend: Failed to run grub-editenv`.
