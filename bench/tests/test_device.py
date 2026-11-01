@@ -48,7 +48,7 @@ def test_rauc_adapter_loads(rauc: Device) -> None:
     assert rauc.updated == ("B", "2")
     assert {"v1", "v2", "v2-broken", "v2-attacker"} <= set(rauc.artifacts)
     assert rauc.firmware("uefi-esp") == "uefi" and rauc.firmware("ext2") == "bios"
-    assert len(rauc.variants) == 14
+    assert {"ext4-c5", "ext2", "vfat", "ext4-inplace", "uefi-esp", "ext4-inplace-rootro"} <= set(rauc.variants)
 
 
 def test_parse_status_full() -> None:
@@ -151,7 +151,7 @@ def test_extends_inherits_and_overrides(tmp_path: Path) -> None:
 def test_real_rauc_upgrade_adapter() -> None:
     d = Device("rauc1.15.2-grub")
     assert d.cmd_install == Device("rauc-grub").cmd_install
-    assert "minver" in d.variants and len(d.variants) == 15
+    assert "minver" in d.variants and set(d.variants) == set(Device("rauc-grub").variants) | {"minver"}
 
 
 def test_install_path_override_and_slot_digest(tmp_path: Path) -> None:

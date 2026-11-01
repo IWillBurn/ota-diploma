@@ -36,3 +36,4 @@ results/.suit-work/
 !results/rauc-sigcover-2026-11-01/
 !results/pilot-ab-20261101-183354/
 !results/d2-timestamp-same-version/
+clients/tough/target/

@@ -149,6 +149,14 @@ steps:
         echo 'tmpfs /tmp tmpfs defaults,mode=1777 0 0' >> /etc/fstab
         echo 'tmpfs /var/tmp tmpfs defaults,mode=1777 0 0' >> /etc/fstab
       fi
+  fsckroot:  # OTA-PWR-06 mitigation: the initramfs repairs the (rw) root fs before mounting it
+    run: |
+      mkdir -p /etc/initramfs-tools/conf.d
+      echo FSTYPE=ext4 > /etc/initramfs-tools/conf.d/otabench-fsck
+      update-initramfs -u -k all > /dev/null 2>&1
+      lsinitramfs /boot/initrd.img-$(uname -r) | grep -q 'e2fsck$'
+      sed -i 's/^set CMDLINE="rw /set CMDLINE="rw fsck.repair=yes /' /boot-ab/grub/grub.cfg
+      grep -q '^set CMDLINE="rw fsck.repair=yes ' /boot-ab/grub/grub.cfg
   rebundle:  # the slot image must carry the reconfigured system: rebuild v2 from slot A
     run: |
       rm -rf /data/staging /data/b-v2
@@ -196,6 +204,8 @@ variants:
     steps: [dosfstools, {step: reformat, env: {FS: vfat, MOD: fat}}, inplace, rebundle]
   ext4-inplace-rootro:  # the fix plus a read-only root: does OTA-PWR-06 disappear?
     steps: [inplace, rootro, rebundle]
+  ext4-inplace-fsck:  # the fix plus fsck -y of the rw root in the initramfs (OTA-PWR-06)
+    steps: [inplace, fsckroot, rebundle]
   uefi-esp:  # RAUC's docs suggest the ESP for grubenv on UEFI systems
     firmware: uefi
     steps: [uefi, rebundle]

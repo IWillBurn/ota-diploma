@@ -1,0 +1,18 @@
+[package]
+name = "tough-client"
+version = "0.1.0"
+edition = "2021"
+description = "tuf-conformance client CLI on top of tough (otabench adapter)"
+license = "Apache-2.0"
+
+[[bin]]
+name = "tough"
+path = "src/main.rs"
+
+[dependencies]
+tough = { version = "=0.24.0", features = ["http"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+url = "2"
+
+[profile.release]
+strip = true

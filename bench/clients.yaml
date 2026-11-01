@@ -24,6 +24,14 @@ clients:
     version: tuf-js 6.0.1
     command: ["{node}", "{root}/clients/tuf-js/client.js"]
 
+  - name: tough
+    spec: tuf
+    language: Rust
+    version: tough 0.24.0
+    command: ["{root}/clients/bin/tough{exe}"]
+    # built in the Linux image (bench/Dockerfile, clients/tough); skipped where not built
+    optional: true
+
   - name: naive
     spec: tuf
     language: Python

@@ -53,6 +53,10 @@ def load_clients(path: Path) -> list[ClientSpec]:
             for k, v in subst.items():
                 part = part.replace(k, v)
             cmd.append(part)
+        if c.get("optional") and not Path(cmd[0]).exists():
+            print(f"note: client {c['name']} skipped, {cmd[0]} is not built on this host",
+                  file=sys.stderr)
+            continue
         env = {"PYTHONPATH": site} if "{python}" in c["command"][0] else {}
         env.update(c.get("env", {}))
         if c.get("path_prepend"):
