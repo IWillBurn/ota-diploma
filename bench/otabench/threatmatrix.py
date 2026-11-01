@@ -117,6 +117,8 @@ def build(catalog: dict, mvp: dict | None, pilots: dict) -> tuple[list[str], lis
                 cols.append((c["name"], c.get("spec") or "tuf", f"mvp:{c['name']}"))
     labels: dict[str, list[tuple[str, str]]] = defaultdict(list)
     for (adapter, cfg) in pilots:
+        if adapter.startswith("naive"):  # control installers, like the MVP's control clients
+            continue
         if cfg in COLUMNS:
             labels[f"{adapter}: {COLUMNS[cfg]}"].append((adapter, cfg))
     for label in labels:

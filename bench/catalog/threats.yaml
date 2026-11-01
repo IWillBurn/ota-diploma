@@ -508,7 +508,7 @@ threats:
     # known weak configuration: grubenv rewritten with truncation (grub-devel 2021-02; 3mdeb redundant env)
     expected: survive
     coverage: {}
-    bench: [ab:reorder:*, ab:replay-state-liveness]  # vfat: zero-length grubenv -> rauc install refuses; fixed by *-inplace
+    bench: [ab:crash-replay, ab:reorder:*, ab:replay-state-liveness]  # zero-length grubenv -> rauc install refuses; fixed by *-inplace
     level: block
 
   - id: OTA-PWR-06
