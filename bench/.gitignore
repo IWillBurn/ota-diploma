@@ -24,3 +24,4 @@ results/*.log
 !results/full-2026-11-01-v3/
 !results/threat-matrix-2026-11-01/
 !results/d1-new-scenarios/
+!results/d2-threshold-key-twice/

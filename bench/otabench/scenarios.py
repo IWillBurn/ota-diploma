@@ -26,7 +26,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
-from securesystemslib.signer import CryptoSigner
+from securesystemslib.signer import CryptoSigner, Signature, SSlibKey
 from tuf.api.metadata import Metadata, MetaFile, TargetFile
 from tuf.api.serialization.json import JSONSerializer
 
@@ -340,7 +340,7 @@ class _Killer:
         self.timers: list[threading.Timer] = []
 
     def __call__(self, _: str) -> None:
-        t = threading.Timer(self.delay, self.r.kill_switch.set)
+        t = threading.Timer(self.delay, self.r.kill_run, args=(self.r.run_id,))
         self.timers.append(t)
         t.start()
 
@@ -379,15 +379,16 @@ def _kill_at(r: ClientRunner, phase: str) -> dict:
     """Rule callbacks that kill the client at a given moment of its i-th request."""
     if phase == "request":  # the client waits for this response: kill before answering
         def on_start(_: str) -> None:
-            r.kill_switch.set()
+            r.kill_run(r.run_id)
             r.proc_done.wait(5)
         return {"on_start": on_start}
     delay = 0.010 if phase == "sent+10ms" else 0.0
 
     def on_sent(_: str) -> None:  # the client is parsing / verifying / storing it
+        run = r.run_id  # the run that received the response; the kill is for it only
         if delay:
             time.sleep(delay)
-        r.kill_switch.set()
+        r.kill_run(run)
     return {"on_sent": on_sent}
 
 
@@ -569,6 +570,35 @@ def unsupported_spec_version(ctx: Ctx) -> Outcome:
     res = r.refresh()
     if (r.trusted_version("timestamp") or 0) > (before or 0):
         return Outcome("FAIL", "metadata of an unsupported major spec version became trusted")
+    return _effect_ok(res)
+
+
+@scenario("threshold-key-twice", ["OTA-AUTH-03", "OTA-KEY-02"],
+          "One snapshot key listed in root under two keyids; threshold 2 met by that key alone")
+def threshold_key_twice(ctx: Ctx) -> Outcome:
+    """TUF 1.0.37: 'each KEY MUST only contribute one SIGNATURE' to a threshold and clients
+    'MUST calculate each KEYID'. tuf-conformance covers the same keyid repeated
+    (test_duplicate_keys); here the same key material appears under a second, bogus keyid."""
+    scene, r = ctx.fresh()
+    sim = scene.sim
+    signer = CryptoSigner.generate_ecdsa()  # the one key the attacker holds
+    key = signer.public_key
+    twin = SSlibKey("f" * 64, key.keytype, key.scheme, dict(key.keyval))
+    sim.root.add_key(key, "snapshot")
+    sim.root.add_key(twin, "snapshot")
+    sim.root.roles["snapshot"].threshold = 2
+    sim.publish(["root"])  # root v2, correctly signed by the root key
+    snap = copy.deepcopy(sim.snapshot)
+    snap.version = len(sim.signed_mds["snapshot"]) + 1
+    md = Metadata(snap)
+    md.sign(signer)
+    md.signatures[twin.keyid] = Signature(twin.keyid, md.signatures[key.keyid].signature)
+    sim.signed_mds["snapshot"].append(md.to_bytes(JSONSerializer()))
+    sim.timestamp.snapshot_meta = MetaFile(version=snap.version)
+    sim.publish(["timestamp"])
+    res = r.refresh()
+    if (r.trusted_version("snapshot") or 0) >= snap.version:
+        return Outcome("FAIL", "one key counted twice towards threshold 2 (two keyids)")
     return _effect_ok(res)
 
 

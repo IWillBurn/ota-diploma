@@ -119,7 +119,11 @@ class Scene:
 
 
 class _Handler(BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.0"  # close-delimited bodies are allowed
+    # HTTP/1.1 with keep-alive, like real mirrors and CDNs. A body without a length
+    # (endless stream) is close-delimited and says so with "Connection: close". Under
+    # HTTP/1.0 the server closed the socket after every response, and Node's HTTP client
+    # (undici) asserted when that happened while it was applying backpressure.
+    protocol_version = "HTTP/1.1"
     server: AdversarialServer
 
     def log_message(self, format: str, *args: object) -> None:  # noqa: A002
@@ -189,6 +193,9 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         if length is not None:
             self.send_header("Content-Length", str(length))
+        else:
+            self.send_header("Connection", "close")
+            self.close_connection = True
         self.end_headers()
 
     def _endless(self, rec: RequestRecord) -> None:

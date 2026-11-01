@@ -88,6 +88,7 @@ class ClientRunner:
         self.target_dir.mkdir()
         self.kill_switch = threading.Event()
         self.proc_done = threading.Event()  # set once the current run's process is gone
+        self.run_id = 0  # increments per run: a delayed kill checks it is still the same run
 
     def close(self) -> None:
         self._tmp.cleanup()
@@ -132,10 +133,17 @@ class ClientRunner:
         return [p.read_bytes() for p in sorted(self.target_dir.rglob("*")) if p.is_file()]
 
     # -- process control ----------------------------------------------------
+    def kill_run(self, run_id: int) -> None:
+        """Kill the run `run_id` if it is still the current, unfinished one. A late
+        callback (server thread, timer) must not kill the run that follows."""
+        if self.run_id == run_id and not self.proc_done.is_set():
+            self.kill_switch.set()
+
     def _run(self, args: list[str], timeout: float) -> RunResult:
         env = {**os.environ, **self.spec.env}
         self.kill_switch.clear()
         self.proc_done.clear()
+        self.run_id += 1
         t0 = time.monotonic()
         proc = subprocess.Popen(  # noqa: S603
             [*self.spec.command, *args], env=env,

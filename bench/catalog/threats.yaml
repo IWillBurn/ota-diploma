@@ -46,7 +46,8 @@
 #                   aktualizr-tests     uptane/aktualizr tests/
 #                 every test name above was checked to exist on 2026-11-01 against
 #                 mcuboot a9767a0, integration b68cbab, aktualizr e5118a7 (sparse
-#                 clones in third_party/verify); what each test asserts was NOT reviewed.
+#                 clones in third_party/verify); what each test asserts: docs/external-tests.md
+#                 (two MCUboot tests are weaker than their names, per their own FIXME/TODO).
 #   bench         otabench scenario ids that exercise it ([] = not yet);
 #                 `ab:<name>` = scenario of the RAUC A/B pilot: scripts/pilot_ab.py
 #                 (`ab:window:*`, `ab:reorder:*` = all /boot-ab configurations), or
@@ -144,7 +145,7 @@ threats:
     expected: block
     coverage:
       tuf-conformance: [test_duplicate_sig_keyids, test_duplicate_keys, test_invalid_sig_in_valid_metadata]
-    bench: [arb-keyid-spoofing]
+    bench: [arb-keyid-spoofing, threshold-key-twice]
 
   # ---------------------------------------------------------------- freshness
   - id: OTA-FRESH-01
@@ -255,7 +256,7 @@ threats:
       uptane: "not required for partial-verification Secondaries (§5.4.4.1 checks Director Targets only)"
     expected: block
     coverage: {}
-    bench: [online-keys-arbitrary]
+    bench: [online-keys-arbitrary, threshold-key-twice]
 
   - id: OTA-KEY-03
     title: Compromised key not revoked after root rotation

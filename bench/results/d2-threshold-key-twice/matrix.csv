@@ -1,0 +1,7 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+threshold-key-twice,OTA-AUTH-03 OTA-KEY-02,python-tuf,FAIL,,,,,,,one key counted twice towards threshold 2 (two keyids)
+threshold-key-twice,OTA-AUTH-03 OTA-KEY-02,go-tuf,PASS,,,,,,,rejected
+threshold-key-twice,OTA-AUTH-03 OTA-KEY-02,tuf-js,FAIL,,,,,,,one key counted twice towards threshold 2 (two keyids)
+threshold-key-twice,OTA-AUTH-03 OTA-KEY-02,naive,FAIL,,,,,,,one key counted twice towards threshold 2 (two keyids)
+threshold-key-twice,OTA-AUTH-03 OTA-KEY-02,naive-nosig,FAIL,,,,,,,one key counted twice towards threshold 2 (two keyids)
+threshold-key-twice,OTA-AUTH-03 OTA-KEY-02,naive-anykey,FAIL,,,,,,,one key counted twice towards threshold 2 (two keyids)

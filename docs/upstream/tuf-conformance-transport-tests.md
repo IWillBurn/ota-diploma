@@ -53,6 +53,16 @@ with `"spec_version": "2.0.0"`, python-tuf and tuf-js rejected it
 (`test_unsupported_spec_version_major`: publish timestamp with spec_version "2.0.0", expect
 the refresh to fail and the trusted timestamp to stay unchanged).
 
+A third candidate, more debatable: the spec says each key MUST contribute at most one
+signature to a threshold (and that clients MUST calculate keyids), but `test_duplicate_keys`
+only repeats the *same keyid*. With the same public key listed in root under two different
+keyids and snapshot threshold 2, a snapshot signed by that single key under both keyids was
+rejected by go-tuf v2.4.2 (it counts by the key itself; this was go-tuf advisory
+GHSA-3633-5h82-39pq for < 0.3.2) and accepted by python-tuf 7.0.1 and tuf-js 6.0.1. We know
+python-tuf deliberately follows TAP 12 here and leaves key uniqueness to the delegator
+(python-tuf#1084), and that specification#305 proposes to loosen the keyid requirement, so
+this may belong in the spec discussion rather than in a pass/fail test.
+
 Out of scope on purpose: slow retrieval. As discussed in python-tuf#932, TUF since v1.0.7
 no longer lists it as a goal, and distinguishing an attack from a slow network is
 deployment-specific. A purely informational measurement (time until the client gives up when
