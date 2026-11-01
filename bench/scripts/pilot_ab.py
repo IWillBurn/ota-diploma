@@ -636,7 +636,10 @@ class Pilot:
             applied = srv.applied
             s1 = self.state(vm)
             ctl = None
-            if kind != "ok" and rc != 0:  # control: the same device still installs an honest download
+            # control: the same device still installs an honest download. Not after a
+            # timeout: the updater may still be busy (RAUC's CLI is only a D-Bus client of
+            # the service, which keeps installing), and the verdict is decided already.
+            if kind != "ok" and rc not in (0, None):
                 srv.set_mode("ok")
                 rc_c, t_c, last_c = self.dev.install_url(vm, url, timeout=600)
                 ctl = {"rc": rc_c, "s": round(t_c, 1), "msg": last_c}
