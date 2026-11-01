@@ -86,7 +86,8 @@ def main(argv: list[str] | None = None) -> int:
     md, h, csv_path = write_reports(run, catalog, out)
     print(f"\nresults: {path}\nmatrix:  {md}\n         {h}\n         {csv_path}")
     for c, s in summary(run).items():
-        print(f"  {c:<14} block rate {s['block_rate']:.0%} ({s['blocked']}/{s['scored']} common scenarios)")
+        print(f"  {c:<14} attacks blocked {s['block_rate']:.0%} ({s['blocked']}/{s['scored']}), "
+              f"faults survived {s['survive_rate']:.0%} ({s['survived']}/{s['faults']})")
     return 0
 
 

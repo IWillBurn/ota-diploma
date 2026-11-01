@@ -18,23 +18,23 @@ Run: 2026-10-31T17:00:18+00:00 · host: Windows-11-10.0.26200-SP0 · trials: 10
 | **slow-metadata** ⚡ | OTA-DOS-03 | ❌ abort 120.64s, 240 B | ❌ abort 120.22s, 240 B | ✅ abort 100.28s, 200 B | ❌ abort 120.52s, 240 B | ❌ abort 120.45s, 240 B | ❌ abort 120.45s, 240 B | ❌ abort 120.45s, 240 B | ❌ abort 120.4s, 240 B |
 | **slow-artifact** ⚡ | OTA-DOS-04 | ❌ abort 120.39s, 7445 B | ❌ abort 120.08s, 7446 B | ✅ abort 100.17s, 6205 B | ❌ abort 120.28s, 7456 B | ❌ abort 120.35s, 7458 B | ❌ abort 120.38s, 7458 B | ❌ abort 120.36s, 7460 B | ❌ abort 120.35s, 7458 B |
 | dropped-connection | OTA-NET-01 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ torn file after drop | ❌ torn file after drop |
-| powercut-refresh | OTA-PWR-01 | ✅ survival 100% (n=10), recovery 0.423s | ✅ survival 100% (n=10), recovery 0.067s | ✅ survival 100% (n=10), recovery 0.196s | ✅ survival 100% (n=10), recovery 0.328s | ✅ survival 100% (n=10), recovery 0.31s | ✅ survival 100% (n=10), recovery 0.314s | ✅ survival 100% (n=10), recovery 0.306s | ✅ survival 100% (n=10), recovery 0.307s |
-| powercut-download | OTA-PWR-02 | ✅ survival 100% (n=10), recovery 0.417s | ✅ survival 100% (n=10), recovery 0.076s | ⚠️ | ❌ survival 0% (n=10), torn file 10× | 🟡 survival 20% (n=10), recovery 0.27s, torn file 8× | ❌ survival 0% (n=10), torn file 10× | ❌ survival 0% (n=10), torn file 10× | 🟡 survival 10% (n=10), recovery 0.259s, torn file 9× |
+| powercut-refresh | OTA-PWR-01 | ✅ survival 100% [72%–100%] (n=10), recovery 0.423s | ✅ survival 100% [72%–100%] (n=10), recovery 0.067s | ✅ survival 100% [72%–100%] (n=10), recovery 0.196s | ✅ survival 100% [72%–100%] (n=10), recovery 0.328s | ✅ survival 100% [72%–100%] (n=10), recovery 0.31s | ✅ survival 100% [72%–100%] (n=10), recovery 0.314s | ✅ survival 100% [72%–100%] (n=10), recovery 0.306s | ✅ survival 100% [72%–100%] (n=10), recovery 0.307s |
+| powercut-download | OTA-PWR-02 | ✅ survival 100% [72%–100%] (n=10), recovery 0.417s | ✅ survival 100% [72%–100%] (n=10), recovery 0.076s | ⚠️ | ❌ survival 0% [0%–28%] (n=10), torn file 10× | 🟡 survival 20% [6%–51%] (n=10), recovery 0.27s, torn file 8× | ❌ survival 0% [0%–28%] (n=10), torn file 10× | ❌ survival 0% [0%–28%] (n=10), torn file 10× | 🟡 survival 10% [2%–40%] (n=10), recovery 0.259s, torn file 9× |
 
 ⚡ = differential finding: real implementations of the same spec disagree.
 
-## Block rate (common scenario set, PARTIAL counts 0.5)
+## Rates over the common scenario set (PARTIAL counts 0.5)
 
-| Client | spec | scored | blocked | rate |
-|---|---|---|---|---|
-| python-tuf | tuf | 14 | 12.0 | 86% |
-| go-tuf | tuf | 14 | 12.0 | 86% |
-| tuf-js | tuf | 14 | 14.0 | 100% |
-| naive (control) | tuf | 14 | 6.0 | 43% |
-| naive-nosig (control) | tuf | 14 | 3.0 | 21% |
-| naive-anykey (control) | tuf | 14 | 5.0 | 36% |
-| naive-nohash (control) | tuf | 14 | 4.0 | 29% |
-| naive-keeptorn (control) | tuf | 14 | 4.0 | 29% |
+| Client | spec | attacks blocked | rate | faults survived | rate |
+|---|---|---|---|---|---|
+| python-tuf | tuf | 10.0/12 | 83% | 2.0/2 | 100% |
+| go-tuf | tuf | 10.0/12 | 83% | 2.0/2 | 100% |
+| tuf-js | tuf | 12.0/12 | 100% | 2.0/2 | 100% |
+| naive (control) | tuf | 4.0/12 | 33% | 2.0/2 | 100% |
+| naive-nosig (control) | tuf | 1.0/12 | 8% | 2.0/2 | 100% |
+| naive-anykey (control) | tuf | 3.0/12 | 25% | 2.0/2 | 100% |
+| naive-nohash (control) | tuf | 3.0/12 | 25% | 1.0/2 | 50% |
+| naive-keeptorn (control) | tuf | 3.0/12 | 25% | 1.0/2 | 50% |
 
 Excluded from the rate because some client returned ERROR: powercut-download
 
@@ -162,11 +162,11 @@ Excluded from the rate because some client returned ERROR: powercut-download
 
 | Threat | Class | Existing suites | otabench |
 |---|---|---|---|
-| OTA-AUTH-01 Arbitrary software installation (artifact substitution) | authenticity | mcuboot-sim, mender-integration, tuf-conformance | arb-target-substitution, online-keys-arbitrary |
+| OTA-AUTH-01 Arbitrary software installation (artifact substitution) | authenticity | mcuboot-sim, mender-integration, tuf-conformance | arb-target-substitution, online-keys-arbitrary, ab:attacker |
 | OTA-AUTH-02 Metadata tampering without keys | authenticity | tuf-conformance | arb-metadata-tamper |
 | OTA-AUTH-03 Signature / keyid confusion | authenticity | tuf-conformance | arb-keyid-spoofing |
 | OTA-FRESH-01 Indefinite freeze (replay of expired metadata) | freshness | tuf-conformance | freeze-expired-timestamp |
-| OTA-FRESH-02 Rollback (replay of older validly signed metadata / firmware) | freshness | mcuboot-sim, tuf-conformance | rollback-timestamp, online-keys-downgrade |
+| OTA-FRESH-02 Rollback (replay of older validly signed metadata / firmware) | freshness | mcuboot-sim, tuf-conformance | rollback-timestamp, online-keys-downgrade, ab:downgrade |
 | OTA-FRESH-03 Mix-and-match | freshness | tuf-conformance | mix-and-match |
 | OTA-FRESH-04 Fast-forward (attacker-inflated version locks out recovery) | freshness | tuf-conformance | — |
 | OTA-KEY-01 Online-key compromise -> downgrade to older firmware | key-compromise | tuf-conformance | online-keys-downgrade |
@@ -181,8 +181,9 @@ Excluded from the rate because some client returned ERROR: powercut-download
 | OTA-NET-01 Interrupted transfer, recovery on retry | fault-tolerance | aktualizr-tests, mender-integration | dropped-connection |
 | OTA-PWR-01 Power loss during metadata update (trust state must not brick) | fault-tolerance | — | powercut-refresh |
 | OTA-PWR-02 Power loss during artifact download/storage | fault-tolerance | — | powercut-download |
-| OTA-PWR-03 Power loss while writing the inactive A/B slot | fault-tolerance | mcuboot-sim | — |
-| OTA-PWR-04 Power loss during boot-slot switch / first boot (fallback via boot counter) | fault-tolerance | mcuboot-sim | — |
+| OTA-PWR-03 Power loss while writing the inactive A/B slot | fault-tolerance | mcuboot-sim | ab:crash-replay, ab:window, ab:reorder |
+| OTA-PWR-04 Power loss during boot-slot switch / first boot (fallback via boot counter) | fault-tolerance | mcuboot-sim | ab:cut-firstboot, ab:broken, ab:crash-replay |
+| OTA-PWR-05 Power loss leaves the update state unusable (device boots but can no longer be updated) | fault-tolerance | — | ab:reorder, ab:replay-state-liveness |
 | OTA-INST-01 Wrong software installation (wrong device/hardware class) | installation | tuf-conformance | — |
 | OTA-INST-02 Partial bundle installation (multi-ECU / multi-image) | installation | — | — |
 | OTA-PARSE-01 Malformed metadata / manifest triggers parser fault | parsing | oss-fuzz | — |

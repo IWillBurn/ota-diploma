@@ -33,6 +33,22 @@ def _matrix(run: dict):
     return clients, scen, cell
 
 
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson score interval for k successes out of n trials."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = k / n
+    den = 1 + z * z / n
+    mid = (p + z * z / (2 * n)) / den
+    half = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / den
+    return (max(0.0, mid - half), min(1.0, mid + half))
+
+
+def is_fault(r: dict) -> bool:
+    """Fault-tolerance scenario (power cut, network loss) rather than an attack."""
+    return any(t.startswith(("OTA-PWR", "OTA-NET")) for t in r.get("threats", []))
+
+
 def _metric_str(r: dict) -> str:
     m = r.get("metrics") or {}
     parts = []
@@ -43,7 +59,8 @@ def _metric_str(r: dict) -> str:
         parts.append(f"{v / 1048576:.1f} MiB" if v >= 1048576 else f"{v / 1024:.0f} KiB"
                      if v >= 10240 else f"{v} B")
     if "survival_rate" in m:
-        parts.append(f"survival {m['survival_rate']:.0%} (n={m.get('trials')})")
+        lo, hi = wilson(int(m.get("survived", 0)), int(m.get("trials", 0)))
+        parts.append(f"survival {m['survival_rate']:.0%} [{lo:.0%}–{hi:.0%}] (n={m.get('trials')})")
     if isinstance(m.get("mean_recovery_s"), (int, float)):
         parts.append(f"recovery {m['mean_recovery_s']}s")
     if m.get("torn_file_observed"):
@@ -72,11 +89,17 @@ def summary(run: dict) -> dict[str, dict]:
     common = [s for s in scen if all(by.get((s, c), {}).get("verdict") not in (None, "ERROR")
                                      for c in names)]
     out = {}
+    fault = {s for s in common if is_fault(by[(s, names[0])])}
     for c in names:
-        score = sum(1.0 if by[(s, c)]["verdict"] == "PASS" else
-                    0.5 if by[(s, c)]["verdict"] == "PARTIAL" else 0.0 for s in common)
-        out[c] = {"scored": len(common), "blocked": score,
-                  "block_rate": round(score / len(common), 3) if common else 0.0,
+        def score(ss: list[str]) -> float:
+            return sum(1.0 if by[(s, c)]["verdict"] == "PASS" else
+                       0.5 if by[(s, c)]["verdict"] == "PARTIAL" else 0.0 for s in ss)
+        atk = [s for s in common if s not in fault]
+        flt = [s for s in common if s in fault]
+        out[c] = {"scored": len(atk), "blocked": score(atk),
+                  "block_rate": round(score(atk) / len(atk), 3) if atk else 0.0,
+                  "faults": len(flt), "survived": score(flt),
+                  "survive_rate": round(score(flt) / len(flt), 3) if flt else 0.0,
                   "excluded": [s for s in scen if s not in common]}
     return out
 
@@ -106,12 +129,14 @@ def to_markdown(run: dict, catalog: dict) -> str:
             row.append(f"{ICON[r['verdict']] if r else '·'} {_metric_str(r) if r else ''}".strip())
         lines.append("| " + " | ".join(row) + " |")
     lines += ["", "⚡ = differential finding: real implementations of the same spec disagree.", "",
-              "## Block rate (common scenario set, PARTIAL counts 0.5)", "",
-              "| Client | spec | scored | blocked | rate |", "|---|---|---|---|---|"]
+              "## Rates over the common scenario set (PARTIAL counts 0.5)", "",
+              "| Client | spec | attacks blocked | rate | faults survived | rate |",
+              "|---|---|---|---|---|---|"]
     specs = {c["name"]: c for c in run["clients"]}
     for c, s in summary(run).items():
         tag = " (control)" if specs[c].get("control") else ""
-        lines.append(f"| {c}{tag} | {specs[c]['spec']} | {s['scored']} | {s['blocked']} | {s['block_rate']:.0%} |")
+        lines.append(f"| {c}{tag} | {specs[c]['spec']} | {s['blocked']}/{s['scored']} | "
+                     f"{s['block_rate']:.0%} | {s['survived']}/{s['faults']} | {s['survive_rate']:.0%} |")
     excl = next(iter(summary(run).values()), {}).get("excluded", [])
     if excl:
         lines += ["", f"Excluded from the rate because some client returned ERROR: {', '.join(excl)}"]

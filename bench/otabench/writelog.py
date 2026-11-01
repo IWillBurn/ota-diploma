@@ -5,10 +5,13 @@ then for every request one header sector {u64 sector, u64 nr_sectors, u64 flags,
 u64 data_len} padded to sectorsize, followed by the written data (writes and
 write-zeroes carry data, flush/discard do not, marks carry data_len bytes).
 
-Replay model used by otabench: crash state k = the disk at log start with entries
-0..k applied in order (a prefix). Prefix states at FLUSH/FUA entries are states a
-correct disk may expose after power loss; prefixes in between are a superset of
-the "lost unflushed writes" states that a stricter model would also explore.
+Two replay models:
+* prefix (WriteLog.apply): crash state k = the disk at log start with entries 0..k
+  applied in order. Every prefix is a state a disk may expose after power loss, but
+  prefixes are only a SUBSET of what a disk with a volatile write cache can expose;
+* reordering (WriteLog.crash_states): between two FLUSH barriers any subset of the
+  unflushed writes may persist (bounded subsets; optionally sector-torn writes).
+  Writes after the last FLUSH of the selected region are not permuted.
 """
 
 from __future__ import annotations

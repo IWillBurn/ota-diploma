@@ -48,7 +48,11 @@
 #                 mcuboot a9767a0, integration b68cbab, aktualizr e5118a7 (sparse
 #                 clones in third_party/verify); what each test asserts was NOT reviewed.
 #   bench         otabench scenario ids that exercise it ([] = not yet);
-#                 `ab:<name>` = scripts/pilot_ab.py (RAUC A/B pilot)
+#                 `ab:<name>` = scenario of the RAUC A/B pilot: scripts/pilot_ab.py
+#                 (`ab:window:*`, `ab:reorder:*` = all /boot-ab configurations), or
+#                 scripts/replay_state.py for `ab:replay-state-liveness`
+#   id prefix     a mnemonic of the threat family (NET, REP, AUTHZ, TIME …); it is not
+#                 required to equal `class` (e.g. OTA-NET-01 is class fault-tolerance)
 #   level         for fault tolerance: process | block | system
 #
 # NOTE (0.2.0): refs replaced with the clause references recorded in
@@ -451,7 +455,7 @@ threats:
     expected: survive
     coverage:
       mcuboot-sim: [perm_with_fails, perm_with_random_fails, status_write_fails_with_reset]
-    bench: [ab:crash-replay, ab:window, ab:reorder]  # scripts/pilot_ab.py, RAUC 1.8 + GRUB; prefix + reordering models
+    bench: [ab:crash-replay, ab:window:*, ab:reorder:*]  # RAUC 1.8 + GRUB; prefix + reordering models
     level: block
 
   - id: OTA-PWR-04
@@ -477,7 +481,7 @@ threats:
     expected: survive
     coverage:
       mcuboot-sim: [basic_revert, revert_with_fails]
-    bench: [ab:cut-firstboot, ab:broken, ab:crash-replay]
+    bench: [ab:cut-firstboot, ab:crash-replay]  # ab:broken exercises the same boot-counter fallback without a power cut
     level: system
 
   - id: OTA-PWR-05
@@ -491,11 +495,10 @@ threats:
       nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write"]
       cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
       verified: false  # entry added 2026-11-01 from pilot results; refs reused from OTA-PWR-03
-    spec_status:
-      note: "known weak configuration: grubenv rewritten with truncation (grub-devel 2021-02, 3mdeb redundant env)"
+    # known weak configuration: grubenv rewritten with truncation (grub-devel 2021-02; 3mdeb redundant env)
     expected: survive
     coverage: {}
-    bench: [ab:reorder, ab:replay-state-liveness]  # vfat: zero-length grubenv -> rauc install refuses
+    bench: [ab:reorder:*, ab:replay-state-liveness]  # vfat: zero-length grubenv -> rauc install refuses; fixed by *-inplace
     level: block
 
   # ---------------------------------------------------------------- installation / parsing
@@ -568,7 +571,7 @@ threats:
     title: TOCTOU between verification and use
     class: installation
     property: the verified manifest / payload is the one that is installed
-    attacker: net
+    attacker: net  # REVIEW: usually needs local write access to the bundle store, not only the network
     ecosystems: [tuf, uptane, suit, ab-updater]
     refs:
       uptane: ["≈ §5.4.3.4 checks SHOULD be done on the image in secondary storage"]
