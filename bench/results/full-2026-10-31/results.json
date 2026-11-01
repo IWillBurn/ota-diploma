@@ -1,0 +1,972 @@
+{
+  "otabench_version": "0.1.0",
+  "started": "2026-10-31T16:27:04+00:00",
+  "host": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "python-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/python-tuf/python_tuf.py",
+      "language": "Python",
+      "version": "tuf 7.0.1 (ngclient)",
+      "control": false,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "go-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/bin/go-tuf.exe",
+      "language": "Go",
+      "version": "go-tuf v2.4.2",
+      "control": false,
+      "env": {
+        "PATH": "C:/Program Files/Git/usr/bin;C:\\Users\\eugen\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\local\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Users\\eugen\\bin;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\Program Files\\Git\\cmd;C:\\Users\\eugen\\.local\\bin;C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\Go\\bin;C:\\Program Files\\nodejs;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\eugen\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\eugen\\AppData\\Local\\Unity\\bin;C:\\Users\\eugen\\.dotnet\\tools;C:\\Users\\eugen\\go\\bin;C:\\Users\\eugen\\AppData\\Roaming\\npm;C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2025.2.6.3\\bin;C:\\Program Files\\Git\\usr\\bin\\vendor_perl;C:\\Program Files\\Git\\usr\\bin\\core_perl"
+      }
+    },
+    {
+      "name": "tuf-js",
+      "spec": "tuf",
+      "command": "bench/clients/tuf-js/client.js",
+      "language": "TypeScript/Node",
+      "version": "tuf-js 6.0.1",
+      "control": false,
+      "env": {}
+    },
+    {
+      "name": "naive",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "Python",
+      "version": "negative control",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    }
+  ],
+  "results": [
+    {
+      "client": "python-tuf",
+      "scenario": "baseline",
+      "threats": [],
+      "title": "Sanity: honest repository, plain download",
+      "wall_s": 1.43,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {
+        "duration_s": 0.738
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "baseline",
+      "threats": [],
+      "title": "Sanity: honest repository, plain download",
+      "wall_s": 0.27,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {
+        "duration_s": 0.157
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "baseline",
+      "threats": [],
+      "title": "Sanity: honest repository, plain download",
+      "wall_s": 0.55,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {
+        "duration_s": 0.329
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "baseline",
+      "threats": [],
+      "title": "Sanity: honest repository, plain download",
+      "wall_s": 1.06,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {
+        "duration_s": 0.547
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "arb-target-substitution",
+      "threats": [
+        "OTA-AUTH-01"
+      ],
+      "title": "Mirror serves attacker bytes instead of the signed artifact",
+      "wall_s": 1.26,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "arb-target-substitution",
+      "threats": [
+        "OTA-AUTH-01"
+      ],
+      "title": "Mirror serves attacker bytes instead of the signed artifact",
+      "wall_s": 0.23,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "arb-target-substitution",
+      "threats": [
+        "OTA-AUTH-01"
+      ],
+      "title": "Mirror serves attacker bytes instead of the signed artifact",
+      "wall_s": 0.51,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "arb-target-substitution",
+      "threats": [
+        "OTA-AUTH-01"
+      ],
+      "title": "Mirror serves attacker bytes instead of the signed artifact",
+      "wall_s": 1.04,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "arb-metadata-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "Targets metadata modified in transit, original signature kept",
+      "wall_s": 1.4,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "arb-metadata-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "Targets metadata modified in transit, original signature kept",
+      "wall_s": 0.23,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "arb-metadata-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "Targets metadata modified in transit, original signature kept",
+      "wall_s": 0.56,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "arb-metadata-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "Targets metadata modified in transit, original signature kept",
+      "wall_s": 0.99,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "arb-keyid-spoofing",
+      "threats": [
+        "OTA-AUTH-03"
+      ],
+      "title": "Attacker signs with own key but claims the legitimate keyid",
+      "wall_s": 1.13,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "arb-keyid-spoofing",
+      "threats": [
+        "OTA-AUTH-03"
+      ],
+      "title": "Attacker signs with own key but claims the legitimate keyid",
+      "wall_s": 0.22,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "arb-keyid-spoofing",
+      "threats": [
+        "OTA-AUTH-03"
+      ],
+      "title": "Attacker signs with own key but claims the legitimate keyid",
+      "wall_s": 0.52,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "arb-keyid-spoofing",
+      "threats": [
+        "OTA-AUTH-03"
+      ],
+      "title": "Attacker signs with own key but claims the legitimate keyid",
+      "wall_s": 0.9,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "freeze-expired-timestamp",
+      "threats": [
+        "OTA-FRESH-01"
+      ],
+      "title": "Mirror keeps replaying metadata after it expired (indefinite freeze)",
+      "wall_s": 6.0,
+      "verdict": "PASS",
+      "detail": "expired metadata rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "freeze-expired-timestamp",
+      "threats": [
+        "OTA-FRESH-01"
+      ],
+      "title": "Mirror keeps replaying metadata after it expired (indefinite freeze)",
+      "wall_s": 5.62,
+      "verdict": "PASS",
+      "detail": "expired metadata rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "freeze-expired-timestamp",
+      "threats": [
+        "OTA-FRESH-01"
+      ],
+      "title": "Mirror keeps replaying metadata after it expired (indefinite freeze)",
+      "wall_s": 5.64,
+      "verdict": "PASS",
+      "detail": "expired metadata rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "freeze-expired-timestamp",
+      "threats": [
+        "OTA-FRESH-01"
+      ],
+      "title": "Mirror keeps replaying metadata after it expired (indefinite freeze)",
+      "wall_s": 5.63,
+      "verdict": "FAIL",
+      "detail": "expired timestamp accepted",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 1.32,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 0.29,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 0.66,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 1.02,
+      "verdict": "FAIL",
+      "detail": "trusted timestamp rolled back to v2",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "mix-and-match",
+      "threats": [
+        "OTA-FRESH-03"
+      ],
+      "title": "Snapshot lists targets v3, mirror serves (older) targets v2 under that name",
+      "wall_s": 0.85,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "mix-and-match",
+      "threats": [
+        "OTA-FRESH-03"
+      ],
+      "title": "Snapshot lists targets v3, mirror serves (older) targets v2 under that name",
+      "wall_s": 0.14,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "mix-and-match",
+      "threats": [
+        "OTA-FRESH-03"
+      ],
+      "title": "Snapshot lists targets v3, mirror serves (older) targets v2 under that name",
+      "wall_s": 0.36,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "mix-and-match",
+      "threats": [
+        "OTA-FRESH-03"
+      ],
+      "title": "Snapshot lists targets v3, mirror serves (older) targets v2 under that name",
+      "wall_s": 0.64,
+      "verdict": "FAIL",
+      "detail": "inconsistent targets trusted",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "online-keys-downgrade",
+      "threats": [
+        "OTA-KEY-01",
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp+snapshot keys compromised: snapshot points back to old targets (downgrade)",
+      "wall_s": 1.24,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "online-keys-downgrade",
+      "threats": [
+        "OTA-KEY-01",
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp+snapshot keys compromised: snapshot points back to old targets (downgrade)",
+      "wall_s": 0.23,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "online-keys-downgrade",
+      "threats": [
+        "OTA-KEY-01",
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp+snapshot keys compromised: snapshot points back to old targets (downgrade)",
+      "wall_s": 0.63,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "online-keys-downgrade",
+      "threats": [
+        "OTA-KEY-01",
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp+snapshot keys compromised: snapshot points back to old targets (downgrade)",
+      "wall_s": 0.98,
+      "verdict": "FAIL",
+      "detail": "downgrade to vulnerable firmware accepted",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "online-keys-arbitrary",
+      "threats": [
+        "OTA-KEY-02",
+        "OTA-AUTH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: attacker signs new targets with the snapshot key",
+      "wall_s": 0.77,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "online-keys-arbitrary",
+      "threats": [
+        "OTA-KEY-02",
+        "OTA-AUTH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: attacker signs new targets with the snapshot key",
+      "wall_s": 0.16,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "online-keys-arbitrary",
+      "threats": [
+        "OTA-KEY-02",
+        "OTA-AUTH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: attacker signs new targets with the snapshot key",
+      "wall_s": 0.36,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "online-keys-arbitrary",
+      "threats": [
+        "OTA-KEY-02",
+        "OTA-AUTH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: attacker signs new targets with the snapshot key",
+      "wall_s": 0.62,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "endless-metadata",
+      "threats": [
+        "OTA-DOS-01"
+      ],
+      "title": "timestamp.json is an endless stream (no Content-Length)",
+      "wall_s": 0.78,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.39,
+        "bytes_pushed": 851968,
+        "requests": 1
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "endless-metadata",
+      "threats": [
+        "OTA-DOS-01"
+      ],
+      "title": "timestamp.json is an endless stream (no Content-Length)",
+      "wall_s": 0.13,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.07,
+        "bytes_pushed": 589824,
+        "requests": 1
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "endless-metadata",
+      "threats": [
+        "OTA-DOS-01"
+      ],
+      "title": "timestamp.json is an endless stream (no Content-Length)",
+      "wall_s": 0.31,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.18,
+        "bytes_pushed": 786432,
+        "requests": 1
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "endless-metadata",
+      "threats": [
+        "OTA-DOS-01"
+      ],
+      "title": "timestamp.json is an endless stream (no Content-Length)",
+      "wall_s": 0.89,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (64 MiB accepted)",
+      "metrics": {
+        "time_to_abort_s": 0.59,
+        "bytes_pushed": 67108864,
+        "requests": 1
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "endless-artifact",
+      "threats": [
+        "OTA-DOS-02"
+      ],
+      "title": "Artifact keeps streaming past its signed length",
+      "wall_s": 1.25,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.45,
+        "bytes_pushed": 851968,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "endless-artifact",
+      "threats": [
+        "OTA-DOS-02"
+      ],
+      "title": "Artifact keeps streaming past its signed length",
+      "wall_s": 0.21,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.07,
+        "bytes_pushed": 458752,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "endless-artifact",
+      "threats": [
+        "OTA-DOS-02"
+      ],
+      "title": "Artifact keeps streaming past its signed length",
+      "wall_s": 0.61,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.25,
+        "bytes_pushed": 786432,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "endless-artifact",
+      "threats": [
+        "OTA-DOS-02"
+      ],
+      "title": "Artifact keeps streaming past its signed length",
+      "wall_s": 1.09,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (64 MiB accepted)",
+      "metrics": {
+        "time_to_abort_s": 0.47,
+        "bytes_pushed": 67108864,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "slow-metadata",
+      "threats": [
+        "OTA-DOS-03"
+      ],
+      "title": "snapshot.json is dripped at 2 bytes/s (below any read-gap timeout)",
+      "wall_s": 120.84,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (still waiting after 120s)",
+      "metrics": {
+        "time_to_abort_s": 120.47,
+        "bytes_pushed": 240,
+        "requests": 1
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "slow-metadata",
+      "threats": [
+        "OTA-DOS-03"
+      ],
+      "title": "snapshot.json is dripped at 2 bytes/s (below any read-gap timeout)",
+      "wall_s": 120.23,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (still waiting after 120s)",
+      "metrics": {
+        "time_to_abort_s": 120.17,
+        "bytes_pushed": 240,
+        "requests": 1
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "slow-metadata",
+      "threats": [
+        "OTA-DOS-03"
+      ],
+      "title": "snapshot.json is dripped at 2 bytes/s (below any read-gap timeout)",
+      "wall_s": 100.29,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 100.18,
+        "bytes_pushed": 200,
+        "requests": 1
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "slow-metadata",
+      "threats": [
+        "OTA-DOS-03"
+      ],
+      "title": "snapshot.json is dripped at 2 bytes/s (below any read-gap timeout)",
+      "wall_s": 120.64,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (still waiting after 120s)",
+      "metrics": {
+        "time_to_abort_s": 120.39,
+        "bytes_pushed": 240,
+        "requests": 1
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "slow-artifact",
+      "threats": [
+        "OTA-DOS-04"
+      ],
+      "title": "Artifact is dripped at 64 bytes/s",
+      "wall_s": 121.26,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (still waiting after 120s)",
+      "metrics": {
+        "time_to_abort_s": 120.43,
+        "bytes_pushed": 7465,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "slow-artifact",
+      "threats": [
+        "OTA-DOS-04"
+      ],
+      "title": "Artifact is dripped at 64 bytes/s",
+      "wall_s": 120.25,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (still waiting after 120s)",
+      "metrics": {
+        "time_to_abort_s": 120.09,
+        "bytes_pushed": 7466,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "slow-artifact",
+      "threats": [
+        "OTA-DOS-04"
+      ],
+      "title": "Artifact is dripped at 64 bytes/s",
+      "wall_s": 100.54,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 100.18,
+        "bytes_pushed": 6224,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "slow-artifact",
+      "threats": [
+        "OTA-DOS-04"
+      ],
+      "title": "Artifact is dripped at 64 bytes/s",
+      "wall_s": 120.93,
+      "verdict": "FAIL",
+      "detail": "client never gave up, harness cap hit (still waiting after 120s)",
+      "metrics": {
+        "time_to_abort_s": 120.29,
+        "bytes_pushed": 7466,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "dropped-connection",
+      "threats": [
+        "OTA-NET-01"
+      ],
+      "title": "Connection closed half-way through the artifact; next attempt must recover",
+      "wall_s": 1.02,
+      "verdict": "PASS",
+      "detail": "recovered",
+      "metrics": {
+        "torn_file_after_drop": 0,
+        "recovery_s": 0.343
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "dropped-connection",
+      "threats": [
+        "OTA-NET-01"
+      ],
+      "title": "Connection closed half-way through the artifact; next attempt must recover",
+      "wall_s": 0.18,
+      "verdict": "PASS",
+      "detail": "recovered",
+      "metrics": {
+        "torn_file_after_drop": 0,
+        "recovery_s": 0.052
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "dropped-connection",
+      "threats": [
+        "OTA-NET-01"
+      ],
+      "title": "Connection closed half-way through the artifact; next attempt must recover",
+      "wall_s": 0.54,
+      "verdict": "PASS",
+      "detail": "recovered",
+      "metrics": {
+        "torn_file_after_drop": 0,
+        "recovery_s": 0.208
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "dropped-connection",
+      "threats": [
+        "OTA-NET-01"
+      ],
+      "title": "Connection closed half-way through the artifact; next attempt must recover",
+      "wall_s": 0.83,
+      "verdict": "PASS",
+      "detail": "recovered",
+      "metrics": {
+        "torn_file_after_drop": 0,
+        "recovery_s": 0.278
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at a random point of a metadata update incl. root rotation",
+      "wall_s": 15.57,
+      "verdict": "PASS",
+      "detail": "10/10 survived (6 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 6,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.404,
+        "kill_points": "root:2,snapshot:2,targets:5,timestamp:1"
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at a random point of a metadata update incl. root rotation",
+      "wall_s": 2.8,
+      "verdict": "PASS",
+      "detail": "10/10 survived (2 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 2,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.058,
+        "kill_points": "root:2,snapshot:2,targets:6"
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at a random point of a metadata update incl. root rotation",
+      "wall_s": 7.44,
+      "verdict": "PASS",
+      "detail": "10/10 survived (10 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 10,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.185,
+        "kill_points": "root:2,snapshot:3,targets:3,timestamp:2"
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at a random point of a metadata update incl. root rotation",
+      "wall_s": 11.84,
+      "verdict": "PASS",
+      "detail": "10/10 survived (4 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 4,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.294,
+        "kill_points": "root:3,snapshot:2,targets:3,timestamp:2"
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "powercut-download",
+      "threats": [
+        "OTA-PWR-02"
+      ],
+      "title": "Process killed at a random moment while a 2 MiB artifact is being fetched/stored",
+      "wall_s": 22.21,
+      "verdict": "PASS",
+      "detail": "10/10 survived (10 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 10,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.378,
+        "torn_file_observed": 0
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "powercut-download",
+      "threats": [
+        "OTA-PWR-02"
+      ],
+      "title": "Process killed at a random moment while a 2 MiB artifact is being fetched/stored",
+      "wall_s": 11.07,
+      "verdict": "PASS",
+      "detail": "10/10 survived (10 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 10,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.066,
+        "torn_file_observed": 0
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "powercut-download",
+      "threats": [
+        "OTA-PWR-02"
+      ],
+      "title": "Process killed at a random moment while a 2 MiB artifact is being fetched/stored",
+      "wall_s": 0.51,
+      "verdict": "ERROR",
+      "detail": "precondition: honest 2 MiB download fails without any fault: Node.js v24.19.0 | Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\\win\\async.c, line 94",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "powercut-download",
+      "threats": [
+        "OTA-PWR-02"
+      ],
+      "title": "Process killed at a random moment while a 2 MiB artifact is being fetched/stored",
+      "wall_s": 19.04,
+      "verdict": "FAIL",
+      "detail": "0/10 survived (10 killed mid-run) | 1x after crash [fw.bin:BAD 671744B] -> after retry exit=0 [fw.bin:BAD 671744B]; 1x after crash [fw.bin:BAD 1884160B] -> after retry exit=0 [fw.bin:BAD 1884160B]; 1x after crash [fw.bin:BAD 1327104B] -> after retry exit=0 [fw.bin:BAD 1327104B]",
+      "metrics": {
+        "trials": 10,
+        "crashed": 10,
+        "survived": 0,
+        "survival_rate": 0.0,
+        "mean_recovery_s": "-",
+        "torn_file_observed": 10
+      }
+    }
+  ]
+}

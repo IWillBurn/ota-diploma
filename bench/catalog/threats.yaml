@@ -1,0 +1,772 @@
+# otabench threat catalog (machine-readable)
+#
+# One entry = one attack or failure the update system must withstand.
+# Fields:
+#   id            stable identifier, OTA-<CLASS>-<NN>
+#   title         short name
+#   class         authenticity | freshness | key-compromise | availability |
+#                 fault-tolerance | installation | parsing | confidentiality
+#   property      the security/resilience property that is violated
+#   attacker      capability model: net (MitM / malicious mirror, no keys),
+#                 online-keys (timestamp/snapshot or director keys), offline-keys,
+#                 fault (no attacker: power loss, network loss)
+#   ecosystems    where the threat applies: tuf, uptane, suit, ab-updater
+#   refs          clause references per source. Values are strings so that a
+#                 human can follow them; `verified: false` marks references that
+#                 still need checking against the primary text. A source key is
+#                 omitted when the notes found no clause for it (NOT FOUND).
+#                 "≈" = closest clause, not equivalent. Source keys:
+#                   tuf          TUF specification 1.0.37 (tag v1.0.37), §-numbers
+#                   uptane       Uptane Standard 2.1.0, §-numbers ("s" = step);
+#                                DEPLOY = Uptane Deployment Best Practices;
+#                                RAID 2024 = Lorch et al., DOI 10.1145/3678890.3678927
+#                   suit         RFC 9124 THREAT.* / REQ.* identifiers; RFC 9019 and
+#                                draft-ietf-suit-manifest-37 where named explicitly
+#                   isvs         OWASP ISVS 1.0 requirement IDs
+#                   cra          Regulation (EU) 2024/2847 (Cyber Resilience Act)
+#                   en18031      EN 18031-1:2024 (RED Delegated Regulation 2022/30)
+#                   etsi303645   ETSI EN 303 645 V3.1.3; "TS 103 701" = its test
+#                                specification V2.1.1
+#                   unr156       UN Regulation No. 156 (ECE/TRANS/WP.29/2020/80)
+#                   nist800193   NIST SP 800-193 (May 2018)
+#                   fstec117     Приказ ФСТЭК России от 11.04.2025 № 117
+#                   fstec239     Приказ ФСТЭК России от 25.12.2017 № 239 (ред. 28.08.2024)
+#                   fstec_method Методика тестирования обновлений безопасности
+#                                программных, программно-аппаратных средств
+#                                (ФСТЭК России, 28.10.2022)
+#   spec_status   optional, per source key: the source explicitly does NOT require
+#                 the defence (removed, non-goal, optional/MAY, informative only,
+#                 restricted to one level)
+#   expected      what the spec demands: block | survive | out-of-scope
+#   coverage      which EXISTING test suites exercise it (test names):
+#                   tuf-conformance     test functions in tuf_conformance/test_*.py
+#                   oss-fuzz            <project>/<fuzzer>
+#                   mcuboot-sim         mcu-tools/mcuboot sim/tests/core.rs (sim_test! names)
+#                   mender-integration  mendersoftware/integration tests/tests/
+#                   aktualizr-tests     uptane/aktualizr tests/
+#                 every test name above was checked to exist on 2026-11-01 against
+#                 mcuboot a9767a0, integration b68cbab, aktualizr e5118a7 (sparse
+#                 clones in third_party/verify); what each test asserts was NOT reviewed.
+#   bench         otabench scenario ids that exercise it ([] = not yet);
+#                 `ab:<name>` = scripts/pilot_ab.py (RAUC A/B pilot)
+#   level         for fault tolerance: process | block | system
+#
+# NOTE (0.2.0): refs replaced with the clause references recorded in
+# research_notes/Бенчмарк безопасности OTA обновлений/specs_threat_models.md
+# (§7 cross-walk, §7.2 proposed IDs) and regulation_and_standards.md (§7
+# requirement -> property table). Coverage checked against the tuf-conformance
+# sources and conformance_suites_and_implementations.md / power_loss_and_fuzzing.md.
+# Regulatory refs map a threat to a requirement through the property it protects
+# (Au/In/AR/KC/At/Rec/Av); this is an interpretation, not literal text. No reviewed
+# regulation requires freshness (anti-freeze), mix-and-match or fast-forward
+# protection, so those entries carry no regulatory keys. UN R155 (key compromise
+# 12.4, DoS 13.1, downgrade-by-replay 6.3) has no key in this schema.
+# OTA-INST-03 .. OTA-PARSE-02 are the classes proposed in specs_threat_models.md §7.2.
+
+version: 0.2.0
+threats:
+
+  # ---------------------------------------------------------------- authenticity
+  - id: OTA-AUTH-01
+    title: Arbitrary software installation (artifact substitution)
+    class: authenticity
+    property: integrity and authenticity of the artifact
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§1.5.2 'Arbitrary installation attacks', 'Wrong software installation'", "§5.7.1–5.7.3 target length and hashes", "§4.5 targets LENGTH, HASHES"]
+      uptane: ["§4.3.4 'Arbitrary software attack'", "§5.4.2.4", "§5.4.3.4 s7 image hashes; length SHALL match", "§5.4.4.2 s10.2.1 Director/Image targets match"]
+      suit: ["THREAT.IMG.NON_AUTH → REQ.SEC.AUTHENTIC (§3.13 Payload Digests)", "THREAT.IMG.REPLACE → REQ.SEC.AUTH.EXEC", "THREAT.NET.REDIRECT → REQ.SEC.AUTH.REMOTE_LOC"]
+      isvs: ["3.4.3 updates signed by a trusted source, authenticity verified before execution", "3.4.4 no TOCTOU between validation and applying the update"]
+      cra: ["Annex I Part I (2)(f) integrity of programs against unauthorised modification", "Annex I Part II (7) mechanisms to securely distribute updates"]
+      en18031: ["6.3.2 [SUM-2] install only software whose integrity and authenticity are valid", "6.3.2.4.6.3 [AU.SUM-2.Sign] unsigned, modified-signature, modified-payload, unauthorised-signer updates not installed"]
+      etsi303645: ["5.3-10 (M) verify authenticity and integrity of each update via a trust relationship", "5.3-9 (R) verify authenticity and integrity of updates", "TS 103 701 5.3-2-2 NOTE 1: change one byte in a signed firmware"]
+      unr156: ["7.2.1.1 authenticity and integrity of software updates protected"]
+      nist800193: ["4.2.1.1(2) update signed by an authorized entity", "4.2.1.1(3) signature verified before non-volatile storage completion"]
+      fstec117: ["п. 39 проверка подлинности и целостности обновлений"]
+      fstec239: ["ОПО.1 получение обновлений от доверенного источника", "ОПО.2 контроль целостности обновлений ПО"]
+      fstec_method: ["Т002 проверка подлинности обновлений (п. 3.3.2)", "Т001 сверка идентичности обновлений из разных источников (п. 3.2)"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_repository_substitutes_target_file, test_multiple_changes_to_target]
+      mcuboot-sim: [bad_secondary_slot]
+      mender-integration: [test_unsigned_artifact_fails_deployment]
+    bench: [arb-target-substitution, online-keys-arbitrary, ab:attacker]
+
+  - id: OTA-AUTH-02
+    title: Metadata tampering without keys
+    class: authenticity
+    property: authenticity of metadata / manifest
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§5.3.4, §5.4.2, §5.5.3, §5.6.3 threshold signatures ('Check for an arbitrary software attack')", "§5.5.2, §5.6.2 hash vs parent listing"]
+      uptane: ["§5.4.4.3 s2.3, §5.4.4.4 s2, §5.4.4.5 s2–s3, §5.4.4.6 s3 signature checks", "§5.4.4.6 s6–s8 Director Targets constraints"]
+      suit: ["THREAT.NET.ONPATH, THREAT.IMG.NON_AUTH → REQ.SEC.AUTHENTIC", "THREAT.MFST.OVERRIDE → REQ.SEC.ACCESS_CONTROL"]
+      isvs: ["3.4.3 updates signed by a trusted source, authenticity verified before execution"]
+      cra: ["Annex I Part I (2)(f) integrity of programs against unauthorised modification", "Annex I Part II (7) mechanisms to securely distribute updates"]
+      en18031: ["6.3.2.4.6.3 [AU.SUM-2.Sign] update with a modified signature not installed", "[AU.SUM-2.SecChan] update modified during communication not installed"]
+      etsi303645: ["5.3-10 (M) verify authenticity and integrity of each update via a trust relationship"]
+      unr156: ["7.2.1.1 authenticity and integrity of software updates protected"]
+      nist800193: ["4.2.1.1(3) signature verified before non-volatile storage completion"]
+      fstec117: ["п. 39 проверка подлинности и целостности обновлений"]
+      fstec239: ["ОПО.2 контроль целостности обновлений ПО"]
+      fstec_method: ["Т002 проверка подлинности обновлений (п. 3.3.2)"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_unsigned_metadata, test_snapshot_does_not_meet_threshold, test_snapshot_has_too_few_keys, test_incorrect_metadata_type]
+    bench: [arb-metadata-tamper]
+
+  - id: OTA-AUTH-03
+    title: Signature / keyid confusion
+    class: authenticity
+    property: binding of signatures to trusted keys
+    attacker: net
+    ecosystems: [tuf, uptane, suit]
+    refs:
+      tuf: ["§4.2.1 KEYID = SHA-256 of canonical key; 'MUST be unique in the signatures array'", "§5.3.4, §5.4.2, §5.5.3, §5.6.3 each KEY contributes one SIGNATURE to the threshold", "TAP 9, TAP 12"]
+      uptane: ["§5.2.1 public key identifier", "§5.2.2 'Each key SHALL have a unique public key identifier'", "threshold of unique keys: §5.4.4.3 s2.3, §5.4.4.4 s2, §5.4.4.5 s3, §5.4.4.6 s3"]
+      suit: ["REQ.SEC.AUTHENTIC (§3.15 Signature)", "REQ.USE.MFST.MULTI_AUTH; no dedicated THREAT"]
+      isvs: ["3.4.3 (generic)", "1.3.13 debug and release images signed with different keys"]
+      en18031: ["6.3.2.4.6.3 [AU.SUM-2.Sign] update signed by an unauthorized entity not installed"]
+      etsi303645: ["5.3-7 (M) best practice cryptography for secure update"]
+      nist800193: ["4.2.1.1(2) update signed by an authorized entity"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_duplicate_sig_keyids, test_duplicate_keys, test_invalid_sig_in_valid_metadata]
+    bench: [arb-keyid-spoofing]
+
+  # ---------------------------------------------------------------- freshness
+  - id: OTA-FRESH-01
+    title: Indefinite freeze (replay of expired metadata)
+    class: freshness
+    property: freshness
+    attacker: net
+    ecosystems: [tuf, uptane, suit]
+    refs:
+      tuf: ["§1.5.2 'Indefinite freeze attacks'", "§5.1 fixed update start time", "§5.3.10, §5.4.4, §5.5.6, §5.6.5 'Check for a freeze attack'", "§6.1 withheld root bounded by root expiry"]
+      uptane: ["§4.3.2 'Freeze attack'", "§5.4 ECUs SHALL have a secure source of time", "§5.4.4.3 s3, §5.4.4.4 s4, §5.4.4.5 s7, §5.4.4.6 s5 freeze checks", "§5.2.3.1 vehicle identifier in image-less Director Targets"]
+      suit: ["THREAT.IMG.EXPIRED.OFFLINE → REQ.SEC.EXP, REQ.USE.MFST.PRE_CHECK"]
+      verified: true
+    spec_status:
+      suit: "expiry optional: REQ.SEC.EXP says a manifest MAY expire"
+    expected: block
+    coverage:
+      tuf-conformance: [test_timestamp_expired, test_snapshot_expired, test_targets_expired, test_root_expired]
+    bench: [freeze-expired-timestamp]
+
+  - id: OTA-FRESH-02
+    title: Rollback (replay of older validly signed metadata / firmware)
+    class: freshness
+    property: anti-rollback
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§1.5.2 'Rollback attacks'", "§5.3.5 root version exactly N+1", "§5.4.3.1 timestamp version strictly greater (equal: abort without error)", "§5.4.3.2 snapshot version non-decreasing", "§5.5.5 targets versions non-decreasing, listed targets kept"]
+      uptane: ["§4.3.3 'Rollback attack'", "§5.4.4.3 s2.4, §5.4.4.4 s3 (accepts equal version), §5.4.4.5 s4–s6, §5.4.4.6 s4", "release counter: §5.2.3.1.1, §5.4.3.4 s5, §5.4.4.2 s10.2.3"]
+      suit: ["THREAT.IMG.EXPIRED → REQ.SEC.SEQUENCE (manifest sequence number, not image version)", "draft-ietf-suit-manifest-37 §8.4.2 suit-manifest-sequence-number"]
+      isvs: ["3.4.6 device cannot be downgraded to known vulnerable versions (L3)"]
+      etsi303645: ["§5.3 EXAMPLE 7 (informative): anti-rollback by version checking", "TS 103 701 5.3-2-1 EXAMPLE, 5.3-2-2 NOTE 1: install an older vulnerable firmware"]
+      nist800193: ["4.2.1.3(2) prevent unauthorized update to an earlier authentic version", "4.4.1(13) recovery should not restore an earlier vulnerable version"]
+      verified: true
+    spec_status:
+      isvs: "required at L3 only (3.4.6)"
+      etsi303645: "informative only (EXAMPLE 7; TS 103 701 test examples)"
+    expected: block
+    coverage:
+      tuf-conformance: [test_new_timestamp_version_rollback, test_snapshot_rollback, test_targets_rollback, test_targets_role_removal, test_timestamp_content_changes]
+      mcuboot-sim: [downgrade_prevention, hw_prot_failed_security_cnt_check]
+    bench: [rollback-timestamp, online-keys-downgrade, ab:downgrade]
+
+  - id: OTA-FRESH-03
+    title: Mix-and-match
+    class: freshness
+    property: consistency of the metadata set
+    attacker: net
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§1.5.2 'Mix-and-match attacks' (metadata combination)", "§2.1.3", "§5.5.2, §5.6.2 hashes vs parent listing", "§5.5.4, §5.6.4 versions vs parent listing"]
+      uptane: ["§4.3.3 'Mix-and-match attack' (incompatible images, not metadata)", "§5.4.4.5 s2, §5.4.4.6 s2 'Checks for a mix-and-match attack'", "§5.3.2.1 s5 Director SHALL consider dependencies/conflicts"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_url_and_metadata_version_mismatch, test_snapshot_hash_mismatch, test_targets_hash_mismatch, test_delegation_not_in_snapshot]
+    bench: [mix-and-match]
+
+  - id: OTA-FRESH-04
+    title: Fast-forward (attacker-inflated version locks out recovery)
+    class: freshness
+    property: recoverability after online-key compromise
+    attacker: online-keys
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§1.5.2 'Fast-forward attacks'", "§5.3.11 delete trusted timestamp/snapshot after key rotation (recovery)", "§5.5.4, §5.6.4 version equality"]
+      uptane: ["§5.4.4.3 s4 recovery from fast-forward attacks [MERCURY]; not in the §4.3 list"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_new_timestamp_fast_forward_recovery, test_new_snapshot_fast_forward_recovery, test_targets_fast_forward_recovery]
+    bench: []
+
+  # ---------------------------------------------------------------- key compromise
+  - id: OTA-KEY-01
+    title: Online-key compromise -> downgrade to older firmware
+    class: key-compromise
+    property: compromise resilience (online keys)
+    attacker: online-keys
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§1.5 online keys not used for roles clients ultimately trust", "§1.5.2 'Vulnerability to key compromises'", "§5.4.3.1–5.4.3.2, §5.5.5 checks against persisted trusted versions"]
+      uptane: ["§4.2 attacker compromises Director or Image repository, not both", "§5.2.3.1.1 release counter, 'even in cases where the Director repository is compromised'", "§5.4.4.2 s10.2.3 release counter non-decreasing", "DEPLOY 'Preventing rollback attacks in case of Director compromise'"]
+      suit: ["THREAT.KEY.EXPOSURE → REQ.SEC.KEY.PROTECTION, REQ.SEC.KEY.ROTATION", "THREAT.IMG.EXPIRED → REQ.SEC.SEQUENCE"]
+      isvs: ["3.4.6 anti-rollback (L3)", "1.5.2 response strategy for compromised credentials"]
+      nist800193: ["4.2.1.3(2) prevent unauthorized update to an earlier authentic version"]
+      verified: true
+    spec_status:
+      isvs: "anti-rollback required at L3 only (3.4.6)"
+    expected: block
+    coverage:
+      tuf-conformance: [test_snapshot_rollback, test_targets_rollback]
+    bench: [online-keys-downgrade]
+
+  - id: OTA-KEY-02
+    title: Online-key compromise -> arbitrary software
+    class: key-compromise
+    property: compromise resilience (online keys)
+    attacker: online-keys
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§1.5 online keys not used for roles clients ultimately trust", "§2.1.4", "§5.6.3 targets threshold from root", "§5.7.3"]
+      uptane: ["§4.2", "§5.4 Primary SHALL perform full verification", "§5.4.4.2 s10 Director vs Image targets match", "DEPLOY ecus.md: partial-verification ECUs can be told to install malicious software with the Director Targets key"]
+      suit: ["THREAT.KEY.EXPOSURE → REQ.SEC.KEY.PROTECTION", "THREAT.UPD.UNAPPROVED → REQ.SEC.RIGHTS"]
+      isvs: ["3.4.3", "1.5.2 response strategy for compromised credentials"]
+      verified: true
+    spec_status:
+      uptane: "not required for partial-verification Secondaries (§5.4.4.1 checks Director Targets only)"
+    expected: block
+    coverage: {}
+    bench: [online-keys-arbitrary]
+
+  - id: OTA-KEY-03
+    title: Compromised key not revoked after root rotation
+    class: key-compromise
+    property: key revocation
+    attacker: offline-keys
+    ecosystems: [tuf, uptane, suit]
+    refs:
+      tuf: ["§1.5.3 'All keys must be easily and safely revocable'", "§5.3.1–5.3.9 root chain N→N+1, dual threshold (§5.3.4)", "§5.3.11", "§6.1 key management and migration", "TAP 8, TAP 20 (Accepted; not in the §1.5.4 list)"]
+      uptane: ["§5.4.4.3 s2 root chain, s4", "§5.4.4.1 note: optional Director Root check for Targets-key rotation", "DEPLOY key_management.md: Root revokes/replaces keys"]
+      suit: ["REQ.SEC.KEY.ROTATION", "REQ.USE.DELEGATION (§3.25 Delegation Chain)"]
+      isvs: ["1.5.2 response strategy for compromised credentials (process only)", "≈ 2.1.11 device credentials"]
+      nist800193: ["4.1.2(4) key store updated via authenticated update; note: recovers from signing-key compromise"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_root_rotation, test_non_root_rotations]
+    bench: []
+
+  - id: OTA-KEY-04
+    title: Online-key compromise -> indefinite freeze with fresh signatures
+    class: key-compromise
+    property: freshness under compromise
+    attacker: online-keys
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§2.1.4", "§5.4.3.2, §5.5.5 no version regression", "§5.5.6, §5.6.5 expiry of snapshot/targets bounds the freeze", "§6.1"]
+      uptane: ["§4.3.2 'Freeze attack'", "§5.4.4.6 s5", "DEPLOY key_management.md: longer expiry gives 'more time to execute freeze attacks'"]
+      suit: ["≈ THREAT.KEY.EXPOSURE + REQ.SEC.EXP"]
+      verified: true
+    expected: out-of-scope
+    coverage: {}
+    bench: []
+
+  # ---------------------------------------------------------------- availability
+  - id: OTA-DOS-01
+    title: Endless data (metadata)
+    class: availability
+    property: bounded resource use
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§1.5.2 'Endless data attacks'", "§5.3.3 W bytes per root, at most Y root files", "§5.4.1 X bytes", "§5.5.1 length from timestamp or Y bytes", "§5.6.1 length from snapshot or Z bytes", "§5.6.7.1 max roles visited"]
+      uptane: ["§4.3.3 'Endless data attack'", "§5.4.4.3 s2.2 (X), §5.4.4.4 s1 (Y), §5.4.4.5 s1, §5.4.4.6 s1 (Z)"]
+      cra: ["Annex I Part I (2)(h) availability; resilience against denial-of-service attacks"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: [endless-metadata]
+
+  - id: OTA-DOS-02
+    title: Endless data (artifact beyond signed length)
+    class: availability
+    property: bounded resource use
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§5.7.3 download up to the length in targets metadata", "§4.5 LENGTH"]
+      uptane: ["§5.4.3.3 s4 download up to the length in Targets metadata", "§5.4.3.4 length SHALL match", "§5.2.3.1 image size"]
+      suit: ["≈ THREAT.IMG.EXTRA → REQ.SEC.IMG.COMPLETE_DIGEST", "≈ §3.14 Size (REQ.SEC.AUTH.EXEC)"]
+      cra: ["Annex I Part I (2)(h) availability; resilience against denial-of-service attacks"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: [endless-artifact]
+
+  - id: OTA-DOS-03
+    title: Slow retrieval (metadata)
+    class: availability
+    property: bounded update latency
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["note: not in 1.0.37. §1.5.2 'Slow retrieval attacks' removed by commit f9122f1 (J. Lock, 2020-09-08), PR #111, first released in v1.0.7 (last listed in v1.0.6)"]
+      uptane: ["§4.3.2 'Slow retrieval attack'", "§5.4 'All ECUs SHALL monitor the download speed of image metadata ... to detect and respond to a slow retrieval attack' (SHALL since 2.0.0; alert to Director SHOULD; no numeric threshold)"]
+      cra: ["Annex I Part I (2)(h) availability; resilience against denial-of-service attacks"]
+      verified: true
+    spec_status:
+      tuf: "not required since v1.0.7"
+    expected: block
+    coverage: {}
+    bench: [slow-metadata]
+
+  - id: OTA-DOS-04
+    title: Slow retrieval (artifact)
+    class: availability
+    property: bounded update latency
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["note: not in 1.0.37. §1.5.2 'Slow retrieval attacks' removed by commit f9122f1 (J. Lock, 2020-09-08), PR #111, first released in v1.0.7 (last listed in v1.0.6)"]
+      uptane: ["§4.3.2 'Slow retrieval attack'", "§5.4 'All ECUs SHALL monitor the download speed of ... image binaries to detect and respond to a slow retrieval attack' (SHALL since 2.0.0; alert to Director SHOULD; no numeric threshold)"]
+      cra: ["Annex I Part I (2)(h) availability; resilience against denial-of-service attacks"]
+      verified: true
+    spec_status:
+      tuf: "not required since v1.0.7"
+    expected: block
+    coverage: {}
+    bench: [slow-artifact]
+
+  - id: OTA-DOS-05
+    title: Malicious mirror prevents updates (no fallback)
+    class: availability
+    property: availability with partially hostile infrastructure
+    attacker: net
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§1.5.2 'Malicious mirrors preventing updates'", "§2.1.5 mirrors role, §2.2, §4.7 mirrors.json; no §5 client step"]
+      suit: ["≈ THREAT.NET.REDIRECT → REQ.SEC.AUTH.REMOTE_LOC"]
+      cra: ["Annex I Part I (2)(h) availability; resilience against denial-of-service attacks"]
+      fstec_method: ["≈ Т001 сверка идентичности обновлений из разных источников (п. 3.2)"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  # ---------------------------------------------------------------- fault tolerance
+  - id: OTA-NET-01
+    title: Interrupted transfer, recovery on retry
+    class: fault-tolerance
+    property: no torn artifact is trusted; next attempt succeeds
+    attacker: fault
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§5 preamble: errors 'should not leave clients in an unrecoverable state'; client 'should still be able to update again in the future'"]
+      uptane: ["§5.4.3.3 'If any part of this step fails, the ECU SHALL jump to the final step'", "§5.4.4 failures SHOULD NOT leave ECUs in an unrecoverable state"]
+      suit: ["≈ THREAT.NET.ONPATH (modified or not delivered)", "RFC 9019 §3 mechanisms to resume interrupted or corrupted transfers", "draft-ietf-suit-manifest-37 §6.3.1 Resilience to Disruption"]
+      isvs: ["3.4.7 on update failure revert to a backup image or notify"]
+      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
+      etsi303645: ["TS 103 701 5.3-2-2 NOTE 1: resume the update after a failed step (test example)"]
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update"]
+      verified: true
+    expected: survive
+    coverage:
+      mender-integration: [test_image_download_retry_timeout, test_image_download_retry_download_count, test_image_download_retry_hosts_broken, test_deployed_during_network_outage]
+      aktualizr-tests: [test_io_failure.py]
+    bench: [dropped-connection]
+    level: process
+
+  - id: OTA-PWR-01
+    title: Power loss during metadata update (trust state must not brick)
+    class: fault-tolerance
+    property: crash consistency of the trust store
+    attacker: fault
+    ecosystems: [tuf, uptane, suit]
+    refs:
+      tuf: ["§5.3.8, §5.4.5, §5.5.7, §5.6.6 persist metadata (no atomicity stated)", "§5 preamble: errors should not leave clients in an unrecoverable state"]
+      uptane: ["§5.4.2.6 each Secondary SHALL store the latest copy of its metadata", "§5.4.3.3 s4 retain previous Targets on failure"]
+      suit: ["no RFC 9124 ID; draft-ietf-suit-manifest-37 §6.3.1 journal in non-volatile memory"]
+      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update", "7.2.2.1.2 enough power to complete the update incl. recovery"]
+      nist800193: ["4.1.2(2) RTU/CTU operational or recoverable after power loss mid flash write"]
+      verified: true
+    expected: survive
+    coverage: {}
+    bench: [powercut-refresh]
+    level: process
+
+  - id: OTA-PWR-02
+    title: Power loss during artifact download/storage
+    class: fault-tolerance
+    property: no torn artifact is trusted
+    attacker: fault
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§5.7.3 'MUST write the file to non-volatile storage' (no atomicity stated)"]
+      uptane: ["§5.4.3.3 ECU SHOULD first back up its previous working image", "§5.4.3.5 backup as an install pre-condition"]
+      suit: ["no RFC 9124 ID; RFC 9019 §3 devices must not fail on power failure during the update", "draft-ietf-suit-manifest-37 §6.3.1 manifests MUST be resumable or reapplicable"]
+      isvs: ["3.4.7 on update failure revert to a backup image or notify"]
+      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update", "7.2.2.1.2 enough power to complete the update incl. recovery"]
+      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write", "4.2.1.1(3) signature verified before non-volatile storage completion"]
+      verified: true
+    expected: survive
+    coverage: {}
+    bench: [powercut-download]
+    level: process
+
+  - id: OTA-PWR-03
+    title: Power loss while writing the inactive A/B slot
+    class: fault-tolerance
+    property: atomic installation, old slot stays bootable
+    attacker: fault
+    ecosystems: [ab-updater, suit]
+    refs:
+      uptane: ["≈ §5.4.3.5 backup pre-condition", "≈ DEPLOY customizations.md: atomic installation is out of Uptane scope"]
+      suit: ["RFC 9019 §3 devices must not fail on power failure during the update", "draft-ietf-suit-manifest-37 §6.3.1 Resilience to Disruption (resume or reapply)"]
+      isvs: ["3.4.7 on update failure revert to a backup image or notify"]
+      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
+      en18031: ["6.3.3.3 Guidance: roll-back policy re-activates the previous version on failed installation"]
+      etsi303645: ["§5.3 informative text after 5.3-4B: watchdogs, dual-bank flash, recovery partitions"]
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update", "7.2.2.1.2 enough power to complete the update incl. recovery"]
+      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write", "4.4.1(1)–(2) recovery resists corruption and obtains an authentic image"]
+      fstec117: ["п. 52–53 резервные копии ПО и конфигураций, восстановление (generic, operator-side)"]
+      verified: true
+    spec_status:
+      tuf: "non-goal (§1.4: 'performing the actual update of application files')"
+      en18031: "Guidance only: no presumption of conformity (restriction 1)"
+      etsi303645: "informative only"
+    expected: survive
+    coverage:
+      mcuboot-sim: [perm_with_fails, perm_with_random_fails, status_write_fails_with_reset]
+    bench: [ab:crash-replay, ab:window, ab:reorder]  # scripts/pilot_ab.py, RAUC 1.8 + GRUB; prefix + reordering models
+    level: block
+
+  - id: OTA-PWR-04
+    title: Power loss during boot-slot switch / first boot (fallback via boot counter)
+    class: fault-tolerance
+    property: automatic rollback to the last good slot
+    attacker: fault
+    ecosystems: [ab-updater]
+    refs:
+      suit: ["≈ REQ.SEC.AUTH.EXEC verify firmware at boot", "RFC 9019 §4 recovery strategy; §4.1 bootloader selects valid firmware or obtains new"]
+      isvs: ["3.4.7 on update failure revert to a backup image or notify", "3.1.5 boot stages cryptographically verified before execution"]
+      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
+      en18031: ["6.3.3.3 Guidance: roll-back policy re-activates the previous version on failed installation"]
+      etsi303645: ["§5.3 informative text after 5.3-4B: watchdogs, dual-bank flash, recovery partitions"]
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update", "7.2.2.1.2 enough power to complete the update incl. recovery"]
+      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write", "4.4.1(1)–(2) recovery resists corruption and obtains an authentic image"]
+      fstec117: ["п. 52–53 резервные копии ПО и конфигураций, восстановление (generic, operator-side)"]
+      verified: true
+    spec_status:
+      tuf: "non-goal (§1.4: 'performing the actual update of application files')"
+      en18031: "Guidance only: no presumption of conformity (restriction 1)"
+      etsi303645: "informative only"
+    expected: survive
+    coverage:
+      mcuboot-sim: [basic_revert, revert_with_fails]
+    bench: [ab:cut-firstboot, ab:broken, ab:crash-replay]
+    level: system
+
+  - id: OTA-PWR-05
+    title: Power loss leaves the update state unusable (device boots but can no longer be updated)
+    class: fault-tolerance
+    property: recoverability of the update capability itself (liveness), not only bootability
+    attacker: fault
+    ecosystems: [ab-updater]
+    refs:
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update"]
+      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write"]
+      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
+      verified: false  # entry added 2026-11-01 from pilot results; refs reused from OTA-PWR-03
+    spec_status:
+      note: "known weak configuration: grubenv rewritten with truncation (grub-devel 2021-02, 3mdeb redundant env)"
+    expected: survive
+    coverage: {}
+    bench: [ab:reorder, ab:replay-state-liveness]  # vfat: zero-length grubenv -> rauc install refuses
+    level: block
+
+  # ---------------------------------------------------------------- installation / parsing
+  - id: OTA-INST-01
+    title: Wrong software installation (wrong device/hardware class)
+    class: installation
+    property: compatibility binding
+    attacker: online-keys
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§1.5.2 'Wrong software installation'", "§5.6.7 pre-order DFS delegation search, terminating delegations", "§5.7.1–5.7.2"]
+      uptane: ["§5.4.3.4 s3 hardware identifier, s4 filename valid for the ECU", "§5.2.3.1.1", "§5.4.4.6 s7–s8", "§5.4.4.7 s4.1"]
+      suit: ["THREAT.IMG.INCOMPATIBLE → REQ.SEC.COMPATIBLE, REQ.SEC.AUTH.COMPATIBILITY", "THREAT.IMG.FORMAT → REQ.SEC.AUTH.IMG_TYPE", "THREAT.IMG.LOCATION → REQ.SEC.AUTH.IMG_LOC"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_graph_traversal, test_targetfile_search]
+    bench: []
+
+  - id: OTA-INST-02
+    title: Partial bundle installation (multi-ECU / multi-image)
+    class: installation
+    property: all-or-nothing installation of a bundle
+    attacker: net
+    ecosystems: [uptane, suit, ab-updater]
+    refs:
+      uptane: ["§4.3.2 'Partial bundle installation attack' (no labelled client check)", "DEPLOY 'Atomic installation of a bundle of images': out of Uptane scope"]
+      isvs: ["≈ 3.4.7 on update failure revert to a backup image or notify"]
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update", "7.2.2.4 user informed of success or failure"]
+      verified: true
+    spec_status:
+      uptane: "atomicity out of scope (DEPLOY 'Atomic installation of a bundle of images')"
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-PARSE-01
+    title: Malformed metadata / manifest triggers parser fault
+    class: parsing
+    property: memory safety and total parsing
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§4.3 clients MUST verify that 'spec_version' matches; no other parsing clause"]
+      uptane: ["no Standard clause; DEPLOY 'ASN.1 decoding': decoders SHOULD be unit-tested and fuzzed, prefer DER"]
+      suit: ["REQ.USE.PARSE (§4.5.13) simple parsing 'to reduce the attack vectors against manifest parsers'", "REQ.SEC.MFST.CONST", "draft-ietf-suit-manifest-37 §6.1 fail on unsupported version, §6.2 verify signature prior to parsing/executing"]
+      fstec239: ["п. 29.3.2 статический анализ, фаззинг, динамический анализ (категория 1)"]
+      verified: true
+    expected: block
+    coverage:
+      oss-fuzz: [rauc/manifest, rauc/bundle]
+    bench: []
+
+  # ---------------------------------------------------------------- proposed in specs_threat_models.md §7.2
+  - id: OTA-INST-03
+    title: Extraneous dependencies
+    class: installation
+    property: only the requested, correctly delegated targets are fetched and installed
+    attacker: net
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§1.5.2 'Extraneous dependencies attacks' (no dedicated client step)", "indirect: §5.6.3, §5.6.7, §5.7.1"]
+      uptane: ["≈ §5.3.2.1 s5 Director considers dependencies"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-INST-04
+    title: TOCTOU between verification and use
+    class: installation
+    property: the verified manifest / payload is the one that is installed
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      uptane: ["≈ §5.4.3.4 checks SHOULD be done on the image in secondary storage"]
+      suit: ["THREAT.MFST.TOCTOU → REQ.SEC.MFST.CONST", "THREAT.IMG.REPLACE → REQ.SEC.AUTH.EXEC"]
+      isvs: ["3.4.4 apply the update right after authenticity is validated (no TOCTOU)"]
+      en18031: ["6.3.2.1 [SUM-2] integrity and authenticity valid 'at the time of the installation'"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-INST-05
+    title: Wrong delta precursor
+    class: installation
+    property: a differential update is applied only to its authenticated base image
+    attacker: net
+    ecosystems: [uptane, suit]
+    refs:
+      uptane: ["≈ §3.2.2.4 'Update one ECU with multiple deltas' (use case)"]
+      suit: ["THREAT.UPD.WRONG_PRECURSOR → REQ.SEC.AUTH.PRECURSOR (§3.5 Precursor Image Digest)"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-AUTH-04
+    title: Extra data after a valid image
+    class: authenticity
+    property: the digest covers the whole installed image
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["≈ §5.7.3 hash over the declared length"]
+      uptane: ["≈ §5.4.3.4 image length SHALL match"]
+      suit: ["THREAT.IMG.EXTRA → REQ.SEC.IMG.COMPLETE_DIGEST (§3.13 Payload Digests)"]
+      cra: ["Annex I Part I (2)(f) integrity of programs against unauthorised modification"]
+      en18031: ["6.3.2.4.6.3 [AU.SUM-2.Sign] modified update with a valid signature for the unmodified update not installed"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-AUTH-05
+    title: Debug / pre-production build accepted
+    class: authenticity
+    property: only release-signed builds are installable
+    attacker: net
+    ecosystems: [suit, ab-updater]
+    refs:
+      isvs: ["3.4.8 unsigned debug pre-production builds cannot be flashed", "1.3.13 debug and release images signed with different keys"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-AUTHZ-01
+    title: Unapproved firmware / override of critical manifest elements
+    class: authenticity
+    property: a signer can authorise only what its rights or delegation allow
+    attacker: offline-keys
+    ecosystems: [tuf, uptane, suit]
+    refs:
+      tuf: ["≈ §5.6.7 delegations, terminating delegations"]
+      uptane: ["≈ §5.4.4.8 multi-role delegations [TAP-3]"]
+      suit: ["THREAT.UPD.UNAPPROVED → REQ.SEC.RIGHTS, REQ.SEC.ACCESS_CONTROL", "THREAT.MFST.OVERRIDE → REQ.SEC.ACCESS_CONTROL"]
+      en18031: ["6.3.2.4.6.3 [AU.SUM-2.Sign] update signed by an unauthorized entity not installed", "[AU.SUM-2.AccContMech] update by an unauthorized entity not installed"]
+      fstec117: ["п. 39 разрешение на применение обновлений; бесконтрольная установка обновлений не допускается"]
+      fstec239: ["п. 31 запрет удалённого и бесконтрольного локального доступа для обновления со стороны третьих лиц"]
+      verified: true
+    expected: block
+    coverage:
+      tuf-conformance: [test_cached_role_is_verified_against_current_delegator]
+    bench: []
+
+  - id: OTA-CONF-01
+    title: Eavesdropping on update content (image disclosure)
+    class: confidentiality
+    property: confidentiality of firmware images
+    attacker: net
+    ecosystems: [uptane, suit, ab-updater]
+    refs:
+      uptane: ["§4.3.1 'Eavesdrop attack'", "§5.4.3.4 s6 decryption with the ECU key", "§5.2.3.1.1 encrypted-image information CONDITIONALLY REQUIRED"]
+      suit: ["THREAT.IMG.DISCLOSURE → REQ.SEC.IMG.CONFIDENTIALITY"]
+      isvs: ["3.4.9 encrypted images securely decrypted on the device", "3.4.11 updates stored encrypted server-side", "3.4.12 updates transmitted over an encrypted channel"]
+      verified: true
+    spec_status:
+      tuf: "out of scope (§1.5: not concerned with exposing the contents of updates)"
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-CONF-02
+    title: Confidential manifest element exposure
+    class: confidentiality
+    property: confidentiality of manifest / metadata contents
+    attacker: net
+    ecosystems: [suit]
+    refs:
+      suit: ["THREAT.MFST.EXPOSURE → REQ.SEC.MFST.CONFIDENTIALITY"]
+      verified: true
+    spec_status:
+      tuf: "out of scope (§1.5: not concerned with exposing the contents of updates)"
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-DOS-06
+    title: Drop-request (update traffic blocked)
+    class: availability
+    property: inability to update is detected and reported
+    attacker: net
+    ecosystems: [tuf, uptane, suit]
+    refs:
+      tuf: ["≈ §1.5.2 preamble: the framework must detect when a client is unable to update"]
+      uptane: ["§4.3.2 'Drop-request attack' (no labelled client check)", "§5.4.2.1.2 version report carries an indicator of any detected security attack"]
+      suit: ["≈ THREAT.NET.ONPATH"]
+      cra: ["Annex I Part I (2)(h) availability; resilience against denial-of-service attacks"]
+      verified: true
+    expected: survive
+    coverage: {}
+    bench: []
+
+  - id: OTA-FRESH-05
+    title: Cross-device replay of image-less Director metadata
+    class: freshness
+    property: metadata bound to the vehicle / device it was issued for
+    attacker: net
+    ecosystems: [uptane]
+    refs:
+      uptane: ["§5.2.3.1 Director Targets without images SHALL include a vehicle identifier 'to avoid a replay attack'", "DEPLOY 'Avoiding Director replay attacks'"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-TIME-01
+    title: Absent or invalid time attestation
+    class: freshness
+    property: expiry checks rely on a trustworthy current time
+    attacker: net
+    ecosystems: [tuf, uptane]
+    refs:
+      tuf: ["§5.1 fixed update start time", "§7.1 'Support for bogus clocks' (future direction, no requirement)"]
+      uptane: ["§5.4 ECUs SHALL have a secure source of time", "§5.4.2.2 Primary SHALL load the current time from a secure source", "§5.4.3.1 time check SHOULD (optional without capacity)", "§5.4.4.1 s1, §5.4.4.2 s1 SHALL load and verify attested time", "RAID 2024 Finding 1: no abort when the time attestation is absent or invalid (freeze on partial-verification Secondary)"]
+      suit: ["≈ REQ.SEC.EXP, REQ.SEC.KEY.ROTATION (secure clock)"]
+      verified: true
+    spec_status:
+      tuf: "no requirement (§7.1 bogus clocks is an open question)"
+      uptane: "per-install time check optional (§5.4.3 step 1; §5.4.3.1 SHOULD)"
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-REP-01
+    title: Version-report replay / attacker-authored version report
+    class: authenticity
+    property: authenticity and freshness of device version reports
+    attacker: net
+    ecosystems: [uptane, suit]
+    refs:
+      uptane: ["§5.4.2.1.2 nonce/counter SHALL change each update cycle", "§5.3.2.1 s3–s4 Director checks (SHOULD)", "RAID 2024 P2 (VVM replay), P5 (attacker-authored VVM)"]
+      suit: ["THREAT.NET.ONPATH → REQ.SEC.REPORTING"]
+      isvs: ["≈ 1.4.7 log integrity"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-NET-02
+    title: Missing transport / update-server authentication
+    class: authenticity
+    property: authenticated, encrypted channel to the update server
+    attacker: net
+    ecosystems: [tuf, uptane, suit, ab-updater]
+    refs:
+      tuf: ["§1.5.1 designed to be secure without TLS"]
+      uptane: ["DEPLOY customizations.md 'Using Uptane with transport security' (heading only, not read in full)"]
+      suit: ["REQ.SEC.REPORTING", "≈ THREAT.NET.ONPATH"]
+      isvs: ["3.4.10 device authenticates to the update server before download", "3.4.12 updates transmitted over an encrypted channel", "4.1.1, 4.1.5"]
+      en18031: ["6.3.2.4.2 [IC.SUM-2.AuthIntVal.SecChan] secure channel to the authorized source", "[AU.SUM-2.SecChan] no man-in-the-middle impersonation of the update source"]
+      etsi303645: ["5.3-10 NOTE 7: authenticated communication channels as a trust relationship", "§5.3 EXAMPLE 6: authentic update servers, integrity-protected channels"]
+      verified: false
+    spec_status:
+      tuf: "transport security not required (§1.5.1)"
+    expected: block
+    coverage: {}
+    bench: []
+
+  - id: OTA-PARSE-02
+    title: Unsupported spec / encoding version accepted
+    class: parsing
+    property: version-aware, fail-closed parsing
+    attacker: net
+    ecosystems: [tuf, suit]
+    refs:
+      tuf: ["§4.3 'clients MUST verify that spec_version matches the expected version number'", "TAP 6"]
+      suit: ["≈ REQ.USE.PARSE", "draft-ietf-suit-manifest-37 §6.1 fail on unsupported version"]
+      verified: true
+    expected: block
+    coverage: {}
+    bench: []

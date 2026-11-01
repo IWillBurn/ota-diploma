@@ -1,0 +1,16 @@
+.venv/
+clients/bin/
+clients/tuf-js/node_modules/
+results/*/
+!results/full-2026-10-31/
+!results/full-2026-10-31-v2/
+__pycache__/
+!results/pilot-ab-20261031-223425/
+!results/pilot-ab-20261031-225918/
+!results/pilot-ab-20261031-232023-window-v1/
+!results/pilot-ab-20261101-003715/
+!results/pilot-ab-20261101-103655/
+!results/pilot-ab-20261101-105531/
+!results/pilot-ab-20261101-110921/
+!results/pilot-ab-20261101-111300/
+results/*.log

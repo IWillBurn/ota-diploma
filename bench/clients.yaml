@@ -1,0 +1,61 @@
+# Clients under test. Every entry speaks the tuf-conformance CLI protocol
+# (init / refresh / download), see third_party/tuf-conformance/CLIENT-CLI.md.
+# Placeholders: {python} base interpreter (venv site-packages injected via
+# PYTHONPATH so a kill reaches the real process), {node}, {root} = bench dir.
+clients:
+  - name: python-tuf
+    spec: tuf
+    language: Python
+    version: tuf 7.0.1 (ngclient)
+    command: ["{python}", "{root}/clients/python-tuf/python_tuf.py"]
+
+  - name: go-tuf
+    spec: tuf
+    language: Go
+    version: go-tuf v2.4.2
+    command: ["{root}/clients/bin/go-tuf.exe"]
+    # the conformance client shells out to `date +%s` (faketime support)
+    path_prepend: ["C:/Program Files/Git/usr/bin"]
+
+  - name: tuf-js
+    spec: tuf
+    language: TypeScript/Node
+    version: tuf-js 6.0.1
+    command: ["{node}", "{root}/clients/tuf-js/client.js"]
+
+  - name: naive
+    spec: tuf
+    language: Python
+    version: negative control
+    control: true
+    command: ["{python}", "{root}/clients/naive/naive_client.py"]
+
+  # ---- mutants of the control client: used to check that every scenario can
+  # ---- detect *something* (run with --clients naive,naive-*)
+  - name: naive-nosig
+    spec: tuf
+    version: mutant (no signature check)
+    control: true
+    command: ["{python}", "{root}/clients/naive/naive_client.py"]
+    env: {OTABENCH_MUTANT: sig}
+
+  - name: naive-anykey
+    spec: tuf
+    version: mutant (signature by any root key accepted)
+    control: true
+    command: ["{python}", "{root}/clients/naive/naive_client.py"]
+    env: {OTABENCH_MUTANT: role-keys}
+
+  - name: naive-nohash
+    spec: tuf
+    version: mutant (no artifact hash check)
+    control: true
+    command: ["{python}", "{root}/clients/naive/naive_client.py"]
+    env: {OTABENCH_MUTANT: hash}
+
+  - name: naive-keeptorn
+    spec: tuf
+    version: mutant (keeps artifact with bad hash)
+    control: true
+    command: ["{python}", "{root}/clients/naive/naive_client.py"]
+    env: {OTABENCH_MUTANT: keep-torn}

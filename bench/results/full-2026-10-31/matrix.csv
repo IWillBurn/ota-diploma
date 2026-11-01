@@ -1,0 +1,65 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+baseline,,python-tuf,PASS,,,,,,,
+baseline,,go-tuf,PASS,,,,,,,
+baseline,,tuf-js,PASS,,,,,,,
+baseline,,naive,PASS,,,,,,,
+arb-target-substitution,OTA-AUTH-01,python-tuf,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,go-tuf,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,tuf-js,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,naive,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,python-tuf,PASS,,,,,,,
+arb-metadata-tamper,OTA-AUTH-02,go-tuf,PASS,,,,,,,
+arb-metadata-tamper,OTA-AUTH-02,tuf-js,PASS,,,,,,,
+arb-metadata-tamper,OTA-AUTH-02,naive,PASS,,,,,,,
+arb-keyid-spoofing,OTA-AUTH-03,python-tuf,PASS,,,,,,,
+arb-keyid-spoofing,OTA-AUTH-03,go-tuf,PASS,,,,,,,
+arb-keyid-spoofing,OTA-AUTH-03,tuf-js,PASS,,,,,,,
+arb-keyid-spoofing,OTA-AUTH-03,naive,PASS,,,,,,,
+freeze-expired-timestamp,OTA-FRESH-01,python-tuf,PASS,,,,,,,expired metadata rejected
+freeze-expired-timestamp,OTA-FRESH-01,go-tuf,PASS,,,,,,,expired metadata rejected
+freeze-expired-timestamp,OTA-FRESH-01,tuf-js,PASS,,,,,,,expired metadata rejected
+freeze-expired-timestamp,OTA-FRESH-01,naive,FAIL,,,,,,,expired timestamp accepted
+rollback-timestamp,OTA-FRESH-02,python-tuf,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,go-tuf,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,tuf-js,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,naive,FAIL,,,,,,,trusted timestamp rolled back to v2
+mix-and-match,OTA-FRESH-03,python-tuf,PASS,,,,,,,
+mix-and-match,OTA-FRESH-03,go-tuf,PASS,,,,,,,
+mix-and-match,OTA-FRESH-03,tuf-js,PASS,,,,,,,
+mix-and-match,OTA-FRESH-03,naive,FAIL,,,,,,,inconsistent targets trusted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,python-tuf,PASS,,,,,,,rejected
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,go-tuf,PASS,,,,,,,rejected
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,tuf-js,PASS,,,,,,,rejected
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,python-tuf,PASS,,,,,,,
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,go-tuf,PASS,,,,,,,
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,tuf-js,PASS,,,,,,,
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive,PASS,,,,,,,
+endless-metadata,OTA-DOS-01,python-tuf,PASS,0.39,851968,,,,,client aborted the transfer itself
+endless-metadata,OTA-DOS-01,go-tuf,PASS,0.07,589824,,,,,client aborted the transfer itself
+endless-metadata,OTA-DOS-01,tuf-js,PASS,0.18,786432,,,,,client aborted the transfer itself
+endless-metadata,OTA-DOS-01,naive,FAIL,0.59,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-artifact,OTA-DOS-02,python-tuf,PASS,0.45,851968,,,,,client aborted the transfer itself
+endless-artifact,OTA-DOS-02,go-tuf,PASS,0.07,458752,,,,,client aborted the transfer itself
+endless-artifact,OTA-DOS-02,tuf-js,PASS,0.25,786432,,,,,client aborted the transfer itself
+endless-artifact,OTA-DOS-02,naive,FAIL,0.47,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+slow-metadata,OTA-DOS-03,python-tuf,FAIL,120.47,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,go-tuf,FAIL,120.17,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,tuf-js,PASS,100.18,200,,,,,client aborted the transfer itself
+slow-metadata,OTA-DOS-03,naive,FAIL,120.39,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,python-tuf,FAIL,120.43,7465,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,go-tuf,FAIL,120.09,7466,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,tuf-js,PASS,100.18,6224,,,,,client aborted the transfer itself
+slow-artifact,OTA-DOS-04,naive,FAIL,120.29,7466,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+dropped-connection,OTA-NET-01,python-tuf,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,go-tuf,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,tuf-js,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,naive,PASS,,,,,,,recovered
+powercut-refresh,OTA-PWR-01,python-tuf,PASS,,,1.0,10,0.404,,10/10 survived (6 killed mid-run)
+powercut-refresh,OTA-PWR-01,go-tuf,PASS,,,1.0,10,0.058,,10/10 survived (2 killed mid-run)
+powercut-refresh,OTA-PWR-01,tuf-js,PASS,,,1.0,10,0.185,,10/10 survived (10 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive,PASS,,,1.0,10,0.294,,10/10 survived (4 killed mid-run)
+powercut-download,OTA-PWR-02,python-tuf,PASS,,,1.0,10,0.378,0,10/10 survived (10 killed mid-run)
+powercut-download,OTA-PWR-02,go-tuf,PASS,,,1.0,10,0.066,0,10/10 survived (10 killed mid-run)
+powercut-download,OTA-PWR-02,tuf-js,ERROR,,,,,,,"precondition: honest 2 MiB download fails without any fault: Node.js v24.19.0 | Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94"
+powercut-download,OTA-PWR-02,naive,FAIL,,,0.0,10,-,10,0/10 survived (10 killed mid-run) | 1x after crash [fw.bin:BAD 671744B] -> after retry exit=0 [fw.bin:BAD 671744B]; 1x after crash [fw.bin:BAD 1884160B] -> after retry exit=0 [fw.bin:BAD 1884160B]; 1x after crash [fw.bin:BAD 1327104B] -> after retry exit=0 [fw.bin:BAD 1327104B]
