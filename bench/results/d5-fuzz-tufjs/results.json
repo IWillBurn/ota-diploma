@@ -1,0 +1,112 @@
+{
+  "otabench_version": "0.3.0",
+  "started": "2026-11-01T18:20:28+00:00",
+  "host": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "tuf-js",
+      "spec": "tuf",
+      "command": "bench/clients/tuf-js/client.js",
+      "language": "TypeScript/Node",
+      "version": "tuf-js 6.0.1",
+      "control": false,
+      "env": {}
+    }
+  ],
+  "results": [
+    {
+      "client": "tuf-js",
+      "scenario": "baseline",
+      "threats": [],
+      "title": "Sanity: honest repository, plain download",
+      "wall_s": 0.46,
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {
+        "duration_s": 0.277
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "dropped-connection",
+      "threats": [
+        "OTA-NET-01"
+      ],
+      "title": "Connection closed half-way through the artifact; next attempt must recover",
+      "wall_s": 0.75,
+      "verdict": "PASS",
+      "detail": "recovered",
+      "metrics": {
+        "torn_file_after_drop": 0,
+        "recovery_s": 0.293
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "endless-artifact",
+      "threats": [
+        "OTA-DOS-02"
+      ],
+      "title": "Artifact URL answers with an endless stream (no Content-Length), longer than the signed length",
+      "wall_s": 0.67,
+      "verdict": "PASS",
+      "detail": "client aborted the transfer itself",
+      "metrics": {
+        "time_to_abort_s": 0.25,
+        "bytes_pushed": 917504,
+        "requests": 1,
+        "declared_len": 13312
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "powercut-download",
+      "threats": [
+        "OTA-PWR-02"
+      ],
+      "title": "Process killed at a random moment while a 2 MiB artifact is being fetched/stored",
+      "wall_s": 16.44,
+      "verdict": "PASS",
+      "detail": "10/10 survived (10 killed mid-run)",
+      "metrics": {
+        "trials": 10,
+        "crashed": 10,
+        "survived": 10,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.261,
+        "torn_file_observed": 0
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 76.19,
+      "verdict": "PASS",
+      "detail": "no crash or hang on 120 inputs; 3 mutated timestamps became trusted (compared across clients)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 3,
+        "accepted_cases": "extra-field meta.snapshot.json.version=i32 version=i32",
+        "crash_or_hang": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

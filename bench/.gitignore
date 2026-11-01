@@ -42,3 +42,6 @@ clients/tough/target/
 !results/pilot-ab-20261101-201530/
 !results/pilot-ab-20261101-201902/
 !results/pilot-ab-20261101-202405/
+!results/d5-fuzz-metadata/
+!results/d5-fuzz-linux/
+!results/d5-fuzz-tufjs/

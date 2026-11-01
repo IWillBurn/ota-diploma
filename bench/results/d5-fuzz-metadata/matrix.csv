@@ -1,0 +1,5 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+fuzz-metadata,OTA-PARSE-01,python-tuf,PASS,,,,,,,no crash or hang on 120 inputs; 9 mutated timestamps became trusted (compared across clients)
+fuzz-metadata,OTA-PARSE-01,go-tuf,FAIL,,,,,,,"4 of 120 inputs crashed or hung the client: del:meta.snapshot.json crash(2), meta.snapshot.json=null crash(2), meta=dict crash(2), meta=null crash(2)"
+fuzz-metadata,OTA-PARSE-01,tuf-js,PASS,,,,,,,no crash or hang on 120 inputs; 3 mutated timestamps became trusted (compared across clients)
+fuzz-metadata,OTA-PARSE-01,naive,PASS,,,,,,,no crash or hang on 120 inputs; 11 mutated timestamps became trusted (compared across clients)

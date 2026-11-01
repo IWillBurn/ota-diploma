@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>otabench matrix</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1d1d1b;--mut:#6b6b66;--line:#e3e2de;--pass:#e3f1e6;--fail:#f8e1de;--partial:#fbf0d4;--err:#ececec}
+@media (prefers-color-scheme:dark){:root{--bg:#191917;--fg:#ecebe7;--mut:#9b9a94;--line:#33332f;--pass:#1f3a27;--fail:#4a2320;--partial:#4a3d1a;--err:#2c2c2a}}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;margin:24px 16px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}
+small{display:block;color:var(--mut);font-size:12px;font-weight:400}td.pass{background:var(--pass)}td.fail{background:var(--fail)}
+td.partial{background:var(--partial)}td.err{background:var(--err)}td.t{font-family:ui-monospace,monospace;font-size:12px}
+.wrap{overflow-x:auto}h1{font-size:20px}
+</style><h1>otabench: threat × implementation</h1>
+<p>2026-11-01T18:20:28+00:00 · Windows-11-10.0.26200-SP0 · trials=10</p>
+<div class="wrap"><table><tr><th>scenario</th><th>threats</th><th>tuf-js</th></tr><tr><th class='s'>baseline<small>Sanity: honest repository, plain download</small></th><td class='t'></td><td class="pass" title=""><b>PASS</b><small></small></td></tr><tr><th class='s'>dropped-connection<small>Connection closed half-way through the artifact; next attempt must recover</small></th><td class='t'>OTA-NET-01</td><td class="pass" title="recovered"><b>PASS</b><small></small></td></tr><tr><th class='s'>endless-artifact<small>Artifact URL answers with an endless stream (no Content-Length), longer than the signed length</small></th><td class='t'>OTA-DOS-02</td><td class="pass" title="client aborted the transfer itself"><b>PASS</b><small>abort 0.25s, 896 KiB</small></td></tr><tr><th class='s'>powercut-download<small>Process killed at a random moment while a 2 MiB artifact is being fetched/stored</small></th><td class='t'>OTA-PWR-02</td><td class="pass" title="10/10 survived (10 killed mid-run)"><b>PASS</b><small>survival 100% [72%–100%] (n=10), recovery 0.261s</small></td></tr><tr><th class='s'>fuzz-metadata<small>Structural mutations of timestamp metadata, validly signed: no crash, no hang</small></th><td class='t'>OTA-PARSE-01</td><td class="pass" title="no crash or hang on 120 inputs; 3 mutated timestamps became trusted (compared across clients)"><b>PASS</b><small></small></td></tr></table></div>
+<p>⚡ differential finding: real implementations of the same spec disagree.</p></html>

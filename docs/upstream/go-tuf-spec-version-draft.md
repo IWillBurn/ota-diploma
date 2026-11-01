@@ -41,9 +41,25 @@ for this is proposed separately in tuf-conformance.
 
 ---
 
+**Second, separate issue (draft): ask for a release with the nil checks of #743.**
+
+go-tuf v2.4.2, the latest release on 2026-11-01, panics (nil pointer dereference in
+`trustedmetadata.(*TrustedMetadata).UpdateTimestamp`, `trustedmetadata.go:144`) when a
+correctly signed timestamp has no `meta["snapshot.json"]` entry or has it set to `null`
+(also `meta` empty or `null`). The signature checks pass first, so this needs the timestamp
+key or a broken repository, but a long-running updater process dies instead of reporting an
+error. The nil checks added in #743 (merged 2026-09-22, `923b304`) fix it: the tuf-conformance
+go client built against `923b304` returns `meta is missing required "snapshot.json" entry`.
+Suggested action: cut a release; no new code needed.
+
+---
+
 ## Notes for the author (not part of the issue)
 
 * Result: `bench/results/d1-new-scenarios/` (scenario `unsupported-spec-version`, otabench).
 * Source checked: `~/go/pkg/mod/github.com/theupdateframework/go-tuf/v2@v2.4.2/metadata/`
   and `master` on GitHub (2026-11-01).
 * No @-handles in the issue.
+* Panic: found by the otabench scenario `fuzz-metadata` (`bench/results/d5-fuzz-metadata/`,
+  4 of 120 inputs, exit code 2); master checked by building the conformance client against
+  `923b304` (2026-11-01). Not a new vulnerability report: the fix exists upstream.

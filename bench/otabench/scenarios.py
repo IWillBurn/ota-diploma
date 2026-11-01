@@ -19,7 +19,9 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import random
+import re
 import threading
 import time
 from collections.abc import Callable
@@ -599,6 +601,92 @@ def timestamp_same_version(ctx: Ctx) -> Outcome:
         return Outcome("FAIL", "a timestamp with an equal version but new content replaced the trusted one")
     return Outcome("PASS", "kept the trusted timestamp (exit 0, as TUF requires)" if res.ok else
                    "kept the trusted timestamp, but reported an error (TUF: stop without error)")
+
+
+def _fuzz_cases() -> list[tuple[str, list[str], object]]:
+    """Deterministic structural mutations of timestamp.signed: (id, path, value); value
+    _DELETE removes the field. Floats are left out: canonical JSON cannot sign them."""
+    deep: object = 1
+    for _ in range(500):
+        deep = [deep]
+    values = [("zero", 0), ("neg", -1), ("i32", 2**31), ("i64", 2**63), ("u64", 2**64),
+              ("big", 10**30), ("str-num", "2"), ("empty", ""), ("long", "x" * 100_000),
+              ("true", True), ("null", None), ("list", []), ("dict", {}), ("deep", deep),
+              ("nul-char", "a\u0000b"), ("unicode", "тест\U0001f600")]
+    paths = [["version"], ["expires"], ["spec_version"], ["_type"], ["meta"],
+             ["meta", "snapshot.json"], ["meta", "snapshot.json", "version"]]
+    cases = [(f"{'.'.join(pth)}={vid}", pth, v) for pth in paths for vid, v in values]
+    cases += [(f"del:{'.'.join(pth)}", pth, _DELETE) for pth in paths]
+    cases.append(("extra-field", ["x-otabench"], {"nested": [1, "two", {"three": None}]}))
+    return cases
+
+
+_DELETE = object()
+FUZZ_TIMEOUT_S = 30.0
+
+
+@scenario("fuzz-metadata", ["OTA-PARSE-01"],
+          "Structural mutations of timestamp metadata, validly signed: no crash, no hang")
+def fuzz_metadata(ctx: Ctx) -> Outcome:
+    """Differential structured fuzzing (backlog D5): each mutation of `signed` is re-signed
+    with the real timestamp key, so only parsing and validation stand between it and the
+    trust store. A crash (exit code other than 0/1) or a hang is FAIL. Which mutations
+    become trusted is recorded and compared across clients, not judged alone: some are
+    valid metadata (a larger version, an unknown field that TUF requires to keep)."""
+    from securesystemslib.formats import encode_canonical
+    outcomes: dict[str, str] = {}
+    tails: dict[str, str] = {}
+    only = os.environ.get("OTABENCH_FUZZ_ONLY")  # regex over case ids, to reproduce findings
+    for cid, path, value in _fuzz_cases():
+        if only and not re.search(only, cid):
+            continue
+        scene, r = ctx.fresh()
+        _require(r.refresh().ok, "initial refresh failed")
+        sim = scene.sim
+        signed = copy.deepcopy(json.loads(sim.signed_mds["timestamp"][-1])["signed"])
+        signed["version"] = int(signed["version"]) + 1  # a newer timestamp, unless mutated
+        node = signed
+        for k in path[:-1]:
+            node = node[k] if isinstance(node, dict) else {}
+        if isinstance(node, dict):
+            if value is _DELETE:
+                node.pop(path[-1], None)
+            else:
+                node[path[-1]] = value
+        try:
+            canon = encode_canonical(signed).encode("utf-8")
+        except Exception:  # noqa: BLE001 - canonical JSON cannot express it: skip, same for all
+            outcomes[cid] = "skip"
+            continue
+        sig = _signer(scene, "timestamp").sign(canon)
+        raw = json.dumps({"signatures": [{"keyid": sig.keyid, "sig": sig.signature}],
+                          "signed": signed}, ensure_ascii=False).encode("utf-8")
+        before = (r.metadata_dir / "timestamp.json").read_bytes()
+        scene.add_rule(Rule(role("timestamp"), "substitute", data=raw))
+        res = r.refresh(timeout=FUZZ_TIMEOUT_S)
+        if res.timed_out:
+            outcomes[cid] = "hang"
+            tails[cid] = f"{res.duration:.1f}s " + res.stderr_tail[-300:]
+        elif res.exit_code not in (0, 1):
+            outcomes[cid] = f"crash({res.exit_code})"
+            tails[cid] = res.stderr_tail[-300:]
+        else:
+            try:
+                changed = (r.metadata_dir / "timestamp.json").read_bytes() != before
+            except OSError:
+                changed = True
+            outcomes[cid] = "accepted" if changed else "rejected"
+    bad = sorted(c for c, o in outcomes.items() if o == "hang" or o.startswith("crash"))
+    accepted = sorted(c for c, o in outcomes.items() if o == "accepted")
+    metrics = {"cases": len(outcomes), "skipped": sum(o == "skip" for o in outcomes.values()),
+               "accepted": len(accepted), "accepted_cases": " ".join(accepted),
+               "crash_or_hang": " ".join(f"{c}:{outcomes[c]}" for c in bad),
+               "stderr": " || ".join(f"{c}: {tails[c]}" for c in bad[:6])}
+    if bad:
+        return Outcome("FAIL", f"{len(bad)} of {len(outcomes)} inputs crashed or hung the client: "
+                       + ", ".join(f"{c} {outcomes[c]}" for c in bad[:4]), metrics)
+    return Outcome("PASS", f"no crash or hang on {len(outcomes)} inputs; "
+                   f"{len(accepted)} mutated timestamps became trusted (compared across clients)", metrics)
 
 
 @scenario("threshold-key-twice", ["OTA-AUTH-03", "OTA-KEY-02"],

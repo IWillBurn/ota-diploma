@@ -1,0 +1,6 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+baseline,,tuf-js,PASS,,,,,,,
+dropped-connection,OTA-NET-01,tuf-js,PASS,,,,,,,recovered
+endless-artifact,OTA-DOS-02,tuf-js,PASS,0.25,917504,,,,,client aborted the transfer itself
+powercut-download,OTA-PWR-02,tuf-js,PASS,,,1.0,10,0.261,0,10/10 survived (10 killed mid-run)
+fuzz-metadata,OTA-PARSE-01,tuf-js,PASS,,,,,,,no crash or hang on 120 inputs; 3 mutated timestamps became trusted (compared across clients)

@@ -1,0 +1,139 @@
+{
+  "otabench_version": "0.3.0",
+  "started": "2026-11-01T18:21:58+00:00",
+  "host": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "python-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/python-tuf/python_tuf.py",
+      "language": "Python",
+      "version": "tuf 7.0.1 (ngclient)",
+      "control": false,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "go-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/bin/go-tuf.exe",
+      "language": "Go",
+      "version": "go-tuf v2.4.2",
+      "control": false,
+      "env": {
+        "PATH": "C:/Program Files/Git/usr/bin;C:\\Users\\eugen\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\local\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Users\\eugen\\bin;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\Program Files\\Git\\cmd;C:\\Users\\eugen\\.local\\bin;C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\Go\\bin;C:\\Program Files\\nodejs;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\eugen\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\eugen\\AppData\\Local\\Unity\\bin;C:\\Users\\eugen\\.dotnet\\tools;C:\\Users\\eugen\\go\\bin;C:\\Users\\eugen\\AppData\\Roaming\\npm;C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2025.2.6.3\\bin;C:\\Users\\eugen\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\copilot-shim;C:\\Program Files\\Git\\usr\\bin\\vendor_perl;C:\\Program Files\\Git\\usr\\bin\\core_perl"
+      }
+    },
+    {
+      "name": "tuf-js",
+      "spec": "tuf",
+      "command": "bench/clients/tuf-js/client.js",
+      "language": "TypeScript/Node",
+      "version": "tuf-js 6.0.1",
+      "control": false,
+      "env": {}
+    },
+    {
+      "name": "naive",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "Python",
+      "version": "negative control",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    }
+  ],
+  "results": [
+    {
+      "client": "python-tuf",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 148.4,
+      "verdict": "PASS",
+      "detail": "no crash or hang on 120 inputs; 9 mutated timestamps became trusted (compared across clients)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 9,
+        "accepted_cases": "extra-field meta.snapshot.json.version=big meta.snapshot.json.version=i32 meta.snapshot.json.version=i64 meta.snapshot.json.version=u64 version=big version=i32 version=i64 version=u64",
+        "crash_or_hang": "",
+        "stderr": ""
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 29.53,
+      "verdict": "FAIL",
+      "detail": "4 of 120 inputs crashed or hung the client: del:meta.snapshot.json crash(2), meta.snapshot.json=null crash(2), meta=dict crash(2), meta=null crash(2)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 7,
+        "accepted_cases": "extra-field meta.snapshot.json.version=i32 spec_version=empty spec_version=nul-char spec_version=str-num spec_version=unicode version=i32",
+        "crash_or_hang": "del:meta.snapshot.json:crash(2) meta.snapshot.json=null:crash(2) meta=dict:crash(2) meta=null:crash(2)",
+        "stderr": "del:meta.snapshot.json: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main() || meta.snapshot.json=null: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main() || meta=dict: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main() || meta=null: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main()"
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 88.51,
+      "verdict": "PASS",
+      "detail": "no crash or hang on 120 inputs; 3 mutated timestamps became trusted (compared across clients)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 3,
+        "accepted_cases": "extra-field meta.snapshot.json.version=i32 version=i32",
+        "crash_or_hang": "",
+        "stderr": ""
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 123.03,
+      "verdict": "PASS",
+      "detail": "no crash or hang on 120 inputs; 11 mutated timestamps became trusted (compared across clients)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 11,
+        "accepted_cases": "extra-field meta.snapshot.json.version=big meta.snapshot.json.version=i32 meta.snapshot.json.version=i64 meta.snapshot.json.version=true meta.snapshot.json.version=u64 version=big version=i32 version=i64 version=true version=u64",
+        "crash_or_hang": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

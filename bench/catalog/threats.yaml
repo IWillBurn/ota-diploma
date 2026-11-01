@@ -580,7 +580,7 @@ threats:
     expected: block
     coverage:
       oss-fuzz: [rauc/manifest, rauc/bundle]
-    bench: [suit-malformed]
+    bench: [suit-malformed, fuzz-metadata]
 
   # ---------------------------------------------------------------- proposed in specs_threat_models.md §7.2
   - id: OTA-INST-03

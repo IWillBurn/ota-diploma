@@ -1,0 +1,79 @@
+{
+  "otabench_version": "0.3.0",
+  "started": "2026-11-01T18:25:04+00:00",
+  "host": {
+    "os": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.36",
+    "python": "3.13.18"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "go-tuf",
+      "spec": "tuf",
+      "command": "/work/bench/clients/bin/go-tuf",
+      "language": "Go",
+      "version": "go-tuf v2.4.2",
+      "control": false,
+      "env": {
+        "PATH": "C:/Program Files/Git/usr/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      }
+    },
+    {
+      "name": "tough",
+      "spec": "tuf",
+      "command": "/work/bench/clients/bin/tough",
+      "language": "Rust",
+      "version": "tough 0.24.0",
+      "control": false,
+      "env": {}
+    }
+  ],
+  "results": [
+    {
+      "client": "go-tuf",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 15.4,
+      "verdict": "FAIL",
+      "detail": "4 of 120 inputs crashed or hung the client: del:meta.snapshot.json crash(2), meta.snapshot.json=null crash(2), meta=dict crash(2), meta=null crash(2)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 7,
+        "accepted_cases": "extra-field meta.snapshot.json.version=i32 spec_version=empty spec_version=nul-char spec_version=str-num spec_version=unicode version=i32",
+        "crash_or_hang": "del:meta.snapshot.json:crash(2) meta.snapshot.json=null:crash(2) meta=dict:crash(2) meta=null:crash(2)",
+        "stderr": "del:meta.snapshot.json: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main() || meta.snapshot.json=null: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main() || meta=dict: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main() || meta=null: github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd.Execute() | main.main()"
+      }
+    },
+    {
+      "client": "tough",
+      "scenario": "fuzz-metadata",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "Structural mutations of timestamp metadata, validly signed: no crash, no hang",
+      "wall_s": 83.7,
+      "verdict": "PASS",
+      "detail": "no crash or hang on 120 inputs; 10 mutated timestamps became trusted (compared across clients)",
+      "metrics": {
+        "cases": 120,
+        "skipped": 0,
+        "accepted": 10,
+        "accepted_cases": "extra-field meta.snapshot.json.version=i32 meta.snapshot.json.version=i64 spec_version=empty spec_version=long spec_version=nul-char spec_version=str-num spec_version=unicode version=i32 version=i64",
+        "crash_or_hang": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

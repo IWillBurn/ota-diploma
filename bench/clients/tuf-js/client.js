@@ -59,8 +59,15 @@ async function main() {
 }
 
 // Set exitCode instead of calling process.exit(): on Windows, exiting while
-// undici sockets are still closing trips a libuv assertion.
+// undici sockets are still closing trips a libuv assertion. But a response the
+// library stopped reading (e.g. after "Max length reached") can keep a keep-alive
+// socket and thus the event loop alive: exit anyway once the work is done and the
+// sockets had 2 s to close. The verdict (exit code) is the library's, not ours.
+const finish = (code) => {
+  process.exitCode = code;
+  setTimeout(() => process.exit(code), 2000).unref();
+};
 main().then(
-  () => { process.exitCode = 0; },
-  (err) => { console.error(`tuf-js client: ${err && err.message ? err.message : err}`); process.exitCode = 1; },
+  () => finish(0),
+  (err) => { console.error(`tuf-js client: ${err && err.message ? err.message : err}`); finish(1); },
 );
