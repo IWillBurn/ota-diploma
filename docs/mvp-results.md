@@ -72,6 +72,21 @@
 
 **go-tuf не проверяет `spec_version`** загруженных метаданных (v2.4.2 и master), хотя спецификация требует проверки; python-tuf и tuf-js отклоняют мажорную версию 2. Опасность низкая (нужна подпись ключа роли). Черновики: `docs/upstream/go-tuf-spec-version-draft.md`, тест в `docs/upstream/tuf-conformance-transport-tests.md`; не опубликованы.
 
+## Профиль SUIT: libcsuit (01.11.2026)
+
+`bench/results/suit-2026-11-01/`, адаптер `bench/clients/suit-libcsuit/`, прогон `bench/scripts/suit_bench.py`.
+
+| Сценарий | Угроза | libcsuit (адаптер) | пример libcsuit (контроль) |
+|---|---|---|---|
+| `suit-baseline`: подлинный образ по манифесту expU | — | PASS | PASS |
+| `suit-payload-substitution`: образ изменён, дайджест не совпадает | OTA-AUTH-01 | PASS | **FAIL** |
+| `suit-manifest-tamper`: один байт манифеста | OTA-AUTH-02 | PASS | PASS |
+| `suit-signature-tamper`: один байт подписи COSE | OTA-AUTH-02 | PASS | PASS |
+| `suit-extra-data`: байты после образа | OTA-AUTH-04 | PASS (принят ровно подписанный размер) | PASS |
+| `suit-malformed`: усечённый конверт и 20 случайных входов | OTA-PARSE-01 | **FAIL**: 6 из 21 «успешны» | **FAIL** |
+
+Две находки в libcsuit (ложный успех на испорченном входе; разыменование NULL при печати пустого отчёта в исходном примере) — `docs/upstream/libcsuit-draft.md`, не опубликован.
+
 ## Что из этого следует
 
 1. **Стенд различает реализации.** Контрольный клиент проваливает ровно те сценарии, где у него нет защиты: сроки, версии, лимиты, атомарность. Настоящие клиенты эти сценарии проходят. Это главный аргумент валидности оракулов.

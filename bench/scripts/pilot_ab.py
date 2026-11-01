@@ -63,7 +63,8 @@ class Pilot:
         self.uefi = False  # set while a UEFI variant is under test
         self.torn = False  # reorder: also emit sector-torn states (--torn)
         self.settle = 0.0  # reorder: seconds between install return and the end marker
-        self.region_at = "end"  # reorder: region before the end marker | around env writes
+        self.region_at = "end"  # reorder: before the end marker | around env writes | window
+        self.sample_intervals = 15  # reorder --region-at window: intervals sampled
         self.updater_version: str | None = None
         self.base_override: Path | None = None  # system scenarios on a variant
 
@@ -307,8 +308,12 @@ class Pilot:
             # target slot bad before writing it) are outside the window of interest
             lo = max(e0, env_idx[-1] - region)
             hi = min(e_inst, env_idx[-1] + region // 2)
+        sample = None
+        if self.region_at == "window":  # the whole install, a sample of its intervals
+            lo, hi, sample = e0, e_inst, self.sample_intervals
         # the open interval after the last flush is a crash point too (no-fsync writers)
-        states = sorted(wl.crash_states(lo, hi, torn=self.torn, open_tail=self.region_at == "env"),
+        states = sorted(wl.crash_states(lo, hi, torn=self.torn, open_tail=self.region_at != "end",
+                                        sample=sample),
                         key=lambda x: (x["base_end"], x["label"]))
         if not states:
             raise RuntimeError(f"precondition: the reordering model has no state in entries "
@@ -340,6 +345,7 @@ class Pilot:
         bad = counts["INCONSISTENT"] + counts["BRICK"]
         return {"verdict": "FAIL" if bad else "PASS", "config": config,
                 "region": [lo, hi], "region_at": self.region_at, "settle_s": self.settle,
+                "sampled_intervals": sample,
                 "env_entries": env_idx,
                 "detail": f"{len(results)} states in {len({tuple(r['interval']) for r in results})} "
                           f"barrier intervals: {counts}; non-prefix states only: {np_counts}",
@@ -632,7 +638,9 @@ def main() -> int:
                     help="reorder: also tear multi-sector writes at sector granularity")
     ap.add_argument("--settle", type=float, default=0.0,
                     help="reorder: wait this long after the install before the end marker")
-    ap.add_argument("--region-at", choices=("end", "env"), default="end",
+    ap.add_argument("--sample-intervals", type=int, default=15,
+                    help="reorder --region-at window: barrier intervals sampled over the install")
+    ap.add_argument("--region-at", choices=("end", "env", "window"), default="end",
                     help="reorder: region before the end marker (default) or around the "
                          "boot-environment writes, incl. the open interval after the last flush")
     ap.add_argument("--work", default="")
@@ -645,7 +653,7 @@ def main() -> int:
     work = Path(a.work) if a.work else Path(r"P:\vm\pilot") / stamp
     p = Pilot(work, dev, Path(a.variant_dir))
     p.torn = a.torn
-    p.settle, p.region_at = a.settle, a.region_at
+    p.settle, p.region_at, p.sample_intervals = a.settle, a.region_at, a.sample_intervals
     RUN_INFO.update(params=vars(a), git_commit=_git_commit(), check_ready_s=CHECK_READY_S)
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
             "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot,

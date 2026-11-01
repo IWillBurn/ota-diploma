@@ -1,0 +1,171 @@
+{
+  "bench_version": "0.3.0",
+  "started": "2026-11-01T16:31:08+00:00",
+  "host": {
+    "os": "Windows 11 (adapter in Docker, Ubuntu 22.04)",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 1,
+    "image": "otabench-suit",
+    "manifest": "/libcsuit/testfiles/suit_manifest_expU.suit"
+  },
+  "clients": [
+    {
+      "name": "libcsuit",
+      "spec": "suit",
+      "language": "C",
+      "version": "libcsuit 00f5609 (otabench adapter)",
+      "control": false
+    },
+    {
+      "name": "libcsuit-example",
+      "spec": "suit",
+      "language": "C",
+      "version": "upstream example behaviour: failed conditions suppressed",
+      "control": true
+    }
+  ],
+  "results": [
+    {
+      "scenario": "suit-baseline",
+      "threats": [],
+      "title": "expU with the genuine payload",
+      "client": "libcsuit",
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {},
+      "duration_s": 0.71
+    },
+    {
+      "scenario": "suit-baseline",
+      "threats": [],
+      "title": "expU with the genuine payload",
+      "client": "libcsuit-example",
+      "verdict": "PASS",
+      "detail": "",
+      "metrics": {},
+      "duration_s": 0.81
+    },
+    {
+      "scenario": "suit-payload-substitution",
+      "threats": [
+        "OTA-AUTH-01"
+      ],
+      "title": "payload altered, digest mismatch",
+      "client": "libcsuit",
+      "verdict": "PASS",
+      "detail": "rejected; the fetched bytes stay in the destination component (the manifest fetches straight into it)",
+      "metrics": {},
+      "duration_s": 0.94
+    },
+    {
+      "scenario": "suit-payload-substitution",
+      "threats": [
+        "OTA-AUTH-01"
+      ],
+      "title": "payload altered, digest mismatch",
+      "client": "libcsuit-example",
+      "verdict": "FAIL",
+      "detail": "payload with a wrong digest accepted",
+      "metrics": {},
+      "duration_s": 0.88
+    },
+    {
+      "scenario": "suit-manifest-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "one byte of the signed manifest flipped",
+      "client": "libcsuit",
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {},
+      "duration_s": 1.35
+    },
+    {
+      "scenario": "suit-manifest-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "one byte of the signed manifest flipped",
+      "client": "libcsuit-example",
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {},
+      "duration_s": 1.27
+    },
+    {
+      "scenario": "suit-signature-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "one byte of the COSE signature flipped",
+      "client": "libcsuit",
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {},
+      "duration_s": 1.33
+    },
+    {
+      "scenario": "suit-signature-tamper",
+      "threats": [
+        "OTA-AUTH-02"
+      ],
+      "title": "one byte of the COSE signature flipped",
+      "client": "libcsuit-example",
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {},
+      "duration_s": 1.44
+    },
+    {
+      "scenario": "suit-extra-data",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "bytes appended after the payload",
+      "client": "libcsuit",
+      "verdict": "PASS",
+      "detail": "accepted exactly the signed length",
+      "metrics": {},
+      "duration_s": 0.78
+    },
+    {
+      "scenario": "suit-extra-data",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "bytes appended after the payload",
+      "client": "libcsuit-example",
+      "verdict": "PASS",
+      "detail": "accepted exactly the signed length",
+      "metrics": {},
+      "duration_s": 0.72
+    },
+    {
+      "scenario": "suit-malformed",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "truncated envelope and 20 random inputs",
+      "client": "libcsuit",
+      "verdict": "FAIL",
+      "detail": "0 crashes, 6 accepted of 21 malformed inputs",
+      "metrics": {},
+      "duration_s": 15.17
+    },
+    {
+      "scenario": "suit-malformed",
+      "threats": [
+        "OTA-PARSE-01"
+      ],
+      "title": "truncated envelope and 20 random inputs",
+      "client": "libcsuit-example",
+      "verdict": "FAIL",
+      "detail": "0 crashes, 6 accepted of 21 malformed inputs",
+      "metrics": {},
+      "duration_s": 15.77
+    }
+  ]
+}

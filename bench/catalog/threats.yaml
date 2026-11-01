@@ -51,7 +51,8 @@
 #   bench         otabench scenario ids that exercise it ([] = not yet);
 #                 `ab:<name>` = scenario of the RAUC A/B pilot: scripts/pilot_ab.py
 #                 (`ab:window:*`, `ab:reorder:*` = all /boot-ab configurations), or
-#                 scripts/replay_state.py for `ab:replay-state-liveness`
+#                 scripts/replay_state.py for `ab:replay-state-liveness`;
+#                 `suit-*` = SUIT profile, scripts/suit_bench.py (libcsuit)
 #   id prefix     a mnemonic of the threat family (NET, REP, AUTHZ, TIME …); it is not
 #                 required to equal `class` (e.g. OTA-NET-01 is class fault-tolerance)
 #   level         for fault tolerance: process | block | system
@@ -100,7 +101,7 @@ threats:
       tuf-conformance: [test_repository_substitutes_target_file, test_multiple_changes_to_target]
       mcuboot-sim: [bad_secondary_slot]
       mender-integration: [test_unsigned_artifact_fails_deployment]
-    bench: [arb-target-substitution, online-keys-arbitrary, ab:attacker]
+    bench: [arb-target-substitution, online-keys-arbitrary, ab:attacker, suit-payload-substitution]
 
   - id: OTA-AUTH-02
     title: Metadata tampering without keys
@@ -125,7 +126,7 @@ threats:
     expected: block
     coverage:
       tuf-conformance: [test_unsigned_metadata, test_snapshot_does_not_meet_threshold, test_snapshot_has_too_few_keys, test_incorrect_metadata_type]
-    bench: [arb-metadata-tamper]
+    bench: [arb-metadata-tamper, suit-manifest-tamper, suit-signature-tamper]
 
   - id: OTA-AUTH-03
     title: Signature / keyid confusion
@@ -572,7 +573,7 @@ threats:
     expected: block
     coverage:
       oss-fuzz: [rauc/manifest, rauc/bundle]
-    bench: []
+    bench: [suit-malformed]
 
   # ---------------------------------------------------------------- proposed in specs_threat_models.md §7.2
   - id: OTA-INST-03
@@ -634,7 +635,7 @@ threats:
       verified: true
     expected: block
     coverage: {}
-    bench: [extra-data-artifact]
+    bench: [extra-data-artifact, suit-extra-data]
 
   - id: OTA-AUTH-05
     title: Debug / pre-production build accepted

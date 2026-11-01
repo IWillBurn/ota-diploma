@@ -19,6 +19,8 @@ CATALOG = ROOT / "catalog" / "threats.yaml"
 AB = {"happy", "broken", "broken-unconfirmed", "attacker", "downgrade", "cut-firstboot",
       "cut-unconfirmed", "crash-replay", "window:*", "reorder:*", "reorder:* --torn",
       "replay-state-liveness"}
+SUIT = {"suit-payload-substitution", "suit-manifest-tamper", "suit-signature-tamper",
+        "suit-extra-data", "suit-malformed"}  # scripts/suit_bench.py
 
 
 def test_catalog_valid() -> None:
@@ -32,6 +34,8 @@ def test_bench_ids_exist() -> None:
         for sid in t["bench"]:
             if sid.startswith("ab:"):
                 assert sid[3:] in AB, (t["id"], sid)
+            elif sid.startswith("suit-"):
+                assert sid in SUIT, (t["id"], sid)
             else:
                 assert sid in REGISTRY, (t["id"], sid)
 

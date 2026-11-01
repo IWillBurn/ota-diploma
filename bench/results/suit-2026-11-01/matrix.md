@@ -1,0 +1,90 @@
+# otabench: threat × implementation matrix
+
+Run: 2026-11-01T16:31:08+00:00 · host: Windows 11 (adapter in Docker, Ubuntu 22.04) · trials: 1
+
+| Scenario | Threats | libcsuit | libcsuit-example |
+|---|---|---|---|
+| suit-baseline |  | ✅ | ✅ |
+| suit-payload-substitution | OTA-AUTH-01 | ✅ | ❌ |
+| suit-manifest-tamper | OTA-AUTH-02 | ✅ | ✅ |
+| suit-signature-tamper | OTA-AUTH-02 | ✅ | ✅ |
+| suit-extra-data | OTA-AUTH-04 | ✅ | ✅ |
+| suit-malformed | OTA-PARSE-01 | ❌ | ❌ |
+
+⚡ = differential finding: real implementations of the same spec disagree.
+
+## Rates over the common scenario set (PARTIAL counts 0.5)
+
+| Client | spec | attacks blocked | rate | faults survived | rate |
+|---|---|---|---|---|---|
+| libcsuit | suit | 5.0/6 | 83% | 0/0 | 0% |
+| libcsuit-example (control) | suit | 4.0/6 | 67% | 0/0 | 0% |
+
+## Mutation analysis (which controls each scenario kills)
+
+| Scenario | killed controls |
+|---|---|
+| suit-baseline | **none** |
+| suit-payload-substitution | libcsuit-example |
+| suit-manifest-tamper | **none** |
+| suit-signature-tamper | **none** |
+| suit-extra-data | **none** |
+| suit-malformed | libcsuit-example |
+
+## Details
+
+- `suit-payload-substitution` / libcsuit: PASS — rejected; the fetched bytes stay in the destination component (the manifest fetches straight into it)
+- `suit-payload-substitution` / libcsuit-example: FAIL — payload with a wrong digest accepted
+- `suit-manifest-tamper` / libcsuit: PASS — rejected
+- `suit-manifest-tamper` / libcsuit-example: PASS — rejected
+- `suit-signature-tamper` / libcsuit: PASS — rejected
+- `suit-signature-tamper` / libcsuit-example: PASS — rejected
+- `suit-extra-data` / libcsuit: PASS — accepted exactly the signed length
+- `suit-extra-data` / libcsuit-example: PASS — accepted exactly the signed length
+- `suit-malformed` / libcsuit: FAIL — 0 crashes, 6 accepted of 21 malformed inputs
+- `suit-malformed` / libcsuit-example: FAIL — 0 crashes, 6 accepted of 21 malformed inputs
+
+## Catalog coverage
+
+| Threat | Class | Existing suites | otabench |
+|---|---|---|---|
+| OTA-AUTH-01 Arbitrary software installation (artifact substitution) | authenticity | mcuboot-sim, mender-integration, tuf-conformance | arb-target-substitution, online-keys-arbitrary, ab:attacker, suit-payload-substitution |
+| OTA-AUTH-02 Metadata tampering without keys | authenticity | tuf-conformance | arb-metadata-tamper, suit-manifest-tamper, suit-signature-tamper |
+| OTA-AUTH-03 Signature / keyid confusion | authenticity | tuf-conformance | arb-keyid-spoofing, threshold-key-twice |
+| OTA-FRESH-01 Indefinite freeze (replay of expired metadata) | freshness | tuf-conformance | freeze-expired-timestamp, online-keys-freeze |
+| OTA-FRESH-02 Rollback (replay of older validly signed metadata / firmware) | freshness | mcuboot-sim, tuf-conformance | rollback-timestamp, online-keys-downgrade, ab:downgrade |
+| OTA-FRESH-03 Mix-and-match | freshness | tuf-conformance | mix-and-match |
+| OTA-FRESH-04 Fast-forward (attacker-inflated version locks out recovery) | freshness | tuf-conformance | — |
+| OTA-KEY-01 Online-key compromise -> downgrade to older firmware | key-compromise | tuf-conformance | online-keys-downgrade |
+| OTA-KEY-02 Online-key compromise -> arbitrary software | key-compromise | — | online-keys-arbitrary, threshold-key-twice |
+| OTA-KEY-03 Compromised key not revoked after root rotation | key-compromise | tuf-conformance | — |
+| OTA-KEY-04 Online-key compromise -> indefinite freeze with fresh signatures | key-compromise | — | online-keys-freeze |
+| OTA-DOS-01 Endless data (metadata) | availability | — | endless-metadata |
+| OTA-DOS-02 Endless data (artifact beyond signed length) | availability | — | endless-artifact |
+| OTA-DOS-03 Slow retrieval (metadata) | availability | — | slow-metadata |
+| OTA-DOS-04 Slow retrieval (artifact) | availability | — | slow-artifact |
+| OTA-DOS-05 Malicious mirror prevents updates (no fallback) | availability | — | mirror-errors |
+| OTA-NET-01 Interrupted transfer, recovery on retry | fault-tolerance | aktualizr-tests, mender-integration | dropped-connection |
+| OTA-PWR-01 Power loss during metadata update (trust state must not brick) | fault-tolerance | — | powercut-refresh |
+| OTA-PWR-02 Power loss during artifact download/storage | fault-tolerance | — | powercut-download |
+| OTA-PWR-03 Power loss while writing the inactive A/B slot | fault-tolerance | mcuboot-sim | ab:crash-replay, ab:window:*, ab:reorder:* |
+| OTA-PWR-04 Power loss during boot-slot switch / first boot (fallback via boot counter) | fault-tolerance | mcuboot-sim | ab:cut-firstboot, ab:crash-replay |
+| OTA-PWR-05 Power loss leaves the update state unusable (device boots but can no longer be updated) | fault-tolerance | — | ab:reorder:*, ab:replay-state-liveness |
+| OTA-PWR-06 Power loss corrupts the RUNNING slot (writable rootfs) during an update | fault-tolerance | — | ab:reorder:* --torn |
+| OTA-INST-01 Wrong software installation (wrong device/hardware class) | installation | tuf-conformance | — |
+| OTA-INST-02 Partial bundle installation (multi-ECU / multi-image) | installation | — | — |
+| OTA-PARSE-01 Malformed metadata / manifest triggers parser fault | parsing | oss-fuzz | suit-malformed |
+| OTA-INST-03 Extraneous dependencies | installation | — | — |
+| OTA-INST-04 TOCTOU between verification and use | installation | — | — |
+| OTA-INST-05 Wrong delta precursor | installation | — | — |
+| OTA-AUTH-04 Extra data after a valid image | authenticity | — | extra-data-artifact, suit-extra-data |
+| OTA-AUTH-05 Debug / pre-production build accepted | authenticity | — | — |
+| OTA-AUTHZ-01 Unapproved firmware / override of critical manifest elements | authenticity | tuf-conformance | — |
+| OTA-CONF-01 Eavesdropping on update content (image disclosure) | confidentiality | — | — |
+| OTA-CONF-02 Confidential manifest element exposure | confidentiality | — | — |
+| OTA-DOS-06 Drop-request (update traffic blocked) | availability | — | drop-requests |
+| OTA-FRESH-05 Cross-device replay of image-less Director metadata | freshness | — | — |
+| OTA-TIME-01 Absent or invalid time attestation | freshness | — | — |
+| OTA-REP-01 Version-report replay / attacker-authored version report | authenticity | — | — |
+| OTA-NET-02 Missing transport / update-server authentication | authenticity | — | — |
+| OTA-PARSE-02 Unsupported spec / encoding version accepted | parsing | — | unsupported-spec-version |

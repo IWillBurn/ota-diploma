@@ -110,7 +110,7 @@ def build(catalog: dict, mvp: dict | None, pilots: dict) -> tuple[list[str], lis
     if mvp:
         for c in mvp["clients"]:
             if not c.get("control"):
-                cols.append((c["name"], "tuf", f"mvp:{c['name']}"))
+                cols.append((c["name"], c.get("spec") or "tuf", f"mvp:{c['name']}"))
     labels: dict[str, list[tuple[str, str]]] = defaultdict(list)
     for (adapter, cfg) in pilots:
         if cfg in COLUMNS:

@@ -28,3 +28,5 @@ results/*.log
 !results/full-2026-11-01-v4/
 !results/full-linux-2026-11-01/
 !results/full-linux-2026-11-01-v4/
+!results/suit-2026-11-01/
+results/.suit-work/

@@ -163,15 +163,14 @@ bootlog:
 
 Значимые строки без комментариев и пустых.
 
-| Реализация | Уровень | Адаптер | Строк своих |
-|---|---|---|---|
-| python-tuf | v1 | `clients/python-tuf/python_tuf.py` из tuf-conformance | 0 (100 — чужие) |
-| go-tuf | v1 | клиент из tuf-conformance, собран в `clients/bin/go-tuf.exe` | 0 |
-| tuf-js | v1 | `clients/tuf-js/client.js`, написан для otabench | 61 |
-| RAUC 1.8 + GRUB | v2 | `updaters/rauc-grub.yaml` | 49, из них 10 — диагностика (+113 на варианты экспериментов) |
-
-Кроме адаптера, для уровня v2 нужен образ. Для RAUC его собирает `scripts/build_ab_image.py`
-(125 строк, вместе с изготовлением бандлов) и `vm/guest/*`.
+| Реализация | Уровень | Адаптер | Строк адаптера | Изготовление артефактов и образа |
+|---|---|---|---|---|
+| python-tuf 7.0.1 | клиент | `python_tuf.py` из tuf-conformance | 0 своих | симулятор репозитория (общий) |
+| go-tuf v2.4.2 | клиент | клиент из tuf-conformance | 0 своих | — |
+| tuf-js 6.0.1 | клиент | `clients/tuf-js/client.js` | 53 | — |
+| RAUC 1.8 + GRUB | устройство | `updaters/rauc-grub.yaml` | 49 (+123 на 14 вариантов экспериментов) | `build_ab_image.py` (125) + гостевые файлы (78) |
+| RAUC 1.15.2 + GRUB | устройство | `updaters/rauc1.15.2-grub.yaml` (`extends: rauc-grub`) | 4 (+30 на вариант `minver`) | `build_rauc_upgrade.py` (105) поверх образа RAUC 1.8 |
+| SWUpdate 2024.12.1 + GRUB | устройство | `updaters/swupdate-grub.yaml` | 46 (+39 на 4 варианта) | `build_swupdate_image.py` (101) + гостевые файлы (76) |
 
 ## Совместимость результатов
 

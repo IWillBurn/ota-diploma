@@ -103,7 +103,8 @@ class WriteLog:
 
     # ---------------------------------------------------------------- reordering model
     def crash_states(self, start: int, end: int, max_volatile: int = 8,
-                     torn: bool = False, open_tail: bool = False) -> list[dict]:
+                     torn: bool = False, open_tail: bool = False,
+                     sample: int | None = None) -> list[dict]:
         """Crash states that a disk with a volatile write cache may expose, for crashes
         between consecutive FLUSH barriers inside [start, end].
 
@@ -117,6 +118,9 @@ class WriteLog:
         open_tail=True also treats (last flush, end] as an interval: a writer that never
         flushes (SWUpdate's grubenv) leaves its writes volatile at a crash at `end`.
 
+        sample=N keeps N evenly spaced intervals that contain volatile writes (for a model of
+        a whole install window, where the full set of intervals is too large to boot).
+
         torn=True adds sector-level tearing: a device only guarantees that a single
         sector is written atomically, so a multi-sector write w may persist only its
         first k sectors (k = 1 and k = half). Such states carry "partial": [w, k]."""
@@ -129,7 +133,11 @@ class WriteLog:
                 flushes = ([before[-1]] if before else [start - 1]) + flushes
             flushes.append(end + 1)
         states: list[dict] = []
-        for a, b in zip(flushes, flushes[1:]):
+        pairs = [(a, b) for a, b in zip(flushes, flushes[1:])
+                 if any(e.is_write and not e.flags & FUA for e in self.entries[a + 1:b])]
+        if sample and len(pairs) > sample:  # evenly spaced intervals over the whole range
+            pairs = [pairs[round(i * (len(pairs) - 1) / (sample - 1))] for i in range(sample)]
+        for a, b in pairs:
             inner = [e for e in self.entries[a + 1:b] if e.is_write]
             fua = [e.idx for e in inner if e.flags & FUA]
             vol = [e.idx for e in inner if not e.flags & FUA]
