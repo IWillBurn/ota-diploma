@@ -1,0 +1,4 @@
+# Keep LF everywhere: guest files (shebangs, grub.cfg, fstab, systemd units) are copied
+# byte-for-byte into Linux VMs, and CRLF would break them on Windows checkouts.
+* text=auto eol=lf
+*.ps1 text eol=crlf

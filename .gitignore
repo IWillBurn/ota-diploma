@@ -1,0 +1,15 @@
+# local toolchains, caches, build outputs
+bench/.venv/
+bench/clients/bin/
+bench/clients/tuf-js/node_modules/
+__pycache__/
+*.pyc
+
+# external clones (tuf-conformance commit is pinned in bench/scripts/setup.ps1;
+# third_party/verify holds sparse clones used to check test names in the catalog)
+third_party/
+
+# VM images and pilot work dirs live outside the repo (P:\vm); never commit disks or write logs
+*.qcow2
+*.raw
+golden.log
