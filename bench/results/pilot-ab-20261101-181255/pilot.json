@@ -1,0 +1,390 @@
+{
+  "started": "20261101-181255",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "rauc1.15.2-grub",
+    "only": "happy,broken,broken-unconfirmed,attacker,downgrade,cut-firstboot,cut-unconfirmed,downgrade:minver",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "05927ca",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "rauc1.15.2-grub",
+    "file": "updaters\\rauc1.15.2-grub.yaml",
+    "version": "rauc 1.15.2",
+    "image": "P:\\vm\\ab-v1-rauc1.15.2.qcow2"
+  },
+  "results": {
+    "happy": {
+      "verdict": "PASS",
+      "boot_s": 9.1,
+      "install_s": 21.7,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 12.1,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        }
+      ],
+      "wall_s": 63.1
+    },
+    "broken": {
+      "verdict": "PASS",
+      "fallback_path": "regular boot-attempt logic",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/1 via regular boot-attempt logic",
+      "install_rc": 0,
+      "install_s": 19.5,
+      "confirmed_at_install": true,
+      "recovery_s": 24.3,
+      "boot_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A",
+          "rescue": false
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": null,
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "wall_s": 53.9
+    },
+    "broken-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "rescue rule",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/1 via rescue rule",
+      "install_rc": 0,
+      "install_s": 17.1,
+      "confirmed_at_install": false,
+      "env_at_install": {
+        "ORDER": "A B",
+        "A_OK": "1",
+        "A_TRY": "1",
+        "B_OK": "0",
+        "B_TRY": "0"
+      },
+      "recovery_s": 24.0,
+      "boot_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A",
+          "rescue": true
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": null,
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "wall_s": 52.1
+    },
+    "attacker": {
+      "verdict": "PASS",
+      "install_rc": 1,
+      "install_msg": "Installing `/data/bundles/v2-attacker.raucb` failed",
+      "install_s": 0.2,
+      "bootloader_untouched": true,
+      "boot_state_reported": true,
+      "after_reboot": "A/1",
+      "detail": "foreign-key artifact rejected, boot state untouched, still boots A/1",
+      "wall_s": 24.9
+    },
+    "downgrade": {
+      "verdict": "FAIL",
+      "detail": "v2 -> v1 downgrade accepted and booted (no version check in this configuration; needs an integrator hook)",
+      "rebooted": true,
+      "before": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "wall_s": 139.7
+    },
+    "cut-firstboot": {
+      "verdict": "PASS",
+      "fallback_path": "regular boot-attempt logic",
+      "detail": "after cut booted A/1 via regular boot-attempt logic; retry -> B/2",
+      "cut_after_boot_s": 31.1,
+      "boot_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "install_rc": 0,
+      "retry_rc": 0,
+      "confirmed_at_install": true,
+      "wall_s": 74.0
+    },
+    "cut-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "rescue rule",
+      "detail": "after cut booted A/1 via rescue rule; retry -> B/2",
+      "cut_after_boot_s": 31.8,
+      "boot_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "install_rc": 0,
+      "retry_rc": 0,
+      "confirmed_at_install": false,
+      "env_at_install": {
+        "ORDER": "A B",
+        "A_OK": "1",
+        "A_TRY": "1",
+        "B_OK": "0",
+        "B_TRY": "0"
+      },
+      "wall_s": 73.9
+    },
+    "downgrade:minver": {
+      "verdict": "PASS",
+      "detail": "downgrade rejected (rc=1: Installing `/data/bundles/v1.raucb` failed)",
+      "rebooted": false,
+      "before": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "wall_s": 398.2
+    }
+  }
+}

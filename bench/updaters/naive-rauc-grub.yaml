@@ -1,0 +1,37 @@
+# CONTROL implementation (not a real updater), like the `naive` TUF client: a hand-written
+# installer for plain RAUC bundles that verifies the signature and then REOPENS the bundle
+# by path to install it -- the verify-then-use pattern behind CVE-2020-25860 (RAUC < 1.5).
+# It exists to show that the toctou scenario can fail an installer; everything else
+# (image, status, bootloader, variants) is inherited from rauc-grub.
+#
+# Plain bundle = squashfs || CMS signature (DER, detached) || u64 BE signature size.
+# The `sleep` stands for the gap between verification (e.g. at download time) and use
+# (installation later); RAUC >= 1.5 closes the gap by taking exclusive ownership of the
+# file before verifying it.
+
+extends: rauc-grub
+name: naive-rauc-grub
+description: control installer for plain RAUC bundles (verify, then reopen by path); slots A=vda1, B=vda2
+
+commands:
+  version: echo naive-rauc-grub
+  install: |
+    set -e
+    f={artifact}
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    if [ "$S" = A ]; then T=B; D=/dev/vda2; else T=A; D=/dev/vda1; fi
+    size=$(stat -c %s "$f")
+    sig=$(tail -c 8 "$f" | od -An -tu8 --endian=big | tr -d ' \n')
+    sq=$((size - 8 - sig))
+    tail -c $((sig + 8)) "$f" | head -c "$sig" > /run/naive.sig
+    head -c "$sq" "$f" | openssl cms -verify -binary -inform DER -in /run/naive.sig \
+      -content /dev/stdin -CAfile /etc/rauc/keyring.pem -purpose any -out /dev/null
+    echo "naive: signature ok, installing to $T"
+    sleep 10
+    mkdir -p /run/naive-mnt
+    mount -o loop,ro "$f" /run/naive-mnt
+    dd if=/run/naive-mnt/rootfs.ext4 of="$D" bs=4M conv=fsync status=none
+    umount /run/naive-mnt
+    grub-editenv /boot-ab/grub/grubenv set "ORDER=$T $S" "${T}_OK=1" "${T}_TRY=0"
+    sync
+    echo "naive: installed $T"

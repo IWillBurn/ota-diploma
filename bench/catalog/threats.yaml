@@ -126,7 +126,7 @@ threats:
     expected: block
     coverage:
       tuf-conformance: [test_unsigned_metadata, test_snapshot_does_not_meet_threshold, test_snapshot_has_too_few_keys, test_incorrect_metadata_type]
-    bench: [arb-metadata-tamper, suit-manifest-tamper, suit-signature-tamper]
+    bench: [arb-metadata-tamper, suit-manifest-tamper, suit-signature-tamper, rauc-sigcover]
 
   - id: OTA-AUTH-03
     title: Signature / keyid confusion

@@ -30,3 +30,7 @@ results/*.log
 !results/full-linux-2026-11-01-v4/
 !results/suit-2026-11-01/
 results/.suit-work/
+!results/pilot-ab-20261101-181255/
+!results/pilot-ab-20261101-184534/
+!results/pilot-ab-20261101-191247/
+!results/rauc-sigcover-2026-11-01/

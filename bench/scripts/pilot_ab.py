@@ -11,6 +11,9 @@ Scenarios (each starts from a fresh qcow2 overlay of the adapter's image or of a
   attacker       artifact signed with a foreign key -> rejected, boot state untouched,
                  the device still boots the initial slot
   downgrade      on v2 install v1 -> is the downgrade accepted?
+  toctou         the artifact sits in a directory of an unprivileged update service; that
+                 service swaps it for a foreign-key artifact while the updater runs ->
+                 the image installed must be the one verified (OTA-INST-04)
   cut-firstboot  power cut during the first, unconfirmed boot of the new slot -> safe
                  fallback, then a retry must succeed (liveness)
   crash-replay   block level: log every write of one install (blklogwrites), rebuild
@@ -26,6 +29,7 @@ Scenarios (each starts from a fresh qcow2 overlay of the adapter's image or of a
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import secrets
 import subprocess
@@ -47,6 +51,39 @@ VARIANT_DIR = Path(r"P:\vm\variants")
 VERDICTS = ("OK", "DEGRADED", "INCONSISTENT", "BRICK")
 # a 4 KiB block with a unique tag, written with O_DIRECT: finds a moment in the write log
 ENV_HEADER = b"# GRUB Environment Block"
+# toctou: (how the attacker gets write access, seconds after the install starts)
+TOCTOU_TRIALS = (("held", 2.0), ("held", 6.0), ("held", 12.0), ("late", 6.0))
+# Runs as `nobody` in the guest. held: a writable descriptor opened BEFORE the install
+# starts (a compromised download service keeps its file open); late: the file is opened
+# only at swap time (the service merely owns the file). Then the artifact's bytes are
+# replaced by the foreign-key artifact's.
+TOCTOU_ATTACKER = r"""
+import os, sys, time
+b, evil, mode, delay, d = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]), sys.argv[5]
+fd = os.open(b, os.O_RDWR) if mode == "held" else None
+open(d + "/ready", "w").close()
+while not os.path.exists(d + "/go"):
+    time.sleep(0.02)
+t0 = time.monotonic()
+time.sleep(delay)
+t1 = time.monotonic()
+try:
+    if fd is None:
+        fd = os.open(b, os.O_RDWR)
+    n = 0
+    with open(evil, "rb") as src:
+        os.lseek(fd, 0, os.SEEK_SET)
+        while True:
+            chunk = src.read(1 << 20)
+            if not chunk:
+                break
+            n += os.write(fd, chunk)
+    os.ftruncate(fd, n)
+    os.fsync(fd)
+    print(f"swapped {n} bytes at +{t1 - t0:.2f}s in {time.monotonic() - t1:.2f}s", flush=True)
+except OSError as e:
+    print(f"swap failed at +{t1 - t0:.2f}s: {e}", flush=True)
+"""
 MARK = ("yes {tag} | head -c 4096 > /tmp/m && dd if=/tmp/m of={dir}/{name} bs=4096 "
         "count=1 oflag=direct conv=fsync status=none")
 
@@ -135,14 +172,24 @@ class Pilot:
                      markers: dict[int, int]) -> dict:
         """Boot the disk state 'power lost right after log entry k' and classify it."""
         t = time.monotonic()
-        cvm = self.fresh("crash", base=raw, base_fmt="raw")
-        try:
-            ready = cvm.agent.wait(CHECK_READY_S)
-            st = self.state(cvm) if ready else {}
-            runs = self.boot_runs(cvm)
-        finally:
-            cvm.power_cut()
-        cvm.disk.unlink(missing_ok=True)  # keep the serial log for post-mortem
+
+        def boot(timeout: float) -> tuple[bool, dict, list[dict]]:
+            cvm = self.fresh("crash", base=raw, base_fmt="raw")
+            try:
+                ready = cvm.agent.wait(timeout)
+                return ready, self.state(cvm) if ready else {}, self.boot_runs(cvm)
+            finally:
+                cvm.power_cut()
+                cvm.disk.unlink(missing_ok=True)  # keep the serial log for post-mortem
+
+        ready, st, runs = boot(CHECK_READY_S)
+        retry = None
+        if not ready:
+            # A BRICK is confirmed on a second boot of the very same state with twice the
+            # timeout: a guest that is merely slow under host load is not a brick
+            # (01.11.2026: one such false BRICK while four VMs ran in parallel).
+            ready, st, runs = boot(2 * CHECK_READY_S)
+            retry = "booted on retry" if ready else "confirmed"
         pair = (st.get("slot"), st.get("version"))
         env_ok = bool(st.get("env_ok"))
         first = runs[0] if runs else {}
@@ -163,10 +210,11 @@ class Pilot:
              "verdict": v, "slot": pair[0], "version": pair[1], "env_ok": env_ok,
              "rescue": rescue, "diverged": diverged, "boot_slot": first.get("slot"),
              "boot_order": first.get("order"), "os_order": st.get("order"), "boots": len(runs),
-             "check_s": round(time.monotonic() - t, 1)}
+             "brick_retry": retry, "check_s": round(time.monotonic() - t, 1)}
         tag = f"+{marker}s" if marker is not None else f"{r['phase']:.0%}"
         print(f"    crash@{k} ({tag}{' B' if r['barrier'] else ''}): {v} {pair[0]}/{pair[1]} "
-              f"boot=[{first.get('order')}] os=[{st.get('order')}]{' RESCUE' if rescue else ''}",
+              f"boot=[{first.get('order')}] os=[{st.get('order')}]{' RESCUE' if rescue else ''}"
+              f"{f' (first boot timed out; {retry})' if retry else ''}",
               flush=True)
         return r
 
@@ -466,6 +514,65 @@ class Pilot:
                           f"downgrade rejected (rc={rc}: {last})",
                 "rebooted": t_rb is not None, "control_install": ctl, "before": s_mid, "after": st}
 
+    def _toctou_trial(self, mode: str | None, delay: float, ref: str | None) -> dict:
+        """One install of a copy of v2 that an unprivileged process may swap for the
+        foreign-key artifact (mode None = control, no attacker)."""
+        art, evil = self.dev.artifact("v2").path, self.dev.artifact("v2-attacker").path
+        d = f"{self.dev.scratch_dir}/otabench-toctou"
+        b = f"{d}/update{Path(art).suffix}"
+        tag = f"{mode}-{delay:g}" if mode else "control"
+        vm = self.fresh(f"toctou-{tag}")
+        try:
+            self.boot_confirmed(vm)
+            s0 = self.state(vm)
+            rc, out, err = vm.agent.sh(
+                f"rm -rf {d} && mkdir -p {d} && cp {art} {b} && cp {evil} {d}/evil && "
+                f"chown -R nobody:nogroup {d} && chmod 0666 {b} && chmod 0644 {d}/evil && "
+                f"echo {base64.b64encode(TOCTOU_ATTACKER.encode()).decode()} | base64 -d > "
+                f"{d}/attacker.py && sync", 600)
+            if rc != 0:
+                raise RuntimeError(f"precondition: staging the artifact failed: {(out + err)[-200:]}")
+            if mode:
+                vm.agent.spawn(f"cd / && runuser -u nobody -- python3 {d}/attacker.py {b} "
+                               f"{d}/evil {mode} {delay} {d} > {d}/attacker.log 2>&1")
+                deadline = time.monotonic() + 60
+                while vm.agent.sh(f"test -e {d}/ready", 10)[0] != 0:
+                    if time.monotonic() > deadline:
+                        raise RuntimeError("precondition: the attacker process did not start")
+                    time.sleep(0.5)
+            vm.agent.sh(f"touch {d}/go", 10)
+            rc, t_inst, last = self.dev.install(vm, "v2", path=b)
+            s1 = self.state(vm)
+            alog = vm.agent.sh(f"sleep 2; cat {d}/attacker.log 2>/dev/null", 30)[1].strip() if mode else ""
+            digest = self.dev.slot_digest(vm, self.dev.target_slot) if rc == 0 else None
+        finally:
+            vm.power_cut()
+        t = self.dev.target_slot
+        boot = lambda s: (s.get("order"), s.get("env", {}).get(f"{t}_OK"),  # noqa: E731
+                          s.get("env", {}).get(f"{t}_TRY"))
+        if rc != 0:
+            outcome = "blocked" if boot(s1) == boot(s0) else "failed, boot state changed"
+        else:
+            outcome = "genuine" if ref is None or digest == ref else "substituted"
+        return {"trial": tag, "install_rc": rc, "install_s": round(t_inst, 1),
+                "install_msg": last, "attacker": alog, "slot_digest": digest,
+                "outcome": outcome, "safe": outcome in ("blocked", "genuine"),
+                "boot_before": boot(s0), "boot_after": boot(s1)}
+
+    def toctou(self) -> dict:
+        ctl = self._toctou_trial(None, 0.0, None)
+        if ctl["install_rc"] != 0:
+            raise RuntimeError("precondition: the unattacked copy of v2 did not install "
+                               f"({ctl['install_msg'][:160]}); the scenario cannot tell a "
+                               "blocked attack from a broken setup")
+        trials = [self._toctou_trial(m, dl, ctl["slot_digest"]) for m, dl in TOCTOU_TRIALS]
+        bad = [t for t in trials if not t["safe"]]
+        return {"verdict": "FAIL" if bad else "PASS", "metric": "census",
+                "detail": (f"{len(bad)} of {len(trials)} trials unsafe: "
+                           + "; ".join(f"{t['trial']} {t['outcome']}" for t in bad)) if bad else
+                          "all trials safe: " + ", ".join(f"{t['trial']} {t['outcome']}" for t in trials),
+                "control": ctl, "trials": trials}
+
     def cut_firstboot(self, delay: float = 3.0, confirm: bool = True) -> dict:
         vm = self.fresh("cutfb" if confirm else "cutfb-unconf")
         disk = vm.disk
@@ -656,7 +763,7 @@ def main() -> int:
     p.settle, p.region_at, p.sample_intervals = a.settle, a.region_at, a.sample_intervals
     RUN_INFO.update(params=vars(a), git_commit=_git_commit(), check_ready_s=CHECK_READY_S)
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
-            "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot,
+            "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot, "toctou": p.toctou,
             "broken-unconfirmed": lambda: p.broken(confirm=False),
             "cut-unconfirmed": lambda: p.cut_firstboot(confirm=False),
             "crash-replay": lambda: p.crash_replay(

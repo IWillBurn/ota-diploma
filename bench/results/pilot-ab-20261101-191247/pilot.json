@@ -1,0 +1,102 @@
+{
+  "started": "20261101-191247",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "rauc-grub",
+    "only": "happy:ext4-inplace-rootro",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "settle": 0.0,
+    "sample_intervals": 15,
+    "region_at": "end",
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "b8f34fc",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "rauc-grub",
+    "file": "updaters\\rauc-grub.yaml",
+    "version": "rauc 1.8",
+    "image": "P:\\vm\\ab-v1.qcow2"
+  },
+  "results": {
+    "happy:ext4-inplace-rootro": {
+      "verdict": "PASS",
+      "boot_s": 24.1,
+      "install_s": 22.9,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 16.9,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        }
+      ],
+      "wall_s": 632.4
+    }
+  }
+}

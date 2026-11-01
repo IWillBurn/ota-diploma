@@ -72,6 +72,7 @@ class Device:
         self.cmd_info = c.get("info")
         self.cmd_debug = c.get("debug")
         self.cmd_unconfirm = c.get("unconfirm")
+        self.cmd_slot_digest = c.get("slot_digest")
         bl = raw.get("bootlog") or {}
         run, rescue = bl.get("run"), bl.get("rescue")
         if run and "(?P<slot>" not in run:
@@ -119,9 +120,11 @@ class Device:
         return self.target_slot, self.artifact("v2").version
 
     # ------------------------------------------------------------------ guest commands
-    def install(self, vm, role: str, timeout: float = 1200) -> tuple[int, float, str]:
-        """Install the artifact for `role`; returns (exit code, seconds, last output line)."""
-        cmd = self.cmd_install.replace("{artifact}", shlex.quote(self.artifact(role).path))
+    def install(self, vm, role: str, timeout: float = 1200,
+                path: str | None = None) -> tuple[int, float, str]:
+        """Install the artifact for `role` (from `path` if given, e.g. a copy of it);
+        returns (exit code, seconds, last output line)."""
+        cmd = self.cmd_install.replace("{artifact}", shlex.quote(path or self.artifact(role).path))
         t = time.monotonic()
         rc, out, err = vm.agent.sh(cmd, timeout)
         lines = (out + err).strip().splitlines()
@@ -147,6 +150,16 @@ class Device:
                 "order": kv.get("order"),
                 "primary": kv.get("primary") or None,
                 "env": {k[4:]: v for k, v in kv.items() if k.startswith("env.")}}
+
+    def slot_digest(self, vm, slot: str, timeout: float = 600) -> str:
+        """SHA-256 of the whole block device of `slot` (adapter command `slot_digest`)."""
+        if not self.cmd_slot_digest:
+            raise AdapterError(f"adapter {self.name} has no 'slot_digest' command")
+        rc, out, err = vm.agent.sh(str(self.cmd_slot_digest).replace("{slot}", shlex.quote(slot)), timeout)
+        d = out.strip().split()[0] if out.strip() else ""
+        if rc != 0 or len(d) != 64:
+            raise AdapterError(f"slot_digest {slot} failed (rc={rc}): {(out + err).strip()[-200:]}")
+        return d
 
     def version(self, vm) -> str | None:
         if not self.cmd_version:

@@ -152,3 +152,42 @@ def test_real_rauc_upgrade_adapter() -> None:
     d = Device("rauc1.15.2-grub")
     assert d.cmd_install == Device("rauc-grub").cmd_install
     assert "minver" in d.variants and len(d.variants) == 15
+
+
+def test_install_path_override_and_slot_digest(tmp_path: Path) -> None:
+    d = _adapter(tmp_path, MINIMAL)
+    d.cmd_slot_digest = "dig {slot}"
+
+    class Agent:
+        def sh(self, cmd, timeout):
+            self.cmd = cmd
+            return 0, ("ab" * 32 + "\n") if cmd.startswith("dig") else "ok\n", ""
+
+    class VM:
+        agent = Agent()
+
+    d.install(VM, "v2", path="/data/t/update.bin")
+    assert VM.agent.cmd == "inst /data/t/update.bin"
+    assert d.slot_digest(VM, "B") == "ab" * 32 and VM.agent.cmd == "dig B"
+
+
+def test_control_installer_adapter() -> None:
+    n, r = Device("naive-rauc-grub"), Device("rauc-grub")
+    assert n.cmd_install != r.cmd_install and "mount -o loop" in n.cmd_install
+    assert (n.cmd_status, n.cmd_slot_digest, n.image) == (r.cmd_status, r.cmd_slot_digest, r.image)
+    assert n.artifact("v2-attacker").path == r.artifact("v2-attacker").path
+
+
+ROLES = ("v1", "v2", "v2-broken", "v2-attacker")
+
+
+@pytest.mark.parametrize("name", sorted(p.stem for p in (Path(__file__).resolve().parent.parent
+                                                         / "updaters").glob("*.yaml")))
+def test_every_adapter_provides_all_roles(name: str) -> None:
+    """The artifact roles are the protocol-driver interface: scenarios know roles, not formats."""
+    d = Device(name)
+    for role in ROLES:
+        a = d.artifact(role)
+        assert a.path.startswith("/") and a.version
+    assert d.artifact("v2").path != d.artifact("v2-attacker").path
+    assert Path(d.artifact("v2").path).suffix == Path(d.artifact("v2-attacker").path).suffix

@@ -1,0 +1,105 @@
+{
+ "scenario": "rauc-sigcover",
+ "threats": [
+  "OTA-AUTH-02"
+ ],
+ "image": "otabench-rauc-verify",
+ "raw": [
+  "build small.raucb rc=0 size=8394012 rauc-Message: 17:05:39.355: No keyring given, skipping signature verification",
+  "check small-ok rauc-1.8 rc=0 version=2 msg=",
+  "check small-ok rauc-1.15.2 rc=0 version=2 msg=",
+  "check small-flip rauc-1.8 rc=1 version= msg=signature verification failed: error:1700009E:CMS routines::verification failure",
+  "check small-flip rauc-1.15.2 rc=1 version= msg=signature verification failed: error:1700009E:CMS routines::verification failure",
+  "build big.raucb rc=0 size=2222986524 rauc-Message: 17:06:04.640: No keyring given, skipping signature verification",
+  "build-1.15.2 big rc=1 Failed to create bundle: failed to sign bundle: Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)",
+  "big payload=2222985216 head= 68 73 71 73 04 00 00 00 7c 71 e7 6a 00 00 02 00",
+  "check big-ok rauc-1.8 rc=0 version=2 msg=",
+  "check big-ok rauc-1.15.2 rc=1 version= msg=Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)",
+  "evil head= 68 73 71 73 04 00 00 00 92 71 e7 6a 00 00 02 00 size=2222985216",
+  "check big-transplant rauc-1.8 rc=0 version=666 msg=",
+  "check big-transplant rauc-1.15.2 rc=1 version= msg=Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)",
+  "check big-flip rauc-1.8 rc=0 version=2 msg=",
+  "check big-flip rauc-1.15.2 rc=1 version= msg=Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)"
+ ],
+ "checks": {
+  "small-ok": {
+   "rauc 1.8": {
+    "accepted": true,
+    "rc": 0,
+    "manifest_version": "2",
+    "msg": ""
+   },
+   "rauc 1.15.2": {
+    "accepted": true,
+    "rc": 0,
+    "manifest_version": "2",
+    "msg": ""
+   }
+  },
+  "small-flip": {
+   "rauc 1.8": {
+    "accepted": false,
+    "rc": 1,
+    "manifest_version": "",
+    "msg": "signature verification failed: error:1700009E:CMS routines::verification failure"
+   },
+   "rauc 1.15.2": {
+    "accepted": false,
+    "rc": 1,
+    "manifest_version": "",
+    "msg": "signature verification failed: error:1700009E:CMS routines::verification failure"
+   }
+  },
+  "big-ok": {
+   "rauc 1.8": {
+    "accepted": true,
+    "rc": 0,
+    "manifest_version": "2",
+    "msg": ""
+   },
+   "rauc 1.15.2": {
+    "accepted": false,
+    "rc": 1,
+    "manifest_version": "",
+    "msg": "Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)"
+   }
+  },
+  "big-transplant": {
+   "rauc 1.8": {
+    "accepted": true,
+    "rc": 0,
+    "manifest_version": "666",
+    "msg": ""
+   },
+   "rauc 1.15.2": {
+    "accepted": false,
+    "rc": 1,
+    "manifest_version": "",
+    "msg": "Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)"
+   }
+  },
+  "big-flip": {
+   "rauc 1.8": {
+    "accepted": true,
+    "rc": 0,
+    "manifest_version": "2",
+    "msg": ""
+   },
+   "rauc 1.15.2": {
+    "accepted": false,
+    "rc": 1,
+    "manifest_version": "",
+    "msg": "Bundle payload size 2222985216 exceeds maximum for bundles using plain format (2 GiB)"
+   }
+  }
+ },
+ "verdicts": {
+  "rauc 1.8": "FAIL",
+  "rauc 1.8 accepted modified": [
+   "big-transplant",
+   "big-flip"
+  ],
+  "rauc 1.15.2": "PASS",
+  "rauc 1.15.2 accepted modified": []
+ }
+}

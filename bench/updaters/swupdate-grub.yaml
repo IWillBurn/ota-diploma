@@ -45,6 +45,11 @@ commands:
   unconfirm: |
     S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
     grub-editenv /boot-ab/grub/grubenv set "${S}_TRY=1" && sync
+  # SHA-256 of a slot's whole block device: oracle of the toctou scenario
+  # (is the installed image the one that was verified?)
+  slot_digest: |
+    case {slot} in A) D=/dev/vda1 ;; B) D=/dev/vda2 ;; *) exit 2 ;; esac
+    sha256sum "$D" | cut -d' ' -f1
   info: |
     findmnt -no FSTYPE,OPTIONS /boot-ab
     findmnt -no SOURCE,TARGET /boot/grub
