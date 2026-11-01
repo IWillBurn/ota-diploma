@@ -1,0 +1,102 @@
+#!/usr/bin/python3
+"""RAUC custom bootloader backend for otabench: GRUB environment, written IN PLACE.
+
+RAUC's built-in GRUB backend calls `grub-editenv`, which truncates and rewrites
+grubenv. The file then gets a new data block, i.e. its *metadata* changes. GRUB
+does not replay the ext4 journal and keeps reading the old block until the
+background writeback moves the metadata home (~5 s on Debian 12), and on
+filesystems without a journal the truncate+rewrite can leave grubenv unreadable
+after a power cut. GRUB's own `save_env` instead overwrites the existing blocks
+in place. This backend does the same: open without O_TRUNC, pwrite the 1024-byte
+block at offset 0, fsync. No allocation, no metadata change.
+
+Same variables and semantics as RAUC's GRUB backend (ORDER, <slot>_OK, <slot>_TRY).
+RAUC 1.8 calls:  get-primary | set-primary <bootname> | get-state <bootname> |
+                 set-state <bootname> good|bad
+Extra for the harness: dump (print the variables).
+"""
+
+import os
+import sys
+
+ENV = os.environ.get("OTABENCH_GRUBENV", "/boot-ab/grub/grubenv")
+SIZE = 1024
+HEADER = b"# GRUB Environment Block\n"
+
+
+def read() -> tuple[list[bytes], dict[str, str]]:
+    with open(ENV, "rb") as f:
+        buf = f.read()
+    if len(buf) != SIZE or not buf.startswith(HEADER):
+        sys.exit(f"otabench-bootenv: {ENV} is not a {SIZE}-byte GRUB environment block")
+    comments, env = [], {}
+    for line in buf.split(b"\n"):
+        if not line or set(line) == {ord("#")}:
+            continue  # padding
+        if line.startswith(b"#"):
+            comments.append(line)
+            continue
+        key, sep, val = line.partition(b"=")
+        if sep:
+            env[key.decode()] = val.decode()
+    return comments, env
+
+
+def write(comments: list[bytes], env: dict[str, str]) -> None:
+    body = b"".join(c + b"\n" for c in comments)
+    body += b"".join(f"{k}={v}\n".encode() for k, v in env.items())
+    if len(body) > SIZE:
+        sys.exit("otabench-bootenv: environment too large")
+    block = body + b"#" * (SIZE - len(body))
+    # no O_TRUNC: same blocks, no metadata change (O_BINARY only matters on Windows tests)
+    fd = os.open(ENV, os.O_RDWR | getattr(os, "O_BINARY", 0))
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
+        if os.write(fd, block) != SIZE:
+            sys.exit("otabench-bootenv: short write")
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def order(env: dict[str, str]) -> list[str]:
+    return env.get("ORDER", "A B").split()
+
+
+def main(argv: list[str]) -> int:
+    if not argv:
+        print(__doc__, file=sys.stderr)
+        return 2
+    cmd, args = argv[0], argv[1:]
+    comments, env = read()
+    if cmd == "dump":
+        for k, v in env.items():
+            print(f"{k}={v}")
+        return 0
+    if cmd == "get-primary":
+        for slot in order(env):
+            if env.get(f"{slot}_OK") == "1" and env.get(f"{slot}_TRY", "0") == "0":
+                print(slot)
+                return 0
+        return 1  # like the built-in backend: no confirmed primary
+    if cmd == "get-state":
+        print("good" if env.get(f"{args[0]}_OK") == "1" else "bad")
+        return 0
+    if cmd == "set-primary":
+        slot = args[0]
+        env["ORDER"] = " ".join([slot] + [s for s in order(env) if s != slot])
+        env[f"{slot}_OK"], env[f"{slot}_TRY"] = "1", "0"
+        write(comments, env)
+        return 0
+    if cmd == "set-state":
+        slot, state = args
+        env[f"{slot}_OK"] = "1" if state == "good" else "0"
+        env[f"{slot}_TRY"] = "0"
+        write(comments, env)
+        return 0
+    print(f"otabench-bootenv: unknown command {cmd}", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

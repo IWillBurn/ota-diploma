@@ -1,0 +1,584 @@
+{
+  "started": "20261101-105531",
+  "image": "P:\\vm\\ab-v1.qcow2",
+  "rauc": "1.8 (Debian 12)",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "results": {
+    "window:ext4-wbonly": {
+      "verdict": "PASS",
+      "config": "ext4-wbonly",
+      "boot_ab": "ext4   rw,relatime\n100\n3000",
+      "detail": "bootloader sees the new state from +1s (old until +0s); env-rewrite region {'OK': 0, 'DEGRADED': 0, 'INCONSISTENT': 0, 'BRICK': 0}",
+      "old_until_s": 0,
+      "new_from_s": 1,
+      "install_rc": 0,
+      "install_s": 19.1,
+      "region_entries": 0,
+      "region_counts": {
+        "OK": 0,
+        "DEGRADED": 0,
+        "INCONSISTENT": 0,
+        "BRICK": 0
+      },
+      "region_rescue": 0,
+      "region_diverged": 0,
+      "markers": {
+        "0": {
+          "slot": "A",
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "verdict": "DEGRADED"
+        },
+        "1": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "2": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "3": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "4": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "5": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "6": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "8": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "10": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "15": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "20": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "30": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        }
+      },
+      "points": [
+        {
+          "entry": 1666,
+          "phase": 1.0,
+          "after_install_s": 0,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": true,
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 16.7
+        },
+        {
+          "entry": 1676,
+          "phase": 1.006,
+          "after_install_s": 1,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.1
+        },
+        {
+          "entry": 1687,
+          "phase": 1.014,
+          "after_install_s": 2,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.9
+        },
+        {
+          "entry": 1733,
+          "phase": 1.043,
+          "after_install_s": 3,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        },
+        {
+          "entry": 1744,
+          "phase": 1.05,
+          "after_install_s": 4,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.9
+        },
+        {
+          "entry": 1751,
+          "phase": 1.055,
+          "after_install_s": 5,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.8
+        },
+        {
+          "entry": 1764,
+          "phase": 1.063,
+          "after_install_s": 6,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.8
+        },
+        {
+          "entry": 1776,
+          "phase": 1.071,
+          "after_install_s": 8,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        },
+        {
+          "entry": 1788,
+          "phase": 1.079,
+          "after_install_s": 10,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.3
+        },
+        {
+          "entry": 1802,
+          "phase": 1.088,
+          "after_install_s": 15,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        },
+        {
+          "entry": 1820,
+          "phase": 1.099,
+          "after_install_s": 20,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        },
+        {
+          "entry": 1839,
+          "phase": 1.111,
+          "after_install_s": 30,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.8
+        }
+      ],
+      "wall_s": 207.8
+    },
+    "window:ext4-exponly": {
+      "verdict": "PASS",
+      "config": "ext4-exponly",
+      "boot_ab": "ext4   rw,relatime\n500\n100",
+      "detail": "bootloader sees the new state from +5s (old until +4s); env-rewrite region {'OK': 0, 'DEGRADED': 0, 'INCONSISTENT': 0, 'BRICK': 0}",
+      "old_until_s": 4,
+      "new_from_s": 5,
+      "install_rc": 0,
+      "install_s": 18.7,
+      "region_entries": 0,
+      "region_counts": {
+        "OK": 0,
+        "DEGRADED": 0,
+        "INCONSISTENT": 0,
+        "BRICK": 0
+      },
+      "region_rescue": 0,
+      "region_diverged": 0,
+      "markers": {
+        "0": {
+          "slot": "A",
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "verdict": "DEGRADED"
+        },
+        "1": {
+          "slot": "A",
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "verdict": "DEGRADED"
+        },
+        "2": {
+          "slot": "A",
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "verdict": "DEGRADED"
+        },
+        "3": {
+          "slot": "A",
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "verdict": "DEGRADED"
+        },
+        "4": {
+          "slot": "A",
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "verdict": "DEGRADED"
+        },
+        "5": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "6": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "8": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "10": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "15": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "20": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        },
+        "30": {
+          "slot": "B",
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "verdict": "OK"
+        }
+      },
+      "points": [
+        {
+          "entry": 1529,
+          "phase": 1.0,
+          "after_install_s": 0,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": true,
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 17.5
+        },
+        {
+          "entry": 1535,
+          "phase": 1.004,
+          "after_install_s": 1,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": true,
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.1
+        },
+        {
+          "entry": 1541,
+          "phase": 1.008,
+          "after_install_s": 2,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": true,
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.1
+        },
+        {
+          "entry": 1551,
+          "phase": 1.015,
+          "after_install_s": 3,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": true,
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        },
+        {
+          "entry": 1557,
+          "phase": 1.019,
+          "after_install_s": 4,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": true,
+          "grub_order": "A B",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        },
+        {
+          "entry": 1624,
+          "phase": 1.064,
+          "after_install_s": 5,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.8
+        },
+        {
+          "entry": 1630,
+          "phase": 1.068,
+          "after_install_s": 6,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.7
+        },
+        {
+          "entry": 1637,
+          "phase": 1.073,
+          "after_install_s": 8,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.8
+        },
+        {
+          "entry": 1646,
+          "phase": 1.079,
+          "after_install_s": 10,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.7
+        },
+        {
+          "entry": 1711,
+          "phase": 1.122,
+          "after_install_s": 15,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.9
+        },
+        {
+          "entry": 1744,
+          "phase": 1.145,
+          "after_install_s": 20,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 7.9
+        },
+        {
+          "entry": 1787,
+          "phase": 1.174,
+          "after_install_s": 30,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "grub_order": "B A",
+          "linux_order": "B A",
+          "boots": 1,
+          "check_s": 8.0
+        }
+      ],
+      "wall_s": 200.5
+    }
+  }
+}

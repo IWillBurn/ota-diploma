@@ -1,0 +1,711 @@
+{
+  "started": "20261031-223425",
+  "image": "P:\\vm\\ab-v1.qcow2",
+  "rauc": "1.8 (Debian 12)",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "results": {
+    "happy": {
+      "verdict": "PASS",
+      "boot_s": 7.0,
+      "install_s": 15.6,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 11.0,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0"
+          },
+          "rauc_booted": "A",
+          "rauc_primary": "rootfs.0"
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          },
+          "rauc_booted": "A",
+          "rauc_primary": "rootfs.1"
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          },
+          "rauc_booted": "B",
+          "rauc_primary": "rootfs.0"
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          },
+          "rauc_booted": "B",
+          "rauc_primary": "rootfs.0"
+        }
+      ],
+      "wall_s": 48.8
+    },
+    "broken": {
+      "verdict": "PASS",
+      "fallback_path": "regular OK/TRY logic",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/v1 via regular OK/TRY logic",
+      "install_rc": 0,
+      "install_s": 15.0,
+      "recovery_s": 22.4,
+      "grub_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B"
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A"
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        },
+        "rauc_booted": "A",
+        "rauc_primary": null
+      },
+      "wall_s": 47.5
+    },
+    "broken-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "RESCUE branch",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/v1 via RESCUE branch",
+      "install_rc": 0,
+      "install_s": 14.9,
+      "recovery_s": 22.3,
+      "grub_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B"
+        },
+        {
+          "rescue": true
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A"
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        },
+        "rauc_booted": "A",
+        "rauc_primary": null
+      },
+      "wall_s": 44.6
+    },
+    "attacker": {
+      "verdict": "PASS",
+      "install_rc": 1,
+      "install_msg": "Installing `/data/bundles/v2-attacker.raucb` failed",
+      "bootloader_untouched": true,
+      "wall_s": 8.1
+    },
+    "downgrade": {
+      "verdict": "FAIL",
+      "detail": "v2 -> v1 downgrade accepted and booted (no version check in default RAUC config; needs an integrator hook)",
+      "before": {
+        "slot": "B",
+        "version": "2",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        },
+        "rauc_booted": "B",
+        "rauc_primary": "rootfs.1"
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "0"
+        },
+        "rauc_booted": "A",
+        "rauc_primary": "rootfs.1"
+      },
+      "wall_s": 60.7
+    },
+    "cut-firstboot": {
+      "verdict": "PASS",
+      "fallback_path": "regular OK/TRY logic",
+      "detail": "after cut booted A/1 via regular OK/TRY logic; retry -> B/2",
+      "cut_after_grub_s": 27.2,
+      "grub_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B"
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        },
+        "rauc_booted": "A",
+        "rauc_primary": null
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        },
+        "rauc_booted": "B",
+        "rauc_primary": "rootfs.0"
+      },
+      "install_rc": 0,
+      "wall_s": 64.7
+    },
+    "cut-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "RESCUE branch",
+      "detail": "after cut booted A/1 via RESCUE branch; retry -> B/2",
+      "cut_after_grub_s": 26.4,
+      "grub_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B"
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        },
+        "rauc_booted": "A",
+        "rauc_primary": null
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        },
+        "rauc_booted": "B",
+        "rauc_primary": "rootfs.0"
+      },
+      "install_rc": 0,
+      "wall_s": 63.7
+    },
+    "crash-replay": {
+      "verdict": "PASS",
+      "log": {
+        "entries_total": 1492,
+        "superblock_entries": 1492,
+        "install_window": [
+          40,
+          1486
+        ],
+        "entries": 1447,
+        "writes": 1426,
+        "barriers": 21,
+        "discards": 0,
+        "bytes": 1184798720
+      },
+      "install_rc": 0,
+      "install_s": 19.0,
+      "raw_convert_s": 15.2,
+      "crash_points": 32,
+      "counts": {
+        "OK": 25,
+        "DEGRADED": 7,
+        "INCONSISTENT": 0,
+        "BRICK": 0
+      },
+      "first_point_booting_B": null,
+      "mean_check_s": 8.5,
+      "points": [
+        {
+          "entry": 40,
+          "phase": 0.0,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 9.0
+        },
+        {
+          "entry": 43,
+          "phase": 0.002,
+          "barrier": true,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 8.3
+        },
+        {
+          "entry": 45,
+          "phase": 0.003,
+          "barrier": true,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 8.9
+        },
+        {
+          "entry": 73,
+          "phase": 0.023,
+          "barrier": true,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 8.9
+        },
+        {
+          "entry": 75,
+          "phase": 0.024,
+          "barrier": true,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 8.5
+        },
+        {
+          "entry": 78,
+          "phase": 0.026,
+          "barrier": true,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 8.3
+        },
+        {
+          "entry": 80,
+          "phase": 0.028,
+          "barrier": true,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": true,
+          "boots": 2,
+          "check_s": 8.3
+        },
+        {
+          "entry": 188,
+          "phase": 0.102,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.6
+        },
+        {
+          "entry": 233,
+          "phase": 0.133,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.5
+        },
+        {
+          "entry": 268,
+          "phase": 0.158,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.5
+        },
+        {
+          "entry": 333,
+          "phase": 0.203,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.4
+        },
+        {
+          "entry": 475,
+          "phase": 0.301,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.5
+        },
+        {
+          "entry": 551,
+          "phase": 0.353,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.5
+        },
+        {
+          "entry": 619,
+          "phase": 0.4,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.3
+        },
+        {
+          "entry": 622,
+          "phase": 0.402,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.3
+        },
+        {
+          "entry": 762,
+          "phase": 0.499,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.8
+        },
+        {
+          "entry": 905,
+          "phase": 0.598,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.5
+        },
+        {
+          "entry": 1047,
+          "phase": 0.696,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.7
+        },
+        {
+          "entry": 1190,
+          "phase": 0.795,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 9.1
+        },
+        {
+          "entry": 1235,
+          "phase": 0.826,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.3
+        },
+        {
+          "entry": 1242,
+          "phase": 0.831,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.3
+        },
+        {
+          "entry": 1334,
+          "phase": 0.895,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.5
+        },
+        {
+          "entry": 1437,
+          "phase": 0.966,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.6
+        },
+        {
+          "entry": 1469,
+          "phase": 0.988,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.6
+        },
+        {
+          "entry": 1471,
+          "phase": 0.99,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.1
+        },
+        {
+          "entry": 1474,
+          "phase": 0.992,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.2
+        },
+        {
+          "entry": 1476,
+          "phase": 0.993,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.4
+        },
+        {
+          "entry": 1479,
+          "phase": 0.995,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.1
+        },
+        {
+          "entry": 1481,
+          "phase": 0.997,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.4
+        },
+        {
+          "entry": 1483,
+          "phase": 0.998,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.2
+        },
+        {
+          "entry": 1485,
+          "phase": 0.999,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.3
+        },
+        {
+          "entry": 1486,
+          "phase": 1.0,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "boots": 1,
+          "check_s": 8.3
+        }
+      ],
+      "liveness": [
+        {
+          "entry": 40,
+          "retry_ok": true
+        },
+        {
+          "entry": 762,
+          "retry_ok": true
+        },
+        {
+          "entry": 1486,
+          "retry_ok": true
+        }
+      ],
+      "wall_s": 445.7
+    }
+  }
+}

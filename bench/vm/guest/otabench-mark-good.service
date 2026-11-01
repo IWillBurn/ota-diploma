@@ -1,0 +1,11 @@
+[Unit]
+Description=otabench: confirm a good boot of the current RAUC slot
+After=rauc.service
+Wants=rauc.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rauc status mark-good
+
+[Install]
+WantedBy=multi-user.target

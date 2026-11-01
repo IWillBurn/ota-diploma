@@ -1,0 +1,5 @@
+#!/bin/sh
+# otabench: deliberately broken image. A validly signed bundle whose rootfs cannot
+# boot: PID 1 exits -> kernel panic -> panic=5 reboots -> GRUB must fall back.
+echo "otabench: broken image, init exits" > /dev/console
+exit 1

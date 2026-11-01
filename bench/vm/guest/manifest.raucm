@@ -1,0 +1,6 @@
+[update]
+compatible=otabench-pilot
+version=@VERSION@
+
+[image.rootfs]
+filename=rootfs.ext4

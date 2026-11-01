@@ -1,0 +1,159 @@
+"""dm-log-writes log reader/replayer (the format QEMU's `blklogwrites` driver writes).
+
+Layout: sector 0 = superblock {u64 magic, u64 version, u64 nr_entries, u32 sectorsize};
+then for every request one header sector {u64 sector, u64 nr_sectors, u64 flags,
+u64 data_len} padded to sectorsize, followed by the written data (writes and
+write-zeroes carry data, flush/discard do not, marks carry data_len bytes).
+
+Replay model used by otabench: crash state k = the disk at log start with entries
+0..k applied in order (a prefix). Prefix states at FLUSH/FUA entries are states a
+correct disk may expose after power loss; prefixes in between are a superset of
+the "lost unflushed writes" states that a stricter model would also explore.
+"""
+
+from __future__ import annotations
+
+import struct
+from dataclasses import dataclass
+from pathlib import Path
+
+MAGIC = 0x6A736677736872
+FLUSH, FUA, DISCARD, MARK = 1, 2, 4, 8
+
+
+@dataclass
+class Entry:
+    idx: int
+    sector: int
+    nr_sectors: int
+    flags: int
+    data_off: int  # offset of the payload in the log file, 0 = none
+
+    @property
+    def is_write(self) -> bool:
+        return self.nr_sectors > 0 and not self.flags & (DISCARD | MARK)
+
+    @property
+    def is_barrier(self) -> bool:
+        return bool(self.flags & (FLUSH | FUA))
+
+
+class WriteLog:
+    def __init__(self, path: Path) -> None:
+        self.path = Path(path)
+        size = self.path.stat().st_size
+        with open(self.path, "rb") as f:
+            magic, self.version, self.nr_super, self.sectorsize = struct.unpack("<QQQI", f.read(28))
+            if magic != MAGIC:
+                raise ValueError(f"{path}: not a dm-log-writes log (magic {magic:#x})")
+            ss = self.sectorsize
+            self.entries: list[Entry] = []
+            pos = ss
+            while pos + ss <= size:
+                f.seek(pos)
+                sector, nr, flags, data_len = struct.unpack("<QQQQ", f.read(32))
+                if flags & MARK:
+                    dlen = -(-data_len // ss) * ss
+                elif nr and not flags & DISCARD:
+                    dlen = nr * ss
+                else:
+                    dlen = 0
+                if pos + ss + dlen > size:
+                    break
+                self.entries.append(Entry(len(self.entries), sector, nr, flags,
+                                          pos + ss if dlen else 0))
+                pos += ss + dlen
+        self.parsed_bytes = pos
+
+    def __len__(self) -> int:
+        return len(self.entries)
+
+    def data(self, e: Entry, f) -> bytes:
+        f.seek(e.data_off)
+        return f.read(e.nr_sectors * self.sectorsize)
+
+    def find(self, pattern: bytes, start: int = 0) -> int:
+        """Index of the first write entry (>= start) whose payload contains pattern."""
+        with open(self.path, "rb") as f:
+            for e in self.entries[start:]:
+                if e.is_write and pattern in self.data(e, f):
+                    return e.idx
+        raise LookupError(f"pattern {pattern[:40]!r} not found in {self.path}")
+
+    def apply(self, raw: Path, start: int, end: int) -> int:
+        """Apply entries[start:end] to a raw disk image; returns bytes written."""
+        n = 0
+        with open(self.path, "rb") as log, open(raw, "r+b") as disk:
+            for e in self.entries[start:end]:
+                if e.is_write:
+                    buf = self.data(e, log)
+                    disk.seek(e.sector * self.sectorsize)
+                    disk.write(buf)
+                    n += len(buf)
+        return n
+
+    # ---------------------------------------------------------------- reordering model
+    def crash_states(self, start: int, end: int, max_volatile: int = 8) -> list[dict]:
+        """Crash states that a disk with a volatile write cache may expose, for crashes
+        between consecutive FLUSH barriers inside [start, end].
+
+        For the interval (a, b) between flushes a < b: everything up to and including a is
+        durable, FUA writes in (a, b) are durable, the other writes V in (a, b) are volatile
+        and any subset of them may have reached the media. Emitted subsets (bounded, in the
+        spirit of CrashMonkey/ALICE): none of V, all of V (= the prefix state), only one
+        w in V, all but one w in V. Each state: {"label", "base_end" (exclusive prefix),
+        "extra" (entry indices applied on top, in log order)}."""
+        flushes = [e.idx for e in self.entries[start:end + 1] if e.flags & FLUSH]
+        states: list[dict] = []
+        for a, b in zip(flushes, flushes[1:]):
+            inner = [e for e in self.entries[a + 1:b] if e.is_write]
+            fua = [e.idx for e in inner if e.flags & FUA]
+            vol = [e.idx for e in inner if not e.flags & FUA]
+            if not vol:
+                continue
+            pick = vol if len(vol) <= max_volatile else \
+                [vol[int(i * (len(vol) - 1) / (max_volatile - 1))] for i in range(max_volatile)]
+            cand = [("lost-all", []), ("kept-all", vol)]
+            cand += [(f"only-{w}", [w]) for w in pick]
+            if len(vol) > 1:
+                cand += [(f"all-but-{w}", [x for x in vol if x != w]) for w in pick]
+            seen = set()
+            for label, sub in cand:
+                extra = sorted(set(fua) | set(sub))
+                key = tuple(extra)
+                if key in seen:
+                    continue
+                seen.add(key)
+                states.append({"interval": [a, b], "label": label, "base_end": a + 1,
+                               "extra": extra, "volatile": len(vol)})
+        return states
+
+    def apply_with_undo(self, raw: Path, idxs: list[int]) -> list[tuple[int, bytes]]:
+        """Apply the given entries; return what is needed to undo them (old sector data)."""
+        undo: list[tuple[int, bytes]] = []
+        with open(self.path, "rb") as log, open(raw, "r+b") as disk:
+            for i in idxs:
+                e = self.entries[i]
+                if not e.is_write:
+                    continue
+                buf = self.data(e, log)
+                off = e.sector * self.sectorsize
+                disk.seek(off)
+                undo.append((off, disk.read(len(buf))))
+                disk.seek(off)
+                disk.write(buf)
+        return undo
+
+    @staticmethod
+    def undo(raw: Path, undo: list[tuple[int, bytes]]) -> None:
+        with open(raw, "r+b") as disk:
+            for off, old in reversed(undo):
+                disk.seek(off)
+                disk.write(old)
+
+    def summary(self, start: int = 0, end: int | None = None) -> dict:
+        es = self.entries[start:end]
+        return {"entries": len(es), "writes": sum(e.is_write for e in es),
+                "barriers": sum(e.is_barrier for e in es),
+                "discards": sum(bool(e.flags & DISCARD) for e in es),
+                "bytes": sum(e.nr_sectors * self.sectorsize for e in es if e.is_write)}

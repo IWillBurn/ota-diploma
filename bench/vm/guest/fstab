@@ -1,0 +1,6 @@
+# otabench A/B layout: root is passed by GRUB (root=/dev/vda1|2, rw).
+# /boot-ab: type `auto` + nofail, so that a slot image built for one /boot-ab
+# filesystem still boots when an experiment variant reformats it (ext2, vfat);
+# a failed mount then shows up as a missing grubenv (DEGRADED), not as a hang.
+LABEL=boot /boot-ab auto defaults,nofail 0 2
+LABEL=data /data    ext4 defaults 0 2
