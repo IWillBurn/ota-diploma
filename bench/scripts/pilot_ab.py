@@ -125,6 +125,7 @@ class Pilot:
         work.mkdir(parents=True, exist_ok=True)
         self.n = 0
         self.uefi = False  # set while a UEFI variant is under test
+        self.torn = False  # reorder: also emit sector-torn states (--torn)
 
     # ---------------------------------------------------------------- helpers
     def fresh(self, name: str, base: Path = AB, base_fmt: str = "qcow2",
@@ -360,7 +361,7 @@ class Pilot:
         wl = WriteLog(log)
         e0 = wl.find(tag_a.encode())
         e_inst = wl.find(tag_b.encode(), e0)
-        states = sorted(wl.crash_states(max(e0, e_inst - region), e_inst),
+        states = sorted(wl.crash_states(max(e0, e_inst - region), e_inst, torn=self.torn),
                         key=lambda x: (x["base_end"], x["label"]))
         raw = d / "replay.raw"
         subprocess.run([qemu_exe("qemu-img"), "convert", "-O", "raw", str(base), str(raw)], check=True)
@@ -369,14 +370,15 @@ class Pilot:
             for stt in states:
                 wl.apply(raw, applied, stt["base_end"])
                 applied = stt["base_end"]
-                undo = wl.apply_with_undo(raw, stt["extra"])
+                undo = wl.apply_with_undo(raw, stt["extra"], stt.get("partial"))
                 try:
-                    k = max([stt["base_end"] - 1] + stt["extra"])
+                    k = max([stt["base_end"] - 1] + stt["extra"]
+                            + ([stt["partial"][0]] if stt.get("partial") else []))
                     r = self._check_point(raw, k, wl, e0, e_inst, {})
                 finally:
                     wl.undo(raw, undo)
                 r.update(label=stt["label"], interval=stt["interval"], volatile=stt["volatile"],
-                         prefix_state=stt["label"] == "kept-all")
+                         prefix_state=stt["label"] == "kept-all", torn=bool(stt.get("partial")))
                 print(f"      ^ {stt['label']} in {stt['interval']} (volatile={stt['volatile']})",
                       flush=True)
                 results.append(r)
@@ -628,6 +630,8 @@ def main() -> int:
     ap.add_argument("--region", type=int, default=24,
                     help="window: replay every entry this far before install completion")
     ap.add_argument("--offsets", default="0,1,2,3,4,5,6,8,10,15,20,30")
+    ap.add_argument("--torn", action="store_true",
+                    help="reorder: also tear multi-sector writes at sector granularity")
     ap.add_argument("--work", default="")
     ap.add_argument("--keep-disks", action="store_true",
                     help="keep per-scenario qcow2 overlays (~1.2 GB each) for post-mortem")
@@ -635,6 +639,7 @@ def main() -> int:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     work = Path(a.work) if a.work else Path(r"P:\vm\pilot") / stamp
     p = Pilot(work)
+    p.torn = a.torn
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
             "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot,
             "broken-unconfirmed": lambda: p.broken(confirm=False),

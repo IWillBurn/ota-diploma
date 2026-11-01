@@ -93,7 +93,8 @@ class WriteLog:
         return n
 
     # ---------------------------------------------------------------- reordering model
-    def crash_states(self, start: int, end: int, max_volatile: int = 8) -> list[dict]:
+    def crash_states(self, start: int, end: int, max_volatile: int = 8,
+                     torn: bool = False) -> list[dict]:
         """Crash states that a disk with a volatile write cache may expose, for crashes
         between consecutive FLUSH barriers inside [start, end].
 
@@ -102,7 +103,11 @@ class WriteLog:
         and any subset of them may have reached the media. Emitted subsets (bounded, in the
         spirit of CrashMonkey/ALICE): none of V, all of V (= the prefix state), only one
         w in V, all but one w in V. Each state: {"label", "base_end" (exclusive prefix),
-        "extra" (entry indices applied on top, in log order)}."""
+        "extra" (entry indices applied on top, in log order)}.
+
+        torn=True adds sector-level tearing: a device only guarantees that a single
+        sector is written atomically, so a multi-sector write w may persist only its
+        first k sectors (k = 1 and k = half). Such states carry "partial": [w, k]."""
         flushes = [e.idx for e in self.entries[start:end + 1] if e.flags & FLUSH]
         states: list[dict] = []
         for a, b in zip(flushes, flushes[1:]):
@@ -126,17 +131,29 @@ class WriteLog:
                 seen.add(key)
                 states.append({"interval": [a, b], "label": label, "base_end": a + 1,
                                "extra": extra, "volatile": len(vol)})
+            if torn:
+                for w in pick:
+                    nr = self.entries[w].nr_sectors
+                    for k in sorted({1, nr // 2} - {0, nr}):
+                        states.append({"interval": [a, b], "label": f"torn-{w}-{k}of{nr}",
+                                       "base_end": a + 1, "extra": sorted(fua),
+                                       "partial": [w, k], "volatile": len(vol)})
         return states
 
-    def apply_with_undo(self, raw: Path, idxs: list[int]) -> list[tuple[int, bytes]]:
-        """Apply the given entries; return what is needed to undo them (old sector data)."""
+    def apply_with_undo(self, raw: Path, idxs: list[int],
+                        partial: list[int] | None = None) -> list[tuple[int, bytes]]:
+        """Apply the given entries (and optionally the first k sectors of entry w,
+        partial=[w, k]); return what is needed to undo them (old sector data)."""
         undo: list[tuple[int, bytes]] = []
+        todo = [(i, None) for i in idxs] + ([(partial[0], partial[1])] if partial else [])
         with open(self.path, "rb") as log, open(raw, "r+b") as disk:
-            for i in idxs:
+            for i, k in sorted(todo):
                 e = self.entries[i]
                 if not e.is_write:
                     continue
                 buf = self.data(e, log)
+                if k is not None:
+                    buf = buf[:k * self.sectorsize]
                 off = e.sector * self.sectorsize
                 disk.seek(off)
                 undo.append((off, disk.read(len(buf))))
