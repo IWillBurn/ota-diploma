@@ -33,6 +33,7 @@ class Req:
     range: str | None
     status: int = 0
     sent: int = 0
+    want: int = 0  # bytes the request asked for (Content-Length / range)
     t0: float = field(default_factory=time.monotonic)
     t1: float = 0.0
     closed_by: str = ""  # "server" (end of response or drop), "client" (reset/broken pipe), "cap"
@@ -45,6 +46,12 @@ class BundleServer:
         self.mode = "ok"
         self.log: list[Req] = []
         self._dropped = False
+        # Thresholds count bytes served across ALL responses since set_mode(): a streaming
+        # client (RAUC) reads the artifact in thousands of small Range requests, none of
+        # which reaches an offset inside one response.
+        self.total = 0
+        self.applied = False  # the attack of the current mode actually took effect
+        self.lock = threading.Lock()
         self.stop_event = threading.Event()
         outer = self
 
@@ -66,8 +73,9 @@ class BundleServer:
         self.httpd.server_close()
 
     def set_mode(self, mode: str) -> None:
-        self.mode, self._dropped = mode, False
-        self.log.clear()
+        with self.lock:
+            self.mode, self._dropped, self.total, self.applied = mode, False, 0, False
+            self.log.clear()
 
     @property
     def size(self) -> int:
@@ -114,7 +122,7 @@ class _Handler(BaseHTTPRequestHandler):
         start, end = 0, size - 1
         m = re.fullmatch(r"bytes=(\d*)-(\d*)", rec.range or "")
         mode = srv.mode
-        if m and mode != "endless":
+        if m:  # endless: the requested range first, then garbage without end
             if m.group(1):
                 start = int(m.group(1))
                 end = int(m.group(2)) if m.group(2) else size - 1
@@ -127,6 +135,7 @@ class _Handler(BaseHTTPRequestHandler):
         else:
             rec.status = 200
             self.send_response(200)
+        rec.want = end - start + 1
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("Accept-Ranges", "bytes")
         if mode == "endless":
@@ -163,26 +172,38 @@ class _Handler(BaseHTTPRequestHandler):
                     self.close_connection = True
                     return
                 n = CHUNK
-                if slow_bps and pos - start >= slow_after:
+                slow_now = bool(slow_bps) and srv.total >= slow_after
+                if slow_now:
                     n = max(1, slow_bps)
+                elif slow_bps:  # do not overshoot the point where the trickle starts
+                    n = min(n, max(1, slow_after - srv.total))
                 n = min(n, end - pos + 1)
                 if drop_after >= 0:
-                    n = min(n, drop_after - rec.sent) if rec.sent < drop_after else 0
-                    if n <= 0:
-                        srv._dropped = True
-                        rec.closed_by = "server"
-                        self.close_connection = True
-                        self.connection.shutdown(2)
-                        return
+                    with srv.lock:
+                        if srv._dropped:  # another connection already took the cut
+                            drop_after = -1
+                        elif srv.total + n >= drop_after:
+                            n = drop_after - srv.total
+                            if n <= 0:
+                                srv._dropped = srv.applied = True
+                                rec.closed_by = "server"
+                                self.close_connection = True
+                                self.connection.shutdown(2)
+                                return
                 buf = bytearray(f.read(n))
                 if 0 <= tamper_at - pos < len(buf):
                     buf[tamper_at - pos] ^= 0xFF
+                    srv.applied = True
                 self.wfile.write(buf)
                 rec.sent += len(buf)
+                with srv.lock:
+                    srv.total += len(buf)
                 pos += len(buf)
-                if slow_bps and pos - start > slow_after:
+                if slow_now:
+                    srv.applied = True
                     time.sleep(len(buf) / slow_bps)
             if kind == "endless":  # past the end of the artifact: garbage, forever
+                srv.applied = True
                 junk = os.urandom(CHUNK)
                 while time.monotonic() < deadline and not srv.stop_event.is_set():
                     self.wfile.write(junk)

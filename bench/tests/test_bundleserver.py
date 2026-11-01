@@ -71,3 +71,20 @@ def test_slow_and_endless(srv: BundleServer) -> None:
     _, body, h = get(srv)
     assert "Content-Length" not in h and len(body) > len(DATA) and body[:len(DATA)] == DATA
     assert srv.log[-1].closed_by == "cap"
+
+
+def test_thresholds_count_across_range_requests(srv: BundleServer) -> None:
+    """A streaming client reads in small ranges: the cut must still happen once."""
+    srv.set_mode("drop:100000")
+    got, cut = b"", 0
+    for off in range(0, len(DATA), 30000):
+        st, body, _ = get(srv, {"Range": f"bytes={off}-{min(off + 29999, len(DATA) - 1)}"})
+        cut += len(body) < min(30000, len(DATA) - off)
+        got += body
+    assert srv.applied and cut == 1 and len(got) == len(DATA) - (120000 - 100000)
+    srv.set_mode("tamper:5")
+    assert not srv.applied
+    get(srv, {"Range": "bytes=100-200"})
+    assert not srv.applied  # the tampered byte was not served
+    _, body, _ = get(srv, {"Range": "bytes=0-9"})
+    assert srv.applied and body[5] == DATA[5] ^ 0xFF

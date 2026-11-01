@@ -630,8 +630,10 @@ class Pilot:
                 rc, t_inst, last = None, time.monotonic() - t0, f"still running after {limit:.0f} s"
                 vm.agent.sh("pkill -KILL -f 'swupdate|rauc install' ; sleep 2", 30)
             tail = self.dev.last_output if rc is not None else ""
-            reqs = [{"range": r.range, "status": r.status, "sent": r.sent, "closed_by": r.closed_by,
-                     "s": round((r.t1 or time.monotonic()) - r.t0, 1)} for r in srv.log]
+            reqs = [{"range": r.range, "status": r.status, "sent": r.sent, "want": r.want,
+                     "closed_by": r.closed_by, "s": round((r.t1 or time.monotonic()) - r.t0, 1)}
+                    for r in srv.log]
+            applied = srv.applied
             s1 = self.state(vm)
             ctl = None
             if kind != "ok" and rc != 0:  # control: the same device still installs an honest download
@@ -648,7 +650,7 @@ class Pilot:
         boot = lambda s: (s.get("order"), s.get("env", {}).get(f"{t}_OK"))  # noqa: E731
         pair = (s2.get("slot"), s2.get("version"))
         untouched = boot(s1) == boot(s0)
-        extra = sum(r["sent"] for r in reqs) - size
+        extra = sum(max(0, r["sent"] - r["want"]) for r in reqs if r["want"])  # past what was asked
         if kind == "ok":
             ok, why = rc == 0 and pair == self.dev.updated, f"installed and booted {pair[0]}/{pair[1]}"
         elif kind == "tamper":
@@ -675,11 +677,13 @@ class Pilot:
                         if switched else "; reported success, but the boot state was not switched")
         # the honest network install is the baseline: if it fails, nothing else can be judged
         verdict = "PASS" if ok else ("ERROR" if kind == "ok" else "FAIL")
+        if kind != "ok" and not applied:  # e.g. the client never read past the cut point
+            verdict, why = "ERROR", f"precondition: the {kind} attack never took effect ({why})"
         if kind == "ok" and not ok:
             why = f"precondition: the honest network install did not work (rc={rc}: {tail.splitlines()[-2:] if tail else last})"
         return {"verdict": verdict, "detail": why, "mode": srv.mode if kind == "ok" else kind,
                 "install_rc": rc, "install_s": round(t_inst, 1), "install_msg": last, "install_tail": tail,
-                "requests": reqs, "bytes_past_artifact": extra, "artifact_size": size,
+                "requests": reqs, "attack_applied": applied, "bytes_past_artifact": extra, "artifact_size": size,
                 "boot_untouched_after_failure": untouched, "control_install": ctl,
                 "status_mismatch": ((rc == 0) == untouched) if rc is not None else None,
                 "after_reboot": f"{pair[0]}/{pair[1]}", "before": s0, "after": s1}
