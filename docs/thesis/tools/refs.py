@@ -19,6 +19,8 @@ from pathlib import Path
 
 THESIS = Path(__file__).resolve().parent.parent
 CHAPTERS = ["ch1-analysis.md", "ch2-method.md", "ch3-implementation.md", "ch4-results.md"]
+# checked and renumbered together with the chapters (the merge only ever read the chapters)
+EXTRA = ["intro.md", "conclusion.md"]
 REFS = THESIS / "references.md"
 HEADER = re.compile(r"^## Список источников к главе \d+\s*$", re.M)
 CITE = re.compile(r"\[(\d+(?:\s*[–-]\s*\d+)?(?:\s*,\s*\d+(?:\s*[–-]\s*\d+)?)*)((?:\s*,\s*§[^\]]*)?)\](?!\()")
@@ -223,7 +225,9 @@ def renumber() -> int:
     lines = REFS.read_text(encoding="utf-8").splitlines()
     head = [ln for ln in lines if not ENTRY.match(ln)]
     entries = {int(m.group(1)): m.group(2) for m in map(ENTRY.match, lines) if m}
-    bodies = [(THESIS / c).read_text(encoding="utf-8") for c in CHAPTERS]
+    files = CHAPTERS[:1] and ([e for e in EXTRA[:1] if (THESIS / e).exists()] + CHAPTERS
+                              + [e for e in EXTRA[1:] if (THESIS / e).exists()])
+    bodies = [(THESIS / c).read_text(encoding="utf-8") for c in files]
     order: list[int] = []
     for body in bodies:
         for m in cites(body):
@@ -234,7 +238,7 @@ def renumber() -> int:
                     order.append(n)
     order += [n for n in entries if n not in order]
     new = {old: i + 1 for i, old in enumerate(order)}
-    for c, body in zip(CHAPTERS, bodies):
+    for c, body in zip(files, bodies):
         out, pos = [], 0
         for m in cites(body):
             out += [body[pos:m.start()], f"[{compress([new[n] for n in expand(m.group(1))])}{m.group(2)}]"]
@@ -253,7 +257,7 @@ def check() -> int:
     entries = {int(m.group(1)) for m in map(ENTRY.match, REFS.read_text(encoding="utf-8").splitlines()) if m}
     cited: set[int] = set()
     bad = []
-    for c in CHAPTERS:
+    for c in [e for e in EXTRA[:1] if (THESIS / e).exists()] + CHAPTERS + [e for e in EXTRA[1:] if (THESIS / e).exists()]:
         body = (THESIS / c).read_text(encoding="utf-8")
         for m in cites(body):
             for n in expand(m.group(1)):

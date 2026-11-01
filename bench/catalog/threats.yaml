@@ -56,7 +56,8 @@
 #   level         for fault tolerance: process | block | system
 #
 # NOTE (0.3.0, 2026-11-01): OTA-PWR-05 and OTA-PWR-06 added from the A/B pilot results
-# (40 threats); the file is validated against threats.schema.json.
+# (40 threats); the file is validated against threats.schema.json. All 40 entries now have
+# verified references (PWR-05, PWR-06, NET-02 checked last).
 # NOTE (0.2.0): refs replaced with the clause references recorded in
 # research_notes/Бенчмарк безопасности OTA обновлений/specs_threat_models.md
 # (§7 cross-walk, §7.2 proposed IDs) and regulation_and_standards.md (§7
@@ -493,10 +494,10 @@ threats:
     attacker: fault
     ecosystems: [ab-updater]
     refs:
-      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update"]
-      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write"]
-      cra: ["Annex I Part I (2)(h) availability also after an incident (fail-safe by interpretation)"]
-      verified: false  # entry added 2026-11-01 from pilot results; refs reused from OTA-PWR-03
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update (≈: requires a usable state, not explicitly the ability to update again)"]
+      nist800193: ["4.1.2(2) the RTU/CTU 'shall always be operational or recoverable upon a subsequent reboot even in the event of ... power loss in the middle of a flash write operation' (the update mechanism itself must survive)"]
+      cra: ["Annex I Part I (2)(c) 'ensure that vulnerabilities can be addressed through security updates' (a device that can no longer be updated cannot meet it)", "Annex I Part I (2)(h) availability also after an incident (by interpretation)"]
+      verified: true  # 2026-11-01: wording checked against the quotes in research_notes/.../regulation_and_standards.md
     # known weak configuration: grubenv rewritten with truncation (grub-devel 2021-02; 3mdeb redundant env)
     expected: survive
     coverage: {}
@@ -510,9 +511,9 @@ threats:
     attacker: fault
     ecosystems: [ab-updater]
     refs:
-      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update"]
-      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write"]
-      verified: false  # entry added 2026-11-01 from pilot results; refs reused from OTA-PWR-03
+      unr156: ["7.2.2.1.1 'restore systems to their previous version in case of a failed or interrupted update' (impossible when the previous version itself is corrupted)"]
+      nist800193: ["4.1.2(2) operational or recoverable after power loss in the middle of a flash write", "4.4.1 recovery obtains an authentic image"]
+      verified: true  # 2026-11-01: wording checked against the quotes in research_notes/.../regulation_and_standards.md
     # observed only under the sector-atomicity (--torn) model: torn ext4 journal block of slot A
     # -> "error loading journal" -> root unmountable -> panic loop; mitigations: read-only rootfs,
     # 4 KiB atomic writes / eMMC reliable write, fsck in initramfs
@@ -768,12 +769,12 @@ threats:
     ecosystems: [tuf, uptane, suit, ab-updater]
     refs:
       tuf: ["§1.5.1 designed to be secure without TLS"]
-      uptane: ["DEPLOY customizations.md 'Using Uptane with transport security' (heading only, not read in full)"]
+      uptane: ["DEPLOY customizations.md 'Using Uptane with transport security': security 'orthogonal' to transport security; recommended as defence in depth, not required"]
       suit: ["REQ.SEC.REPORTING", "≈ THREAT.NET.ONPATH"]
       isvs: ["3.4.10 device authenticates to the update server before download", "3.4.12 updates transmitted over an encrypted channel", "4.1.1, 4.1.5"]
       en18031: ["6.3.2.4.2 [IC.SUM-2.AuthIntVal.SecChan] secure channel to the authorized source", "[AU.SUM-2.SecChan] no man-in-the-middle impersonation of the update source"]
       etsi303645: ["5.3-10 NOTE 7: authenticated communication channels as a trust relationship", "§5.3 EXAMPLE 6: authentic update servers, integrity-protected channels"]
-      verified: false
+      verified: true  # 2026-11-01: Uptane text read (deployment-considerations/customizations.md); others against regulation_and_standards.md / specs_threat_models.md
     spec_status:
       tuf: "transport security not required (§1.5.1)"
     expected: block

@@ -1,6 +1,7 @@
 """Thesis figures (static SVG, light, print-friendly) generated from the result files.
 
-  python make_figures.py            ->  docs/figures/fig4-1-matrix.svg, fig4-2-window.svg, fig4-3-fix.svg
+  python make_figures.py            ->  docs/figures/fig3-1-architecture.svg, fig4-1-matrix.svg,
+                                        fig4-2-window.svg, fig4-3-fix.svg
 
 Palette: reference instance of the dataviz method (status palette for verdicts, one hue
 for magnitudes, categorical slots 1-2 for before/after; validated: CVD dE 24.7).
@@ -140,10 +141,15 @@ WIN_RU = [
 ]
 
 
-def collect_windows() -> dict[str, dict]:
+def collect_windows(adapter: str = "rauc-grub") -> dict[str, dict]:
+    """Latest window result per configuration, for one adapter only (runs before adapter v2
+    carry no `updater` field and are RAUC 1.8 + GRUB)."""
     out: dict[str, dict] = {}
     for p in sorted(RES.glob("pilot-ab-*/pilot.json")):
-        for name, r in load(p)["results"].items():
+        d = load(p)
+        if (d.get("updater") or {}).get("adapter", "rauc-grub") != adapter:
+            continue
+        for name, r in d["results"].items():
             if name.startswith("window:") and r.get("verdict") != "ERROR":
                 out[name.split(":", 1)[1]] = r | {"_dir": p.parent.name}
     return out
@@ -230,9 +236,80 @@ def fig_fix() -> str:
     return svg(w, h, body, "Плохие состояния до и после исправления")
 
 
+def box(x, y, w, h, title, lines=(), fill="#ffffff", stroke=None, tip="") -> str:
+    """A labelled component box: bold title, up to three detail lines in secondary ink."""
+    stroke = stroke or GRID
+    out = [f"<g><title>{esc(tip or title)}</title>"
+           f"<rect x='{x}' y='{y}' width='{w}' height='{h}' rx='6' fill='{fill}' stroke='{stroke}'/>",
+           text(x + 10, y + 19, title, 12, INK, weight="bold")]
+    out += [text(x + 10, y + 36 + 15 * i, ln, 11, INK2) for i, ln in enumerate(lines)]
+    return "".join(out) + "</g>"
+
+
+def arrow(x1, y1, x2, y2, label="", color=MUTED, dashed=False) -> str:
+    dash = " stroke-dasharray='5 4'" if dashed else ""
+    out = (f"<line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' stroke='{color}' stroke-width='1.5'{dash} "
+           f"marker-end='url(#arr)'/>")
+    if label:
+        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+        out += text(mx + 6, my - 4, label, 10, INK2)
+    return out
+
+
+def fig_arch() -> str:
+    """Fig. 3.1: layers of the bench (threat -> scenario -> driver -> adapter) and the four
+    channels between the bench and the system under test."""
+    W, H = 980, 560
+    b = ["<defs><marker id='arr' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' "
+         f"markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='{MUTED}'/>"
+         "</marker></defs>",
+         text(20, 28, "Стенд otabench: слои и каналы", 15, INK, weight="bold")]
+    # layers (left column)
+    layers = [
+        ("Каталог угроз", ["40 угроз, трассировка к TUF, Uptane, SUIT,", "CRA, UN R156, ФСТЭК; JSON Schema"], "catalog/threats.yaml"),
+        ("Шаблоны сценариев", ["21 сценарий клиентов; 7 системных;", "окно, перестановки, воспроизведение"], "scenarios.py, pilot_ab.py"),
+        ("Драйверы протоколов", ["TUF: симулятор репозитория;", "RAUC: бандлы; SWUpdate: .swu"], "server.py, build_*_image.py"),
+        ("Адаптеры реализаций", ["v1: CLI init/refresh/download;", "v2: YAML с командами в госте"], "clients.yaml, updaters/*.yaml"),
+    ]
+    y = 50
+    for i, (t, ls, tip) in enumerate(layers):
+        b.append(box(20, y, 300, 70, t, ls, fill=tint(BLUE, 0.08), stroke=tint(BLUE, 0.5), tip=tip))
+        if i < len(layers) - 1:
+            b.append(arrow(170, y + 70, 170, y + 92))
+        y += 92
+    b.append(text(20, y + 8, "Оракулы и вердикты: PASS / FAIL / PARTIAL / ERROR;", 11, INK2))
+    b.append(text(20, y + 24, "уровень ОС: OK / DEGRADED / INCONSISTENT / BRICK", 11, INK2))
+    # system under test (right): both boxes are reached through one channel bus
+    b.append(box(650, 60, 310, 110, "Клиент обновления (TUF)", ["python-tuf, go-tuf, tuf-js; naive и мутанты", "процесс на хосте или в контейнере", "хранилище метаданных и артефактов"],
+                 fill="#ffffff", stroke=INK2, tip="испытуемая система, уровень процесса"))
+    b.append(box(650, 240, 310, 140, "A/B-апдейтер в QEMU", ["RAUC 1.8 / 1.15.2, SWUpdate + GRUB", "слоты A и B, /boot-ab (grubenv), /data", "qemu-guest-agent; строки GRUB на консоли", "диск через blklogwrites"],
+                 fill="#ffffff", stroke=INK2, tip="испытуемая система, уровни блока и системы"))
+    bus = 612
+    b.append(f"<line x1='{bus}' y1='95' x2='{bus}' y2='330' stroke='{INK2}' stroke-width='2'/>")
+    b.append(arrow(bus, 115, 642, 115))
+    b.append(arrow(bus, 310, 642, 310))
+    ch = [
+        (110, "управление →", "запуск, init/refresh/download; install, status", BLUE, False),
+        (170, "данные →", "сервер-нарушитель: подмена, повтор, поток, обрыв", ORANGE, False),
+        (230, "← наблюдение", "файлы хранилища, status, строки загрузчика", BLUE, True),
+        (290, "сбои →", "kill по событию; QMP quit; журнал записей", ORANGE, False),
+    ]
+    for yy, name, desc, col, back in ch:
+        mark = "marker-start='url(#arr)'" if back else "marker-end='url(#arr)'"
+        x1, x2 = (338, bus) if back else (330, bus - 6)
+        b.append(f"<line x1='{x1}' y1='{yy}' x2='{x2}' y2='{yy}' stroke='{col}' stroke-width='2' {mark}/>")
+        b.append(text(345, yy - 7, name, 11, INK, weight="bold"))
+        b.append(text(345, yy + 15, desc, 10, INK2))
+    b.append(text(345, 420, "Оракул получает сведения только по каналу наблюдения;", 11, INK2))
+    b.append(text(345, 436, "сбой вносится по событию сервера или по позиции в журнале записей.", 11, INK2))
+    b.append(text(20, H - 16, "Рис. 3.1. Слои стенда (слева) и каналы к испытуемой системе (справа).", 11, MUTED))
+    return svg(W, H, b, "Рис. 3.1 — архитектура стенда otabench")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in (("fig4-1-matrix.svg", fig_matrix), ("fig4-2-window.svg", fig_window), ("fig4-3-fix.svg", fig_fix)):
+    for name, fn in (("fig3-1-architecture.svg", fig_arch), ("fig4-1-matrix.svg", fig_matrix),
+                     ("fig4-2-window.svg", fig_window), ("fig4-3-fix.svg", fig_fix)):
         (OUT / name).write_text(fn(), encoding="utf-8", newline="\n")
         print(OUT / name)
     return 0

@@ -9,7 +9,7 @@
 | Исследование (6 направлений) и итоговый отчёт | `reports/…`, `research_notes/…` | готово |
 | План ВКР, артефакты, план статьи | `docs/plan.md`, `docs/artifacts.md`, `docs/paper.md` | черновики |
 | MVP: TUF-клиенты, сетевые атаки, обрыв процесса, мутанты | `bench/`, `docs/mvp-results.md` | работает, прогон 31.10 |
-| Каталог угроз v0.2 (40 угроз; ссылки не сверены у OTA-PWR-05, -06, OTA-NET-02) | `bench/catalog/threats.yaml` | готово, см. «Проверить» ниже |
+| Каталог угроз v0.3 (40 угроз, ссылки сверены у всех, JSON Schema) | `bench/catalog/threats.yaml` | готово, см. «Проверить» ниже |
 | Пилот уровня ОС: RAUC 1.8 + GRUB в QEMU | `docs/pilot-ab.md`, `bench/scripts/pilot_ab.py` | работает |
 | Протокол адаптера v2 (уровень устройства): всё про RAUC и GRUB вынесено из сценариев в `bench/updaters/rauc-grub.yaml` | `docs/adapter-protocol.md`, `bench/otabench/device.py` | готово (01.11, задача A1) |
 | MVP v3: событийные точки обрыва в `powercut-refresh`, мутант `naive-lazyroot`, единое правило вердиктов, JSON Schema каталога, сводная матрица угроз двух уровней | `bench/results/full-2026-11-01-v3/`, `bench/results/threat-matrix-2026-11-01/` | готово (01.11) |
