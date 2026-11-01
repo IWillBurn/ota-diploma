@@ -225,6 +225,22 @@ whole suite: 17 of 19 attacks blocked (python-tuf 16 of 19 in the same run), end
 within 0.25–0.58 s, slow retrieval aborted after ~30 s by its HTTP transport timeout, all 15
 event-based kill points and 10 download kills survived.
 
+### 5.1b Structured differential fuzzing
+
+A `fuzz-metadata` scenario mutates `timestamp.signed` in 120 deterministic ways (16 values —
+0, −1, 2^31, 2^63, 2^64, 10^30, strings, booleans, null, containers, nesting depth 500, NUL,
+Unicode — in seven fields, plus deletions and an unknown field) and re-signs each mutation with
+the real timestamp key, so only parsing and validation stand between it and the trust store.
+go-tuf v2.4.2 panics (nil dereference in `TrustedMetadata.UpdateTimestamp`) on 4 inputs whose
+`meta` lacks `snapshot.json`; the nil check was merged on master in September 2026 but is not in
+any release. python-tuf accepts versions up to 10^30, tough up to 2^63, go-tuf and tuf-js reject
+2^63: the largest version — and with it the room for a fast-forward attack by a timestamp-key
+holder — differs per implementation. go-tuf and tough accept any `spec_version`, including the
+empty string. A first run showed a tuf-js "hang" that turned out to be our adapter: the library
+rejected the input, but an unread keep-alive socket kept Node's event loop alive. For SUIT,
+436 structured mutations of a genuine envelope (every byte inverted, truncations every 8 bytes)
+neither crashed libcsuit nor installed anything, but 52 returned success without processing.
+
 ### 5.2 SUIT
 
 A six-scenario authenticity and parsing profile on libcsuit separates the processor from its
@@ -305,6 +321,18 @@ ownership of the bundle and checks leases), and a late open by the attacker fail
 SWUpdate rejected every swapped stream by its per-image hashes. All three PASS, the boot state
 untouched.
 
+### 5.5b Network attacks on A/B updaters
+
+The A/B updaters also install over the network from an adversarial artifact server (QEMU user
+networking; the server honours Range requests, and thresholds count bytes across all responses
+because RAUC streaming reads the bundle in thousands of small ranges). SWUpdate (its own
+downloader) and RAUC 1.15.2 (HTTP streaming of a verity bundle) both reject a flipped byte in
+transit (gzip error; dm-verity I/O error) and resume an interrupted transfer. SWUpdate does not
+abort a 64 B/s download within 150 s. With extra data after a complete `.swu`, SWUpdate installs
+the update and switches the boot slot, stops reading after 3.4 MiB, and then *reports failure*
+(exit code 1) — reproduced in three runs; a fleet manager would count an applied update as
+failed. RAUC streaming stops 3.4 MiB past the requested range and fails cleanly.
+
 ### 5.6 Cost (RQ4)
 
 *Table 3 — Cost of connecting an implementation (significant lines of code we wrote).*
@@ -313,6 +341,7 @@ untouched.
 |---|---|---|
 | python-tuf, go-tuf | 0 (tuf-conformance clients) | repository simulator |
 | tuf-js | 58 | repository simulator |
+| tough | 105 (Rust) | repository simulator |
 | libcsuit | example + 3 patches | library test manifests |
 | RAUC 1.8 + GRUB | 49 | image build script (125) |
 | RAUC 1.15.2 + GRUB | 4 (`extends`) | upgrade script (105) |
