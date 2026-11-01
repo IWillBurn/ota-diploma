@@ -1,0 +1,9 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+timestamp-same-version,OTA-FRESH-02,python-tuf,PASS,,,,,,,"kept the trusted timestamp (exit 0, as TUF requires)"
+timestamp-same-version,OTA-FRESH-02,go-tuf,PASS,,,,,,,"kept the trusted timestamp (exit 0, as TUF requires)"
+timestamp-same-version,OTA-FRESH-02,tuf-js,PASS,,,,,,,"kept the trusted timestamp (exit 0, as TUF requires)"
+timestamp-same-version,OTA-FRESH-02,naive,FAIL,,,,,,,a timestamp with an equal version but new content replaced the trusted one
+rollback-timestamp,OTA-FRESH-02,python-tuf,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,go-tuf,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,tuf-js,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,naive,FAIL,,,,,,,trusted timestamp rolled back to v2

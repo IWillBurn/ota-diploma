@@ -1,0 +1,159 @@
+{
+  "otabench_version": "0.3.0",
+  "started": "2026-11-01T17:14:57+00:00",
+  "host": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "python-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/python-tuf/python_tuf.py",
+      "language": "Python",
+      "version": "tuf 7.0.1 (ngclient)",
+      "control": false,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "go-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/bin/go-tuf.exe",
+      "language": "Go",
+      "version": "go-tuf v2.4.2",
+      "control": false,
+      "env": {
+        "PATH": "C:/Program Files/Git/usr/bin;C:\\Users\\eugen\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\local\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Users\\eugen\\bin;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\Program Files\\Git\\cmd;C:\\Users\\eugen\\.local\\bin;C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\Go\\bin;C:\\Program Files\\nodejs;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\eugen\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\eugen\\AppData\\Local\\Unity\\bin;C:\\Users\\eugen\\.dotnet\\tools;C:\\Users\\eugen\\go\\bin;C:\\Users\\eugen\\AppData\\Roaming\\npm;C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2025.2.6.3\\bin;C:\\Users\\eugen\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\copilot-shim;C:\\Program Files\\Git\\usr\\bin\\vendor_perl;C:\\Program Files\\Git\\usr\\bin\\core_perl"
+      }
+    },
+    {
+      "name": "tuf-js",
+      "spec": "tuf",
+      "command": "bench/clients/tuf-js/client.js",
+      "language": "TypeScript/Node",
+      "version": "tuf-js 6.0.1",
+      "control": false,
+      "env": {}
+    },
+    {
+      "name": "naive",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "Python",
+      "version": "negative control",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    }
+  ],
+  "results": [
+    {
+      "client": "python-tuf",
+      "scenario": "timestamp-same-version",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp re-signed with the SAME version but new content (snapshot v100)",
+      "wall_s": 1.94,
+      "verdict": "PASS",
+      "detail": "kept the trusted timestamp (exit 0, as TUF requires)",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "timestamp-same-version",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp re-signed with the SAME version but new content (snapshot v100)",
+      "wall_s": 1.02,
+      "verdict": "PASS",
+      "detail": "kept the trusted timestamp (exit 0, as TUF requires)",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "timestamp-same-version",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp re-signed with the SAME version but new content (snapshot v100)",
+      "wall_s": 1.09,
+      "verdict": "PASS",
+      "detail": "kept the trusted timestamp (exit 0, as TUF requires)",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "timestamp-same-version",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Timestamp re-signed with the SAME version but new content (snapshot v100)",
+      "wall_s": 1.37,
+      "verdict": "FAIL",
+      "detail": "a timestamp with an equal version but new content replaced the trusted one",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 1.73,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 0.26,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 0.79,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "rollback-timestamp",
+      "threats": [
+        "OTA-FRESH-02"
+      ],
+      "title": "Replay of an older, validly signed, unexpired timestamp",
+      "wall_s": 1.36,
+      "verdict": "FAIL",
+      "detail": "trusted timestamp rolled back to v2",
+      "metrics": {}
+    }
+  ]
+}

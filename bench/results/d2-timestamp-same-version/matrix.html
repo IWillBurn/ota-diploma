@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>otabench matrix</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1d1d1b;--mut:#6b6b66;--line:#e3e2de;--pass:#e3f1e6;--fail:#f8e1de;--partial:#fbf0d4;--err:#ececec}
+@media (prefers-color-scheme:dark){:root{--bg:#191917;--fg:#ecebe7;--mut:#9b9a94;--line:#33332f;--pass:#1f3a27;--fail:#4a2320;--partial:#4a3d1a;--err:#2c2c2a}}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;margin:24px 16px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}
+small{display:block;color:var(--mut);font-size:12px;font-weight:400}td.pass{background:var(--pass)}td.fail{background:var(--fail)}
+td.partial{background:var(--partial)}td.err{background:var(--err)}td.t{font-family:ui-monospace,monospace;font-size:12px}
+.wrap{overflow-x:auto}h1{font-size:20px}
+</style><h1>otabench: threat × implementation</h1>
+<p>2026-11-01T17:14:57+00:00 · Windows-11-10.0.26200-SP0 · trials=10</p>
+<div class="wrap"><table><tr><th>scenario</th><th>threats</th><th>python-tuf</th><th>go-tuf</th><th>tuf-js</th><th>naive</th></tr><tr><th class='s'>timestamp-same-version<small>Timestamp re-signed with the SAME version but new content (snapshot v100)</small></th><td class='t'>OTA-FRESH-02</td><td class="pass" title="kept the trusted timestamp (exit 0, as TUF requires)"><b>PASS</b><small></small></td><td class="pass" title="kept the trusted timestamp (exit 0, as TUF requires)"><b>PASS</b><small></small></td><td class="pass" title="kept the trusted timestamp (exit 0, as TUF requires)"><b>PASS</b><small></small></td><td class="fail" title="a timestamp with an equal version but new content replaced the trusted one"><b>FAIL</b><small></small></td></tr><tr><th class='s'>rollback-timestamp<small>Replay of an older, validly signed, unexpired timestamp</small></th><td class='t'>OTA-FRESH-02</td><td class="pass" title="rejected"><b>PASS</b><small></small></td><td class="pass" title="rejected"><b>PASS</b><small></small></td><td class="pass" title="rejected"><b>PASS</b><small></small></td><td class="fail" title="trusted timestamp rolled back to v2"><b>FAIL</b><small></small></td></tr></table></div>
+<p>⚡ differential finding: real implementations of the same spec disagree.</p></html>

@@ -573,6 +573,34 @@ def unsupported_spec_version(ctx: Ctx) -> Outcome:
     return _effect_ok(res)
 
 
+@scenario("timestamp-same-version", ["OTA-FRESH-02"],
+          "Timestamp re-signed with the SAME version but new content (snapshot v100)")
+def timestamp_same_version(ctx: Ctx) -> Outcome:
+    """Version rules differ between ecosystems: TUF 1.0.37 §5.4.3.1 requires a strictly
+    greater timestamp version and, on an equal one, stops the update without error and keeps
+    the trusted timestamp; Uptane 2.1.0 full verification (§5.4.4.4 s3) accepts an equal
+    version. tuf-conformance has the same check (test_timestamp_content_changes)."""
+    scene, r = ctx.fresh()
+    _require(r.refresh().ok, "initial refresh failed")
+    sim = scene.sim
+    before = r.trusted_version("timestamp")
+    _require(before == len(sim.signed_mds["timestamp"]), "trusted timestamp is not the latest")
+    sim.timestamp.snapshot_meta.version = 100
+    sim.timestamp.version -= 1          # publish() bumps it back: same version number,
+    sim.signed_mds["timestamp"].pop()   # new content, served instead of the old bytes
+    sim.publish(["timestamp"])
+    res = r.refresh()
+    try:
+        md = json.loads((r.metadata_dir / "timestamp.json").read_bytes())
+        snap_v = md["signed"]["meta"]["snapshot.json"]["version"]
+    except (OSError, ValueError, KeyError) as e:
+        return Outcome("FAIL", f"trusted timestamp unreadable after refresh: {e}")
+    if snap_v == 100:
+        return Outcome("FAIL", "a timestamp with an equal version but new content replaced the trusted one")
+    return Outcome("PASS", "kept the trusted timestamp (exit 0, as TUF requires)" if res.ok else
+                   "kept the trusted timestamp, but reported an error (TUF: stop without error)")
+
+
 @scenario("threshold-key-twice", ["OTA-AUTH-03", "OTA-KEY-02"],
           "One snapshot key listed in root under two keyids; threshold 2 met by that key alone")
 def threshold_key_twice(ctx: Ctx) -> Outcome:
