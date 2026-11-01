@@ -11,6 +11,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
+from . import __version__
 from . import scenarios as sc
 from .adapter import ClientSpec
 from .server import AdversarialServer, Caps
@@ -47,7 +48,7 @@ def run_matrix(clients: list[ClientSpec], scenario_ids: list[str], *, trials: in
                 progress(f"  {res['verdict']:<8} {res['client']:<12} {res['scenario']:<26} "
                          f"{res['wall_s']:>6.1f}s  {res['detail']}")
     return {
-        "otabench_version": "0.2.0",
+        "otabench_version": __version__,
         "started": started,
         "host": {"os": platform.platform(), "python": platform.python_version()},
         "params": {"trials": trials, "seed": seed, "caps": asdict(caps)},

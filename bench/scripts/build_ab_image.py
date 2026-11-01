@@ -2,7 +2,7 @@
 
 Disk layout (GPT, 12 GiB):
   vda14 BIOS boot  -> GRUB core, prefix (hd0,gpt3)/grub
-  vda15 EFI        (unused)
+  vda15 EFI        unused by BIOS boot; the uefi-esp* variants put GRUB + grubenv here
   vda1  rootfs A   = the original Debian root, version 1   (slot rootfs.0, bootname A)
   vda2  rootfs B   same size as A                          (slot rootfs.1, bootname B)
   vda3  boot       GRUB modules, grub.cfg, grubenv  -> /boot-ab

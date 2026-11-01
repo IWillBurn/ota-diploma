@@ -37,6 +37,7 @@ def main() -> int:
     ap.add_argument("--log", required=True)
     ap.add_argument("--base-end", type=int, required=True)
     ap.add_argument("--extra", default="", help="comma-separated entry indices")
+    ap.add_argument("--partial", default="", help="torn write: ENTRY,SECTORS (first k sectors only)")
     ap.add_argument("--liveness", action="store_true")
     ap.add_argument("--uefi", action="store_true", help="boot with OVMF (uefi-* variants)")
     ap.add_argument("--work", default=r"P:\vm\postmortem")
@@ -50,12 +51,14 @@ def main() -> int:
     out = {"base_end": a.base_end, "extra": extra}
     try:
         wl.apply(raw, 0, a.base_end)
-        wl.apply_with_undo(raw, extra)
+        partial = [int(x) for x in a.partial.split(",")] if a.partial else None
+        wl.apply_with_undo(raw, extra, partial)
+        out["partial"] = partial
         ov = make_overlay(raw, work / "state.qcow2", "raw")
         name = f"state-{a.base_end}-{'-'.join(map(str, extra)) or 'none'}"
         vm = VM(ov, work, name=name, uefi=a.uefi).start()
         try:
-            ready = vm.agent.wait(150)
+            ready = vm.agent.wait(120)  # = CHECK_READY_S in pilot_ab.py
             out["ready"] = ready
             grub = [ln.strip() for ln in vm.serial_text().splitlines() if "otabench-grub" in ln]
             out["grub"] = grub

@@ -1,0 +1,9 @@
+# build context = repository root (see bench/Dockerfile)
+bench/.venv
+bench/clients/bin
+bench/clients/tuf-js/node_modules
+bench/results
+third_party
+**/__pycache__
+*.qcow2
+*.raw

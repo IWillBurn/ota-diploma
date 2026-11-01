@@ -30,8 +30,8 @@ clients:
     control: true
     command: ["{python}", "{root}/clients/naive/naive_client.py"]
 
-  # ---- mutants of the control client: used to check that every scenario can
-  # ---- detect *something* (run with --clients naive,naive-*)
+  # ---- mutants of the control client: every scenario should "kill" (FAIL or PARTIAL)
+  # ---- at least one of them (run with --clients naive,naive-*)
   - name: naive-nosig
     spec: tuf
     version: mutant (no signature check)

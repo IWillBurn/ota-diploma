@@ -60,7 +60,7 @@ class Ctx:
             r.close()
 
     def fresh(self) -> tuple[Scene, ClientRunner]:
-        """New repository + new client workspace, initialised and refreshed once."""
+        """New repository (fw.bin published as targets v2) + new client workspace, `init` done."""
         self._n += 1
         scene = self.server.new_scene(f"{self.scenario_id}--{self.client.name}--{self._n}")
         scene.sim.add_artifact("targets", FW1, "fw.bin")

@@ -9,14 +9,18 @@ RUN git clone https://github.com/theupdateframework/tuf-conformance /src/tuf-con
  && cd /src/tuf-conformance/clients/go-tuf && go build -o /out/go-tuf .
 
 FROM python:3.13-slim-bookworm
-RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm git strace \
+# tuf-js 6.0.1 needs Node ^22.22.2 or ^24.15.0; Debian bookworm ships 18.x
+COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && apt-get update && apt-get install -y --no-install-recommends git \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=gobuild /src/tuf-conformance /work/third_party/tuf-conformance
 COPY --from=gobuild /out/go-tuf /work/bench/clients/bin/go-tuf
 WORKDIR /work/bench
 COPY bench/ /work/bench/
 RUN python -m venv .venv \
- && .venv/bin/pip install --no-cache-dir "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" pyyaml /work/third_party/tuf-conformance \
+ && .venv/bin/pip install --no-cache-dir "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" "pyyaml==6.0.3" /work/third_party/tuf-conformance \
  && cd clients/tuf-js && npm install --no-audit --no-fund \
  && sed -i 's#{root}/clients/bin/go-tuf.exe#{root}/clients/bin/go-tuf#' /work/bench/clients.yaml
 ENTRYPOINT [".venv/bin/python", "-m", "otabench"]

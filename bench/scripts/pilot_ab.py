@@ -1,6 +1,6 @@
 """A/B pilot: RAUC 1.8 + GRUB on Debian 12 in QEMU (system level and block level).
 
-Scenarios (each starts from a fresh qcow2 overlay of ab-v1.qcow2):
+Scenarios (each starts from a fresh qcow2 overlay of ab-v1.qcow2 or of a /boot-ab variant):
   happy          install v2 -> reboot -> B/v2 -> confirmed -> reboot -> still B/v2
   broken         install validly signed but unbootable v2 -> must fall back to A/v1
   attacker       bundle signed with a foreign key -> must be rejected, slot untouched
@@ -9,6 +9,10 @@ Scenarios (each starts from a fresh qcow2 overlay of ab-v1.qcow2):
                  then a retry must succeed (liveness)
   crash-replay   block level: log every write of one install (blklogwrites), rebuild
                  the disk at each crash point (all barriers + sampled writes) and boot it
+  window:<cfg>   when does GRUB see the new A/B state after `rauc install` succeeded
+  reorder:<cfg>  reordering model (bounded subsets of unflushed writes; --torn: sector tears)
+  happy:<cfg>    end-to-end update on a variant; <cfg> in VARIANTS (ext4-*, ext2, vfat,
+                 *-inplace = the fix, uefi-esp* = OVMF + grubenv on the ESP)
 
   python pilot_ab.py [--only happy,broken,...] [--points 30] [--liveness 3]
 """
@@ -40,7 +44,7 @@ ENV_LIST = ("E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf); "
             "[ -n \"$E\" ] || E=/boot-ab/grub/grubenv; grub-editenv \"$E\" list")
 CHECK_READY_S = 120  # per crash state; a fallback boot needs ~25 s
 VARIANT_DIR = Path(r"P:\vm\variants")
-_FSTAB = "sed -i 's#^LABEL=boot .*#/dev/vda3 /boot-ab {fs} {opts} 0 2#' /etc/fstab"
+_FSTAB = "sed -i 's#^LABEL=boot .*#/dev/vda3 /boot-ab {fs} {opts},nofail 0 2#' /etc/fstab"
 _REFORMAT = ("rm -rf /root/bs && mkdir /root/bs && cp -a /boot-ab/. /root/bs/ && umount /boot-ab && "
              "{mkfs} && mount -t {fs} /dev/vda3 /boot-ab && cp -r /root/bs/. /boot-ab/ && "
              "grub-install --target=i386-pc --boot-directory=/boot-ab --modules='part_gpt {mod}' "
@@ -560,10 +564,14 @@ class Pilot:
         subprocess.run([qemu_exe("qemu-img"), "convert", "-O", "raw", str(AB), str(raw)], check=True)
         t_conv = time.monotonic() - t
         applied, results = 0, []
-        for k in cps:
-            wl.apply(raw, applied, k + 1)
-            applied = k + 1
-            results.append(self._check_point(raw, k, wl, e0, e_inst, markers))
+        try:
+            for k in cps:
+                wl.apply(raw, applied, k + 1)
+                applied = k + 1
+                results.append(self._check_point(raw, k, wl, e0, e_inst, markers))
+        except BaseException:
+            raw.unlink(missing_ok=True)
+            raise
         # 3. liveness: after a crash state, the update must still go through
         live = []
         if liveness:
@@ -611,12 +619,24 @@ class Pilot:
                 "points": results, "liveness": live}
 
 
+def _git_commit() -> str | None:
+    try:
+        return subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
+                              capture_output=True, text=True, timeout=10).stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+RUN_INFO: dict = {}
+
+
 def save(stamp: str, results: dict) -> None:
     out_dir = ROOT / "results" / f"pilot-ab-{stamp}"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "pilot.json").write_text(json.dumps(
         {"started": stamp, "image": str(AB), "rauc": "1.8 (Debian 12)", "host": "Windows 11 + "
-         "QEMU 11.1 WHPX", "results": results}, indent=2, ensure_ascii=False), encoding="utf-8")
+         "QEMU 11.1 WHPX", **RUN_INFO, "results": results}, indent=2, ensure_ascii=False),
+        encoding="utf-8")
 
 
 def main() -> int:
@@ -640,6 +660,7 @@ def main() -> int:
     work = Path(a.work) if a.work else Path(r"P:\vm\pilot") / stamp
     p = Pilot(work)
     p.torn = a.torn
+    RUN_INFO.update(params=vars(a), git_commit=_git_commit(), check_ready_s=CHECK_READY_S)
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
             "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot,
             "broken-unconfirmed": lambda: p.broken(confirm=False),
