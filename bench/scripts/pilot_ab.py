@@ -422,6 +422,14 @@ class Pilot:
             rc, t_inst, last = self.install(vm, "v1")
             t_rb = self.reboot(vm) if rc == 0 else None
             st = self.state(vm)
+            ctl = None
+            if rc != 0:  # control: in the same state a non-older artifact must still install,
+                rc_c, _, last_c = self.install(vm, "v2")  # else the rejection proves nothing
+                ctl = {"rc": rc_c, "msg": last_c}
+                if rc_c != 0:
+                    raise RuntimeError("precondition: the control install of v2 failed as well "
+                                       f"({last_c[:120]}); the rejected downgrade is not "
+                                       "attributable to a version check")
         finally:
             vm.power_cut()
         accepted = rc == 0 and st.get("version") == self.dev.artifact("v1").version
@@ -429,7 +437,7 @@ class Pilot:
                 "detail": "v2 -> v1 downgrade accepted and booted (no version check in this "
                           "configuration; needs an integrator hook)" if accepted else
                           f"downgrade rejected (rc={rc}: {last})",
-                "rebooted": t_rb is not None, "before": s_mid, "after": st}
+                "rebooted": t_rb is not None, "control_install": ctl, "before": s_mid, "after": st}
 
     def cut_firstboot(self, delay: float = 3.0, confirm: bool = True) -> dict:
         vm = self.fresh("cutfb" if confirm else "cutfb-unconf")

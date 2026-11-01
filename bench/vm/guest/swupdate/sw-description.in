@@ -2,6 +2,8 @@ software =
 {
 	version = "@SEMVER@";
 	description = "otabench @VERSION@";
+	/* the Debian build enforces hardware compatibility: board otabench, rev 1.0 (-H) */
+	hardware-compatibility: [ "1.0" ];
 
 	stable = {
 		copyA: {
@@ -11,6 +13,7 @@ software =
 					device = "/dev/vda1";
 					type = "raw";
 					compressed = "zlib";
+					installed-directly = true;
 					sha256 = "@SHA@";
 				}
 			);
@@ -27,6 +30,7 @@ software =
 					device = "/dev/vda2";
 					type = "raw";
 					compressed = "zlib";
+					installed-directly = true;
 					sha256 = "@SHA@";
 				}
 			);

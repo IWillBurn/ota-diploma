@@ -1,0 +1,708 @@
+{
+  "otabench_version": "0.3.0",
+  "started": "2026-11-01T15:35:51+00:00",
+  "host": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "python-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/python-tuf/python_tuf.py",
+      "language": "Python",
+      "version": "tuf 7.0.1 (ngclient)",
+      "control": false,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "go-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/bin/go-tuf.exe",
+      "language": "Go",
+      "version": "go-tuf v2.4.2",
+      "control": false,
+      "env": {
+        "PATH": "C:/Program Files/Git/usr/bin;C:\\Users\\eugen\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\local\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Users\\eugen\\bin;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\Program Files\\Git\\cmd;C:\\Users\\eugen\\.local\\bin;C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\Go\\bin;C:\\Program Files\\nodejs;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\eugen\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\eugen\\AppData\\Local\\Unity\\bin;C:\\Users\\eugen\\.dotnet\\tools;C:\\Users\\eugen\\go\\bin;C:\\Users\\eugen\\AppData\\Roaming\\npm;C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2025.2.6.3\\bin;C:\\Users\\eugen\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\copilot-shim;C:\\Program Files\\Git\\usr\\bin\\vendor_perl;C:\\Program Files\\Git\\usr\\bin\\core_perl"
+      }
+    },
+    {
+      "name": "tuf-js",
+      "spec": "tuf",
+      "command": "bench/clients/tuf-js/client.js",
+      "language": "TypeScript/Node",
+      "version": "tuf-js 6.0.1",
+      "control": false,
+      "env": {}
+    },
+    {
+      "name": "naive",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "Python",
+      "version": "negative control",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "naive-nosig",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (no signature check)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "sig"
+      }
+    },
+    {
+      "name": "naive-anykey",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (signature by any root key accepted)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "role-keys"
+      }
+    },
+    {
+      "name": "naive-nohash",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (no artifact hash check)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "hash"
+      }
+    },
+    {
+      "name": "naive-keeptorn",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (keeps artifact with bad hash)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "keep-torn"
+      }
+    },
+    {
+      "name": "naive-lazyroot",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (trusted root replaced non-atomically across requests)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "lazy-root"
+      }
+    }
+  ],
+  "results": [
+    {
+      "client": "python-tuf",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 6.25,
+      "verdict": "PASS",
+      "detail": "freeze detected: expired targets rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 4.84,
+      "verdict": "PASS",
+      "detail": "freeze detected: expired targets rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 5.01,
+      "verdict": "PASS",
+      "detail": "freeze detected: expired targets rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 6.09,
+      "verdict": "FAIL",
+      "detail": "expired targets accepted under fresh online signatures",
+      "metrics": {}
+    },
+    {
+      "client": "naive-nosig",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 6.07,
+      "verdict": "FAIL",
+      "detail": "expired targets accepted under fresh online signatures",
+      "metrics": {}
+    },
+    {
+      "client": "naive-anykey",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 6.09,
+      "verdict": "FAIL",
+      "detail": "expired targets accepted under fresh online signatures",
+      "metrics": {}
+    },
+    {
+      "client": "naive-nohash",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 5.31,
+      "verdict": "FAIL",
+      "detail": "expired targets accepted under fresh online signatures",
+      "metrics": {}
+    },
+    {
+      "client": "naive-keeptorn",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 6.12,
+      "verdict": "FAIL",
+      "detail": "expired targets accepted under fresh online signatures",
+      "metrics": {}
+    },
+    {
+      "client": "naive-lazyroot",
+      "scenario": "online-keys-freeze",
+      "threats": [
+        "OTA-KEY-04",
+        "OTA-FRESH-01"
+      ],
+      "title": "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets",
+      "wall_s": 6.05,
+      "verdict": "FAIL",
+      "detail": "expired targets accepted under fresh online signatures",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 1.28,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.40s, trust store intact",
+      "metrics": {
+        "duration_s": 0.4
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 0.23,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.06s, trust store intact",
+      "metrics": {
+        "duration_s": 0.06
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 3.7,
+      "verdict": "PASS",
+      "detail": "failure reported after 3.26s, trust store intact",
+      "metrics": {
+        "duration_s": 3.26
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 0.99,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.32s, trust store intact",
+      "metrics": {
+        "duration_s": 0.32
+      }
+    },
+    {
+      "client": "naive-nosig",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 0.97,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.37s, trust store intact",
+      "metrics": {
+        "duration_s": 0.37
+      }
+    },
+    {
+      "client": "naive-anykey",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 0.96,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.36s, trust store intact",
+      "metrics": {
+        "duration_s": 0.36
+      }
+    },
+    {
+      "client": "naive-nohash",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 1.01,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.33s, trust store intact",
+      "metrics": {
+        "duration_s": 0.33
+      }
+    },
+    {
+      "client": "naive-keeptorn",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 1.0,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.34s, trust store intact",
+      "metrics": {
+        "duration_s": 0.34
+      }
+    },
+    {
+      "client": "naive-lazyroot",
+      "scenario": "mirror-errors",
+      "threats": [
+        "OTA-DOS-05"
+      ],
+      "title": "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)",
+      "wall_s": 1.11,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.37s, trust store intact",
+      "metrics": {
+        "duration_s": 0.37
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.55,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.64s, trust store intact",
+      "metrics": {
+        "duration_s": 0.64
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 0.37,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.20s, trust store intact",
+      "metrics": {
+        "duration_s": 0.2
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 3.65,
+      "verdict": "PASS",
+      "detail": "failure reported after 3.20s, trust store intact",
+      "metrics": {
+        "duration_s": 3.2
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.07,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.33s, trust store intact",
+      "metrics": {
+        "duration_s": 0.33
+      }
+    },
+    {
+      "client": "naive-nosig",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.05,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.35s, trust store intact",
+      "metrics": {
+        "duration_s": 0.35
+      }
+    },
+    {
+      "client": "naive-anykey",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.11,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.37s, trust store intact",
+      "metrics": {
+        "duration_s": 0.37
+      }
+    },
+    {
+      "client": "naive-nohash",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.11,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.37s, trust store intact",
+      "metrics": {
+        "duration_s": 0.37
+      }
+    },
+    {
+      "client": "naive-keeptorn",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.13,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.38s, trust store intact",
+      "metrics": {
+        "duration_s": 0.38
+      }
+    },
+    {
+      "client": "naive-lazyroot",
+      "scenario": "drop-requests",
+      "threats": [
+        "OTA-DOS-06"
+      ],
+      "title": "Every request is dropped: the connection closes without a response",
+      "wall_s": 1.14,
+      "verdict": "PASS",
+      "detail": "failure reported after 0.39s, trust store intact",
+      "metrics": {
+        "duration_s": 0.39
+      }
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.97,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.17,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.44,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.75,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-nosig",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.73,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-anykey",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.72,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-nohash",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.74,
+      "verdict": "FAIL",
+      "detail": "bytes after the signed image were stored",
+      "metrics": {}
+    },
+    {
+      "client": "naive-keeptorn",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.78,
+      "verdict": "FAIL",
+      "detail": "bytes after the signed image were stored",
+      "metrics": {}
+    },
+    {
+      "client": "naive-lazyroot",
+      "scenario": "extra-data-artifact",
+      "threats": [
+        "OTA-AUTH-04"
+      ],
+      "title": "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)",
+      "wall_s": 0.75,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "python-tuf",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 1.55,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 0.25,
+      "verdict": "FAIL",
+      "detail": "metadata of an unsupported major spec version became trusted",
+      "metrics": {}
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 0.68,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 1.2,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-nosig",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 1.19,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-anykey",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 1.18,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-nohash",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 1.19,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-keeptorn",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 1.11,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    },
+    {
+      "client": "naive-lazyroot",
+      "scenario": "unsupported-spec-version",
+      "threats": [
+        "OTA-PARSE-02"
+      ],
+      "title": "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)",
+      "wall_s": 0.94,
+      "verdict": "PASS",
+      "detail": "rejected",
+      "metrics": {}
+    }
+  ]
+}

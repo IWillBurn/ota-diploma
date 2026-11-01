@@ -68,7 +68,7 @@ def target(name: str | None = None) -> Matcher:
 @dataclass
 class Rule:
     match: Matcher
-    action: str = "normal"  # normal|substitute|endless|slow|throttle|truncate|error
+    action: str = "normal"  # normal|substitute|endless|slow|throttle|truncate|error|drop
     data: bytes | Callable[[], bytes] | None = None  # for substitute
     rate_bps: float = 0.0  # slow / throttle
     status: int = 503  # error
@@ -149,6 +149,8 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             if action == "error":
                 self.send_error(rule.status)
+            elif action == "drop":  # close the connection without any response
+                self.close_connection = True
             elif action == "endless":
                 self._endless(rec)
             else:

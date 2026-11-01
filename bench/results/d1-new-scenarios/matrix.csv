@@ -1,0 +1,46 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,python-tuf,PASS,,,,,,,freeze detected: expired targets rejected
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,go-tuf,PASS,,,,,,,freeze detected: expired targets rejected
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,tuf-js,PASS,,,,,,,freeze detected: expired targets rejected
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-nosig,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-anykey,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-nohash,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-keeptorn,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-lazyroot,FAIL,,,,,,,expired targets accepted under fresh online signatures
+mirror-errors,OTA-DOS-05,python-tuf,PASS,,,,,,,"failure reported after 0.40s, trust store intact"
+mirror-errors,OTA-DOS-05,go-tuf,PASS,,,,,,,"failure reported after 0.06s, trust store intact"
+mirror-errors,OTA-DOS-05,tuf-js,PASS,,,,,,,"failure reported after 3.26s, trust store intact"
+mirror-errors,OTA-DOS-05,naive,PASS,,,,,,,"failure reported after 0.32s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-nosig,PASS,,,,,,,"failure reported after 0.37s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-anykey,PASS,,,,,,,"failure reported after 0.36s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-nohash,PASS,,,,,,,"failure reported after 0.33s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-keeptorn,PASS,,,,,,,"failure reported after 0.34s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-lazyroot,PASS,,,,,,,"failure reported after 0.37s, trust store intact"
+drop-requests,OTA-DOS-06,python-tuf,PASS,,,,,,,"failure reported after 0.64s, trust store intact"
+drop-requests,OTA-DOS-06,go-tuf,PASS,,,,,,,"failure reported after 0.20s, trust store intact"
+drop-requests,OTA-DOS-06,tuf-js,PASS,,,,,,,"failure reported after 3.20s, trust store intact"
+drop-requests,OTA-DOS-06,naive,PASS,,,,,,,"failure reported after 0.33s, trust store intact"
+drop-requests,OTA-DOS-06,naive-nosig,PASS,,,,,,,"failure reported after 0.35s, trust store intact"
+drop-requests,OTA-DOS-06,naive-anykey,PASS,,,,,,,"failure reported after 0.37s, trust store intact"
+drop-requests,OTA-DOS-06,naive-nohash,PASS,,,,,,,"failure reported after 0.37s, trust store intact"
+drop-requests,OTA-DOS-06,naive-keeptorn,PASS,,,,,,,"failure reported after 0.38s, trust store intact"
+drop-requests,OTA-DOS-06,naive-lazyroot,PASS,,,,,,,"failure reported after 0.39s, trust store intact"
+extra-data-artifact,OTA-AUTH-04,python-tuf,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,go-tuf,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,tuf-js,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive-nosig,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive-anykey,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive-nohash,FAIL,,,,,,,bytes after the signed image were stored
+extra-data-artifact,OTA-AUTH-04,naive-keeptorn,FAIL,,,,,,,bytes after the signed image were stored
+extra-data-artifact,OTA-AUTH-04,naive-lazyroot,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,python-tuf,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,go-tuf,FAIL,,,,,,,metadata of an unsupported major spec version became trusted
+unsupported-spec-version,OTA-PARSE-02,tuf-js,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-nosig,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-anykey,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-nohash,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-keeptorn,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-lazyroot,PASS,,,,,,,rejected

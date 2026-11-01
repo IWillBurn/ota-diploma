@@ -486,6 +486,92 @@ def powercut_download(ctx: Ctx) -> Outcome:
                            {"torn_file_observed": torn_seen})
 
 
+# =========================================================== added for catalog coverage (D1)
+TAIL = b"\n#!/bin/sh\n# appended after the signed image\n"
+
+
+def _versions(r: ClientRunner) -> tuple:
+    return tuple(r.trusted_version(x) for x in ("root", "timestamp", "snapshot", "targets"))
+
+
+@scenario("online-keys-freeze", ["OTA-KEY-04", "OTA-FRESH-01"],
+          "Timestamp+snapshot keys compromised: fresh online signatures keep pointing to expired targets")
+def online_keys_freeze(ctx: Ctx) -> Outcome:
+    scene, r = ctx.fresh()
+    exp = datetime.now(UTC).replace(microsecond=0) + timedelta(seconds=4)
+    scene.sim.targets.expires = exp
+    scene.sim.publish(["targets", "snapshot", "timestamp"])  # targets v3, expires soon
+    _require(r.refresh().ok, "refresh before expiry failed")
+    time.sleep(max(0.0, (exp - datetime.now(UTC)).total_seconds()) + 1.5)
+    # the holder of the online keys re-signs fresh timestamp + snapshot that still point to
+    # the now expired targets v3: every signature is valid and recent, the content is frozen
+    scene.sim.publish(["snapshot", "timestamp"])
+    res = r.refresh()
+    if res.ok:
+        return Outcome("FAIL", "expired targets accepted under fresh online signatures")
+    return Outcome("PASS", "freeze detected: expired targets rejected")
+
+
+def _failing_mirror(ctx: Ctx, rule: Rule, what: str) -> Outcome:
+    scene, r = ctx.fresh()
+    _require(r.refresh().ok, "initial refresh failed")
+    before = _versions(r)
+    _publish_fw2(scene)
+    scene.add_rule(rule)
+    res = r.refresh(timeout=60)
+    after = _versions(r)
+    m = {"duration_s": round(res.duration, 2)}
+    if res.timed_out:
+        return Outcome("FAIL", f"client hung on a mirror that {what}", m)
+    if res.ok:
+        return Outcome("FAIL", f"refresh reported success although the mirror {what}", m)
+    if not all(r.metadata_parseable().values()) or after != before:
+        return Outcome("FAIL", f"trust store changed: {before} -> {after}", m)
+    return Outcome("PASS", f"failure reported after {res.duration:.2f}s, trust store intact", m)
+
+
+@scenario("mirror-errors", ["OTA-DOS-05"],
+          "The only mirror answers every request with HTTP 503 (no fallback in the CLI protocol)")
+def mirror_errors(ctx: Ctx) -> Outcome:
+    return _failing_mirror(ctx, Rule(lambda p: True, "error", status=503), "answered only 503")
+
+
+@scenario("drop-requests", ["OTA-DOS-06"],
+          "Every request is dropped: the connection closes without a response")
+def drop_requests(ctx: Ctx) -> Outcome:
+    return _failing_mirror(ctx, Rule(lambda p: True, "drop"), "dropped every request")
+
+
+@scenario("extra-data-artifact", ["OTA-AUTH-04"],
+          "Artifact served with a few bytes appended after the signed image (finite, with Content-Length)")
+def extra_data_artifact(ctx: Ctx) -> Outcome:
+    scene, r = ctx.fresh()
+    scene.add_rule(Rule(target("fw.bin"), "substitute", data=FW1 + TAIL))
+    res = r.download("fw.bin")
+    got = r.downloaded()
+    if any(TAIL in d for d in got):
+        return Outcome("FAIL", "bytes after the signed image were stored")
+    if got and got != [FW1]:
+        return Outcome("FAIL", "a file different from the signed image was stored")
+    if res.ok and got == [FW1]:
+        return Outcome("PASS", "stored exactly the signed length")
+    return Outcome("PASS", "rejected" if not res.ok else "nothing stored, but exit 0")
+
+
+@scenario("unsupported-spec-version", ["OTA-PARSE-02"],
+          "Validly signed timestamp declares spec_version 2.0.0 (unsupported major version)")
+def unsupported_spec_version(ctx: Ctx) -> Outcome:
+    scene, r = ctx.fresh()
+    _require(r.refresh().ok, "initial refresh failed")
+    before = r.trusted_version("timestamp")
+    scene.sim.timestamp.spec_version = "2.0.0"
+    scene.sim.publish(["timestamp"])
+    res = r.refresh()
+    if (r.trusted_version("timestamp") or 0) > (before or 0):
+        return Outcome("FAIL", "metadata of an unsupported major spec version became trusted")
+    return _effect_ok(res)
+
+
 CONTROL_RUNS = 3
 
 

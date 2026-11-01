@@ -46,6 +46,13 @@ Implementation sketch: the simulator server would need an option to stream a bod
 before the cap was reached) rather than with timing, which keeps the tests stable on slow CI
 runners.
 
+One more test that does not fit the transport theme but is equally cheap: none of the
+current tests serves metadata with an unsupported `spec_version`, although the specification
+says clients MUST verify it. In our run go-tuf v2.4.2 accepted a correctly signed timestamp
+with `"spec_version": "2.0.0"`, python-tuf and tuf-js rejected it
+(`test_unsupported_spec_version_major`: publish timestamp with spec_version "2.0.0", expect
+the refresh to fail and the trusted timestamp to stay unchanged).
+
 Out of scope on purpose: slow retrieval. As discussed in python-tuf#932, TUF since v1.0.7
 no longer lists it as a goal, and distinguishing an attack from a slow network is
 deployment-specific. A purely informational measurement (time until the client gives up when

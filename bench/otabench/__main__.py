@@ -40,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     rep = sub.add_parser("report", help="re-render reports from results.json")
     rep.add_argument("results")
     th = sub.add_parser("threats", help="threat x implementation matrix over both levels")
-    th.add_argument("--mvp", default="", help="results.json of an MVP run")
+    th.add_argument("--mvp", nargs="*", default=[], help="results.json of MVP runs (later wins)")
     th.add_argument("--pilot", nargs="*", default=[], help="pilot.json files (latest wins)")
     th.add_argument("--out", required=True)
     a = p.parse_args(argv)
@@ -49,7 +49,17 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "threats":
         from .threatmatrix import load_pilots, write
 
-        mvp = json.loads(Path(a.mvp).read_text(encoding="utf-8")) if a.mvp else None
+        mvp = None
+        for f in a.mvp:  # merge runs: a later (scenario, client) result replaces an earlier one
+            run = json.loads(Path(f).read_text(encoding="utf-8"))
+            if mvp is None:
+                mvp = run
+                continue
+            names = {c["name"] for c in mvp["clients"]}
+            mvp["clients"] += [c for c in run["clients"] if c["name"] not in names]
+            new = {(r["scenario"], r["client"]) for r in run["results"]}
+            mvp["results"] = [r for r in mvp["results"] if (r["scenario"], r["client"]) not in new]
+            mvp["results"] += run["results"]
         for f in write(catalog, mvp, load_pilots([Path(x) for x in a.pilot]), Path(a.out)):
             print(f)
         return 0

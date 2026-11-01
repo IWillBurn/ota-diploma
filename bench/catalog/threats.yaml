@@ -162,7 +162,7 @@ threats:
     expected: block
     coverage:
       tuf-conformance: [test_timestamp_expired, test_snapshot_expired, test_targets_expired, test_root_expired]
-    bench: [freeze-expired-timestamp]
+    bench: [freeze-expired-timestamp, online-keys-freeze]
 
   - id: OTA-FRESH-02
     title: Rollback (replay of older validly signed metadata / firmware)
@@ -287,7 +287,7 @@ threats:
       verified: true
     expected: out-of-scope
     coverage: {}
-    bench: []
+    bench: [online-keys-freeze]
 
   # ---------------------------------------------------------------- availability
   - id: OTA-DOS-01
@@ -369,7 +369,7 @@ threats:
       verified: true
     expected: block
     coverage: {}
-    bench: []
+    bench: [mirror-errors]
 
   # ---------------------------------------------------------------- fault tolerance
   - id: OTA-NET-01
@@ -632,7 +632,7 @@ threats:
       verified: true
     expected: block
     coverage: {}
-    bench: []
+    bench: [extra-data-artifact]
 
   - id: OTA-AUTH-05
     title: Debug / pre-production build accepted
@@ -712,7 +712,7 @@ threats:
       verified: true
     expected: survive
     coverage: {}
-    bench: []
+    bench: [drop-requests]
 
   - id: OTA-FRESH-05
     title: Cross-device replay of image-less Director metadata
@@ -792,4 +792,4 @@ threats:
       verified: true
     expected: block
     coverage: {}
-    bench: []
+    bench: [unsupported-spec-version]

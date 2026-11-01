@@ -27,7 +27,7 @@ commands:
     if [ "$S" = A ]; then T=B; else T=A; fi
     N=""
     if [ -e /etc/otabench-nodowngrade ]; then N="-N $(cat /etc/otabench-semver)"; fi
-    swupdate -v -B grub -k /etc/swupdate/dev.cert.pem $N -e "stable,copy$T" -i {artifact}
+    swupdate -v -B grub -H otabench:1.0 -k /etc/swupdate/dev.cert.pem $N -e "stable,copy$T" -i {artifact}
   reboot: systemctl reboot
   status: |
     E=/boot-ab/grub/grubenv
