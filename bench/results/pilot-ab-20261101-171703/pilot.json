@@ -1,0 +1,853 @@
+{
+  "started": "20261101-171703",
+  "bench_version": "0.2.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "rauc-grub",
+    "only": "happy,broken,broken-unconfirmed,attacker,downgrade,cut-firstboot,cut-unconfirmed,reorder:ext2,happy:vfat-inplace,happy:uefi-esp-inplace",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "c8d0b57",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "rauc-grub",
+    "file": "updaters\\rauc-grub.yaml",
+    "version": "rauc 1.8",
+    "image": "P:\\vm\\ab-v1.qcow2"
+  },
+  "results": {
+    "happy": {
+      "verdict": "PASS",
+      "boot_s": 10.1,
+      "install_s": 15.4,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 13.6,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        }
+      ],
+      "wall_s": 58.1
+    },
+    "broken": {
+      "verdict": "PASS",
+      "fallback_path": "regular boot-attempt logic",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/1 via regular boot-attempt logic",
+      "install_rc": 0,
+      "install_s": 14.9,
+      "recovery_s": 26.1,
+      "boot_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A",
+          "rescue": false
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": null,
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "wall_s": 52.2
+    },
+    "broken-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "regular boot-attempt logic",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/1 via regular boot-attempt logic",
+      "install_rc": 0,
+      "install_s": 14.9,
+      "recovery_s": 41.3,
+      "boot_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A",
+          "rescue": false
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": null,
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "wall_s": 67.0
+    },
+    "attacker": {
+      "verdict": "PASS",
+      "install_rc": 1,
+      "install_msg": "Installing `/data/bundles/v2-attacker.raucb` failed",
+      "install_s": 0.2,
+      "bootloader_untouched": true,
+      "boot_state_reported": true,
+      "after_reboot": "A/1",
+      "detail": "foreign-key artifact rejected, boot state untouched, still boots A/1",
+      "wall_s": 27.9
+    },
+    "downgrade": {
+      "verdict": "FAIL",
+      "detail": "v2 -> v1 downgrade accepted and booted (no version check in this configuration; needs an integrator hook)",
+      "rebooted": true,
+      "before": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "wall_s": 74.5
+    },
+    "cut-firstboot": {
+      "verdict": "PASS",
+      "fallback_path": "regular boot-attempt logic",
+      "detail": "after cut booted A/1 via regular boot-attempt logic; retry -> B/2",
+      "cut_after_boot_s": 33.4,
+      "boot_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "install_rc": 0,
+      "retry_rc": 0,
+      "wall_s": 77.5
+    },
+    "cut-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "rescue rule",
+      "detail": "after cut booted A/1 via rescue rule; retry -> B/2",
+      "cut_after_boot_s": 30.1,
+      "boot_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "install_rc": 0,
+      "retry_rc": 0,
+      "wall_s": 74.0
+    },
+    "reorder:ext2": {
+      "verdict": "PASS",
+      "config": "ext2",
+      "detail": "14 states in 5 barrier intervals: {'OK': 13, 'DEGRADED': 1, 'INCONSISTENT': 0, 'BRICK': 0}; non-prefix states only: {'OK': 8, 'DEGRADED': 1, 'INCONSISTENT': 0, 'BRICK': 0}",
+      "install_rc": 0,
+      "install_s": 18.6,
+      "counts": {
+        "OK": 13,
+        "DEGRADED": 1,
+        "INCONSISTENT": 0,
+        "BRICK": 0
+      },
+      "nonprefix_counts": {
+        "OK": 8,
+        "DEGRADED": 1,
+        "INCONSISTENT": 0,
+        "BRICK": 0
+      },
+      "env_lost": 1,
+      "rescue": 1,
+      "diverged": 1,
+      "points": [
+        {
+          "entry": 1461,
+          "phase": 0.992,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.4,
+          "label": "kept-all",
+          "interval": [
+            1459,
+            1462
+          ],
+          "volatile": 2,
+          "prefix_state": true,
+          "torn": false
+        },
+        {
+          "entry": 1459,
+          "phase": 0.991,
+          "after_install_s": null,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "A",
+          "boot_order": "A B",
+          "os_order": "A B",
+          "boots": 1,
+          "check_s": 11.5,
+          "label": "lost-all",
+          "interval": [
+            1459,
+            1462
+          ],
+          "volatile": 2,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1460,
+          "phase": 0.992,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "A",
+          "version": "1",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "A",
+          "boot_order": "A B",
+          "os_order": "A B",
+          "boots": 1,
+          "check_s": 11.6,
+          "label": "only-1460",
+          "interval": [
+            1459,
+            1462
+          ],
+          "volatile": 2,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1461,
+          "phase": 0.992,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "DEGRADED",
+          "slot": "A",
+          "version": "1",
+          "env_ok": false,
+          "rescue": true,
+          "diverged": true,
+          "boot_slot": "A",
+          "boot_order": "A B",
+          "os_order": null,
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "only-1461",
+          "interval": [
+            1459,
+            1462
+          ],
+          "volatile": 2,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1464,
+          "phase": 0.994,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 10.9,
+          "label": "kept-all",
+          "interval": [
+            1462,
+            1465
+          ],
+          "volatile": 2,
+          "prefix_state": true,
+          "torn": false
+        },
+        {
+          "entry": 1462,
+          "phase": 0.993,
+          "after_install_s": null,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.1,
+          "label": "lost-all",
+          "interval": [
+            1462,
+            1465
+          ],
+          "volatile": 2,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1463,
+          "phase": 0.994,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "only-1463",
+          "interval": [
+            1462,
+            1465
+          ],
+          "volatile": 2,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1464,
+          "phase": 0.994,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 10.4,
+          "label": "only-1464",
+          "interval": [
+            1462,
+            1465
+          ],
+          "volatile": 2,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1466,
+          "phase": 0.996,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "kept-all",
+          "interval": [
+            1465,
+            1467
+          ],
+          "volatile": 1,
+          "prefix_state": true,
+          "torn": false
+        },
+        {
+          "entry": 1465,
+          "phase": 0.995,
+          "after_install_s": null,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "lost-all",
+          "interval": [
+            1465,
+            1467
+          ],
+          "volatile": 1,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1468,
+          "phase": 0.997,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "kept-all",
+          "interval": [
+            1467,
+            1469
+          ],
+          "volatile": 1,
+          "prefix_state": true,
+          "torn": false
+        },
+        {
+          "entry": 1467,
+          "phase": 0.997,
+          "after_install_s": null,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "lost-all",
+          "interval": [
+            1467,
+            1469
+          ],
+          "volatile": 1,
+          "prefix_state": false,
+          "torn": false
+        },
+        {
+          "entry": 1470,
+          "phase": 0.999,
+          "after_install_s": null,
+          "barrier": false,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 10.9,
+          "label": "kept-all",
+          "interval": [
+            1469,
+            1471
+          ],
+          "volatile": 1,
+          "prefix_state": true,
+          "torn": false
+        },
+        {
+          "entry": 1469,
+          "phase": 0.998,
+          "after_install_s": null,
+          "barrier": true,
+          "verdict": "OK",
+          "slot": "B",
+          "version": "2",
+          "env_ok": true,
+          "rescue": false,
+          "diverged": false,
+          "boot_slot": "B",
+          "boot_order": "B A",
+          "os_order": "B A",
+          "boots": 1,
+          "check_s": 11.0,
+          "label": "lost-all",
+          "interval": [
+            1469,
+            1471
+          ],
+          "volatile": 1,
+          "prefix_state": false,
+          "torn": false
+        }
+      ],
+      "wall_s": 248.2
+    },
+    "happy:vfat-inplace": {
+      "verdict": "PASS",
+      "boot_s": 8.5,
+      "install_s": 17.6,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 12.6,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        }
+      ],
+      "wall_s": 236.5
+    },
+    "happy:uefi-esp-inplace": {
+      "verdict": "PASS",
+      "boot_s": 9.6,
+      "install_s": 17.5,
+      "install_rc": 0,
+      "install_msg": "Installing `/data/bundles/v2.raucb` succeeded",
+      "reboot_to_ready_s": 13.1,
+      "states": [
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "A B",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "A B",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "0",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "A",
+          "version": "1",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": true,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.1",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "0"
+          }
+        },
+        {
+          "slot": "B",
+          "version": "2",
+          "confirmed": false,
+          "env_ok": true,
+          "order": "B A",
+          "primary": "rootfs.0",
+          "env": {
+            "ORDER": "B A",
+            "A_OK": "1",
+            "A_TRY": "0",
+            "B_OK": "1",
+            "B_TRY": "1"
+          }
+        }
+      ],
+      "wall_s": 227.5
+    }
+  }
+}

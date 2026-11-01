@@ -1,6 +1,6 @@
 # Состояние работы и как продолжить
 
-Последнее обновление: 01.11.2026, ~14:40.
+Последнее обновление: 01.11.2026, ~17:45.
 
 ## Что уже сделано
 
@@ -11,6 +11,7 @@
 | MVP: TUF-клиенты, сетевые атаки, обрыв процесса, мутанты | `bench/`, `docs/mvp-results.md` | работает, прогон 31.10 |
 | Каталог угроз v0.2 (40 угроз; ссылки не сверены у OTA-PWR-05, -06, OTA-NET-02) | `bench/catalog/threats.yaml` | готово, см. «Проверить» ниже |
 | Пилот уровня ОС: RAUC 1.8 + GRUB в QEMU | `docs/pilot-ab.md`, `bench/scripts/pilot_ab.py` | работает |
+| Протокол адаптера v2 (уровень устройства): всё про RAUC и GRUB вынесено из сценариев в `bench/updaters/rauc-grub.yaml` | `docs/adapter-protocol.md`, `bench/otabench/device.py` | готово (01.11, задача A1) |
 | Блочное воспроизведение точек обрыва (`blklogwrites`) | `bench/otabench/writelog.py` | работает (префиксная модель) |
 | Окно «обновление теряется после успеха» и его механизм | `docs/pilot-ab.md`, раздел «Механизм окна» | готово (01.11): 8 конфигураций, механизм установлен |
 | Модель перестановок несброшенных записей | `WriteLog.crash_states()`, сценарий `reorder:*` | готово (01.11) для ext4, ext2, vfat |
@@ -37,7 +38,7 @@
 
 Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Порядок на ближайшее время:
 
-1. **A1** — адаптер уровня ОС: вынести RAUC-специфичное из `pilot_ab.py` в описание адаптера.
+1. ~~**A1** — адаптер уровня ОС~~ — сделано: `docs/adapter-protocol.md`.
 2. **B1** — `powercut-refresh` с точками обрыва по событию (go-tuf прерван лишь в 2 из 10 испытаний).
 3. **C1** — актуальный RAUC (1.15+); без этого issue в RAUC не отправлять.
 4. **A3** — второй системный апдейтер (SWUpdate или Mender).
@@ -54,16 +55,16 @@
 |---|---|---|
 | MVP (TUF) | `bench\.venv\Scripts\python.exe -m otabench run --quick` | venv стенда |
 | сборка A/B-образа (~6 мин) | `python scripts\build_ab_image.py` → `P:\vm\ab-v1.qcow2` | системный Python 3.13 |
-| пилот A/B | `python scripts\pilot_ab.py --only <сценарии>` | системный Python 3.13 |
+| пилот A/B | `bench\.venv\Scripts\python.exe scripts\pilot_ab.py [--updater rauc-grub] --only <сценарии>` | venv стенда (нужен PyYAML: адаптер — YAML) |
 | список сценариев пилота | `happy, broken, broken-unconfirmed, attacker, downgrade, cut-firstboot, cut-unconfirmed, crash-replay, window:<cfg>, reorder:<cfg> [--torn], happy:<cfg>`; `<cfg>` = `ext4-c5, ext4-c1, ext4-c30, ext4-wb1, ext4-wbonly, ext4-exponly, ext2, vfat, ext4-inplace, ext2-inplace, vfat-inplace, uefi-esp, uefi-esp-inplace` | |
-| одно состояние из журнала + проверка живучести | `python scripts\replay_state.py --base <вариант> --log <golden.log> --base-end N --extra M --liveness` | системный Python 3.13 |
+| одно состояние из журнала + проверка живучести | `bench\.venv\Scripts\python.exe scripts\replay_state.py --base <вариант> --log <golden.log> --base-end N --extra M --liveness` | venv стенда |
 
 Сценарии пилота пишут `bench/results/pilot-ab-<время>/pilot.json` **после каждого сценария**, так что прерывание не теряет готовое. Диски сценариев удаляются автоматически (`--keep-disks`, чтобы оставить).
 
 ## Данные на диске
 * `P:\vm\debian-12-nocloud-amd64.qcow2` — базовый образ (0,4 ГБ).
 * `P:\vm\ab-v1.qcow2` — A/B-образ, пересобран 01.11 с fstab `auto,nofail` (2,4 ГБ).
-* `P:\vm\variants\` — кэш вариантов `/boot-ab` (оверлеи поверх `ab-v1`, 7,1 ГБ: варианты `*-inplace` содержат пересобранный бандл). Удалять можно в любой момент. **Если пересобрать `ab-v1`, удалить обязательно**, иначе варианты будут ссылаться на старую базу. Недостающие варианты создаются сами (1–3 мин каждый). `ab-vfat.qcow2` нужен для повторного разбора журнала `reorder-vfat`.
+* `P:\vm\variants\` — кэш вариантов (оверлеи поверх `ab-v1`). С адаптером v2 имя `<адаптер>-<вариант>-<хэш>.qcow2`; хэш зависит от образа и текста шагов, поэтому после пересборки `ab-v1` или правки шага вариант пересоберётся сам (1–3 мин). Старые `ab-<вариант>.qcow2` (7,1 ГБ) больше не используются сценариями, **но нужны для разбора сохранённых журналов**: журнал воспроизводится только на тот диск, на котором записан (`ab-vfat.qcow2` → `reorder-vfat`, `ab-uefi-esp*.qcow2` → журналы UEFI, `ab-ext4-inplace.qcow2` → `--torn`). Не удалять, пока журналы нужны.
 * Журналы записей для повторного анализа без нового прогона (по 1,1 ГБ): `P:\vm\pilot\20261031-225918\replay\golden.log` (45 точек, ext4), `P:\vm\pilot\20261101-003715\window-ext4-wb1\golden.log`, `P:\vm\pilot\20261101-103655\reorder-vfat\golden.log` (случай с нечитаемым `grubenv`).
 
 ## Подводные камни (уже наступали)
@@ -74,4 +75,6 @@
 * **tuf-js под Node 24 на Windows** падает (assert libuv) на загрузке 2 МиБ, поэтому там вердикт ERROR, а не FAIL.
 * **Место:** прогоны воспроизведения временно создают сырой диск на 12 ГБ и журнал на 1,1 ГБ; сырой диск удаляется в конце сценария. Если прогон прерван, проверить `P:\vm\pilot\*\*\replay.raw`.
 * **Git:** `.gitattributes` держит LF во всём репозитории — гостевые файлы копируются в Linux-ВМ побайтно, CRLF их ломает. Коммиты — без строки `Co-Authored-By` (просьба автора).
+* **Неподтверждённая загрузка не получается гонкой:** служба подтверждения иногда успевает раньше установки. Сценарии `*-unconfirmed` снимают подтверждение командой адаптера `unconfirm` и проверяют это по `status`.
+* **Пилот запускается из venv** (`bench\.venv\Scripts\python.exe`): адаптер — YAML, а в системном Python 3.13 нет PyYAML.
 * **UEFI-GRUB в Debian:** без `--no-uefi-secure-boot` `grub-install` ставит подписанный GRUB через shim, который игнорирует `--boot-directory` и грузит стоковое меню.

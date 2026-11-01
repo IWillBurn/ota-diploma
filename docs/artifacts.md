@@ -7,7 +7,7 @@
 |---|---|---|---|---|
 | A1 | **Каталог угроз** с трассировкой к TUF / Uptane / RFC 9124 / ISVS / CRA / ФСТЭК | YAML + JSON Schema, генерируемая таблица (MD, CSV) для приложения ВКР | черновик v0.1, 24 угрозы, ссылки помечены `verified: false` | `bench/catalog/threats.yaml` |
 | A2 | **Анализ покрытия**: какие угрозы покрыты существующими наборами (tuf-conformance, тесты проектов, OSS-Fuzz) | генерируется из A1 (`otabench coverage`) | работает | `bench/otabench/report.py` |
-| A3 | **Протокол адаптера** v1 (= CLI tuf-conformance) и v2 (+`install`, `status`, `reboot`, `slot`) | Markdown-спецификация + эталонные адаптеры | v1 реализован; v2 нужно спроектировать | `bench/clients/` |
+| A3 | **Протокол адаптера** v1 (= CLI tuf-conformance) и v2 (+`install`, `status`, `reboot`, `slot`) | Markdown-спецификация + эталонные адаптеры | v1 и v2 реализованы (01.11.2026); v2 — YAML с командами в госте, адаптер RAUC + GRUB | `docs/adapter-protocol.md`, `bench/clients.yaml`, `bench/updaters/` |
 | A4 | **Серверы-нарушители**: подмена, повтор, заморозка, бесконечные и медленные данные, обрыв, скомпрометированные онлайн-ключи | Python-модуль | реализован (MVP) | `bench/otabench/server.py` |
 | A5 | **Сценарии с оракулами** | Python, реестр с привязкой к ID угроз | 16 сценариев | `bench/otabench/scenarios.py` |
 | A6 | **Инструмент обрыва питания**: уровни процесс / блок / система | Python + dm-log-writes/replay-log + QEMU/QMP | уровень «процесс» реализован; остальные в плане | — |

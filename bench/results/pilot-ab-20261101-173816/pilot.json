@@ -1,0 +1,139 @@
+{
+  "started": "20261101-173816",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "rauc-grub",
+    "only": "broken-unconfirmed,cut-unconfirmed",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "c8d0b57",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "rauc-grub",
+    "file": "updaters\\rauc-grub.yaml",
+    "version": "rauc 1.8",
+    "image": "P:\\vm\\ab-v1.qcow2"
+  },
+  "results": {
+    "broken-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "rescue rule",
+      "resets": 2,
+      "detail": "validly signed unbootable image -> fell back to A/1 via rescue rule",
+      "install_rc": 0,
+      "install_s": 14.4,
+      "confirmed_at_install": false,
+      "env_at_install": {
+        "ORDER": "A B",
+        "A_OK": "1",
+        "A_TRY": "1",
+        "B_OK": "0",
+        "B_TRY": "0"
+      },
+      "recovery_s": 21.2,
+      "boot_runs": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        },
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "A",
+          "rescue": true
+        }
+      ],
+      "state": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.0",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "wall_s": 46.4
+    },
+    "cut-unconfirmed": {
+      "verdict": "PASS",
+      "fallback_path": "rescue rule",
+      "detail": "after cut booted A/1 via rescue rule; retry -> B/2",
+      "cut_after_boot_s": 27.3,
+      "boot_at_cut": [
+        {
+          "order": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1",
+          "slot": "B",
+          "rescue": false
+        }
+      ],
+      "after_cut": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": false,
+        "env_ok": true,
+        "order": "B A",
+        "primary": null,
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "1",
+          "B_OK": "1",
+          "B_TRY": "1"
+        }
+      },
+      "after_retry": {
+        "slot": "B",
+        "version": "2",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "rootfs.1",
+        "env": {
+          "ORDER": "B A",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "1",
+          "B_TRY": "0"
+        }
+      },
+      "install_rc": 0,
+      "retry_rc": 0,
+      "confirmed_at_install": false,
+      "env_at_install": {
+        "ORDER": "A B",
+        "A_OK": "1",
+        "A_TRY": "1",
+        "B_OK": "0",
+        "B_TRY": "0"
+      },
+      "wall_s": 66.5
+    }
+  }
+}

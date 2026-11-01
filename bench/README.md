@@ -32,12 +32,20 @@ powershell -ExecutionPolicy Bypass -File scripts\setup.ps1     # один раз
 
 ## Уровень ОС: пилот A/B (RAUC + GRUB в QEMU)
 
+Сценарии обращаются к апдейтеру только через адаптер устройства (протокол v2,
+`docs/adapter-protocol.md`): `updaters/<имя>.yaml` описывает установку, состояние
+устройства и строки загрузчика на консоли. Чтобы испытать другой апдейтер, нужен
+его образ и такой файл; код сценариев не меняется.
+
 ```
+updaters/rauc-grub.yaml   адаптер RAUC + GRUB: команды, артефакты, разбор консоли, варианты
+otabench/device.py        загрузка адаптера v2, вызов его команд в госте
 otabench/vm.py            управление ВМ: QMP (обрыв питания), serial-консоль, гостевой агент, blklogwrites
 otabench/writelog.py      разбор и воспроизведение журнала блочных записей (формат dm-log-writes)
 vm/guest/                 гостевые файлы: grub.cfg (выбор слота), system.conf RAUC, fstab, mark-good
 scripts/build_ab_image.py сборка образа ab-v1.qcow2 из Debian 12 nocloud (~6 мин)
-scripts/pilot_ab.py       сценарии: happy, broken, attacker, downgrade, cut-firstboot, crash-replay
+scripts/pilot_ab.py       сценарии: happy, broken, attacker, downgrade, cut-firstboot, crash-replay,
+                          window:/reorder:/happy:<вариант>
 scripts/replay_state.py   одно состояние из журнала записей: загрузить, осмотреть, проверить живучесть
 vm/guest/otabench-bootenv обработчик загрузчика RAUC (bootloader=custom), пишущий grubenv на месте — исправление
 scripts/vm_probe.py       проверка хоста: ускорение, время загрузки, blklogwrites
@@ -49,8 +57,9 @@ scripts/qmp_powercut.py   ручной обрыв питания запущен�
 
 ```powershell
 python scripts\build_ab_image.py                     # -> P:\vm\ab-v1.qcow2
-python scripts\pilot_ab.py                           # все сценарии
-python scripts\pilot_ab.py --only crash-replay --points 30 --liveness 3
+.venv\Scripts\python.exe scripts\pilot_ab.py         # все сценарии, адаптер rauc-grub
+.venv\Scripts\python.exe scripts\pilot_ab.py --only crash-replay --points 30 --liveness 3
+.venv\Scripts\python.exe scripts\pilot_ab.py --updater <имя> --only happy,broken,attacker
 ```
 
 Результаты пишутся в `results/pilot-ab-<время>/pilot.json`, разбор лежит в

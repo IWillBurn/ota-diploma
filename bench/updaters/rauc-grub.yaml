@@ -1,0 +1,189 @@
+# Device-level adapter (adapter protocol v2, docs/adapter-protocol.md):
+# RAUC with its GRUB backend, root slots A/B, Debian 12 in QEMU.
+#
+# Everything the bench knows about RAUC and GRUB is in this file. Commands run in the
+# guest as `/bin/sh -c`, through qemu-guest-agent (no network needed).
+
+name: rauc-grub
+description: RAUC 1.8 (Debian 12 package) with the GRUB backend; slots A=vda1, B=vda2
+image: P:/vm/ab-v1.qcow2  # built by scripts/build_ab_image.py
+slots: [A, B]
+initial: {slot: A, version: "1"}
+scratch_dir: /data  # writable, outside both slots: the bench writes its marker blocks here
+
+# Artifact roles used by the scenarios. `version` is what `status` must report after
+# the artifact has been booted.
+artifacts:
+  v1: {path: /data/bundles/v1.raucb, version: "1"}
+  v2: {path: /data/bundles/v2.raucb, version: "2"}
+  v2-broken: {path: /data/bundles/v2-broken.raucb, version: "2"}  # signed, PID 1 exits
+  v2-attacker: {path: /data/bundles/v2-attacker.raucb, version: "2"}  # foreign key
+
+commands:
+  version: rauc --version
+  install: rauc install {artifact}
+  reboot: systemctl reboot
+  # Prints key=value lines: slot, version, confirmed, env_ok, order, primary, env.<var>.
+  # The grubenv path: system.conf (grub backend), else the custom backend's config.
+  status: |
+    E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf)
+    [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
+    [ -n "$E" ] || E=/boot-ab/grub/grubenv
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    L=$(grub-editenv "$E" list 2>/dev/null)
+    get() { printf '%s\n' "$L" | sed -n "s/^$1=//p"; }
+    echo "slot=$S"
+    echo "version=$(cat /etc/otabench-version 2>/dev/null)"
+    printf '%s\n' "$L" | sed -n 's/^\([^=]*=\)/env.\1/p'
+    printf '%s\n' "$L" | sed -n 's/^ORDER=/order=/p'
+    if printf '%s\n' "$L" | grep -q '^ORDER='; then echo env_ok=1; else echo env_ok=0; fi
+    if [ -n "$S" ] && [ "$(get "${S}_OK")" = 1 ] && [ "$(get "${S}_TRY")" = 0 ]
+    then echo confirmed=1; else echo confirmed=0; fi
+    rauc status --output-format=json 2>/dev/null \
+      | sed -n 's/.*"boot_primary": *"\([^"]*\)".*/primary=\1/p'
+  # Back to "booted, not yet confirmed": the state GRUB leaves before otabench-mark-good
+  # runs (it sets <S>_TRY=1 at boot, mark-good resets it). Used by *-unconfirmed scenarios.
+  unconfirm: |
+    E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf)
+    [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
+    [ -n "$E" ] || E=/boot-ab/grub/grubenv
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    grub-editenv "$E" set "${S}_TRY=1" && sync
+  # free-form, recorded with every window/variant run
+  info: |
+    findmnt -no FSTYPE,OPTIONS /boot-ab
+    cat /proc/sys/vm/dirty_writeback_centisecs /proc/sys/vm/dirty_expire_centisecs
+  # free-form, printed by scripts/replay_state.py
+  debug: |
+    E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf)
+    [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
+    [ -n "$E" ] || E=/boot-ab/grub/grubenv
+    ls -l "$E"; grub-editenv "$E" list 2>&1
+    echo ---; rauc status --output-format=json 2>&1 | head -c 600
+
+# Bootloader decisions as printed on the serial console by vm/guest/grub.cfg.
+# `run` must capture the selected slot as (?P<slot>) and should capture (?P<order>) in the
+# same notation as `status` prints `order=`; `rescue` marks a fallback for the next run.
+bootlog:
+  run: 'otabench-grub: ORDER=\[(?P<order>[^\]]*)\] A_OK=(?P<A_OK>\S*) A_TRY=(?P<A_TRY>\S*) B_OK=(?P<B_OK>\S*) B_TRY=(?P<B_TRY>\S*) -> (?P<slot>\w)'
+  rescue: 'otabench-grub: RESCUE'
+
+# ---------------------------------------------------------------------------------------
+# Variants: configurations of the same image for the grubenv-window experiment. A variant
+# is a list of steps; each step runs with `set -e` in a booted, confirmed base image
+# (BIOS, with network), and the result is cached as an overlay.
+steps:
+  fstab:  # mount /boot-ab as $FS with $OPTS
+    run: |
+      sed -i "s#^LABEL=boot .*#/dev/vda3 /boot-ab $FS $OPTS,nofail 0 2#" /etc/fstab
+  sysctl:  # writeback knobs; no procps in the image, so /proc/sys directly
+    run: |
+      : > /etc/sysctl.d/90-otabench.conf
+      if [ -n "$WRITEBACK" ]; then
+        echo "vm.dirty_writeback_centisecs = $WRITEBACK" >> /etc/sysctl.d/90-otabench.conf
+        echo "$WRITEBACK" > /proc/sys/vm/dirty_writeback_centisecs
+      fi
+      if [ -n "$EXPIRE" ]; then
+        echo "vm.dirty_expire_centisecs = $EXPIRE" >> /etc/sysctl.d/90-otabench.conf
+        echo "$EXPIRE" > /proc/sys/vm/dirty_expire_centisecs
+      fi
+  dosfstools:
+    run: |
+      (command -v mkfs.vfat || (apt-get update -qq &&
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq dosfstools)) >/dev/null
+  reformat:  # recreate /boot-ab as $FS (ext2 | vfat) and reinstall BIOS GRUB with $MOD
+    run: |
+      rm -rf /root/bs && mkdir /root/bs && cp -a /boot-ab/. /root/bs/
+      umount /boot-ab
+      case "$FS" in
+        ext2) mkfs.ext2 -q -F -L boot /dev/vda3 ;;
+        vfat) mkfs.vfat -n boot /dev/vda3 >/dev/null 2>&1 ;;
+        *) echo "unknown FS $FS"; exit 2 ;;
+      esac
+      mount -t "$FS" /dev/vda3 /boot-ab
+      cp -r /root/bs/. /boot-ab/
+      grub-install --target=i386-pc --boot-directory=/boot-ab --modules="part_gpt $MOD" /dev/vda 2>&1 | tail -1
+      sed -i "s#^LABEL=boot .*#/dev/vda3 /boot-ab $FS defaults,nofail 0 2#" /etc/fstab
+      grub-editenv /boot-ab/grub/grubenv list
+      sync
+  inplace:  # the fix under test: a custom backend that rewrites grubenv in place
+    upload: {/usr/local/sbin/otabench-bootenv: vm/guest/otabench-bootenv}
+    run: |
+      chmod 755 /usr/local/sbin/otabench-bootenv
+      sed -i -e 's/^bootloader=grub$/bootloader=custom/' -e '/^grubenv=/d' /etc/rauc/system.conf
+      printf '\n[handlers]\nbootloader-custom-backend=/usr/local/sbin/otabench-bootenv\n' >> /etc/rauc/system.conf
+      systemctl restart rauc
+      rauc status mark-good
+      /usr/local/sbin/otabench-bootenv dump | tr '\n' ' '
+      rauc status --output-format=json > /dev/null
+  uefi:  # GRUB for x86_64-efi on the real ESP (vda15, vfat), grubenv on the ESP
+    run: |
+      ESP_ENV=/boot/efi/EFI/BOOT/grub/grubenv
+      mkdir -p /boot/efi
+      mountpoint -q /boot/efi || mount -t vfat /dev/vda15 /boot/efi
+      # unsigned core: Debian's signed (shim) GRUB ignores --boot-directory, boots the stock menu
+      grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+        --boot-directory=/boot/efi/EFI/BOOT --removable --no-nvram --no-uefi-secure-boot \
+        --modules='part_gpt ext2 fat' 2>&1 | tail -1
+      test -s /boot/efi/EFI/BOOT/BOOTX64.EFI
+      test -d /boot/efi/EFI/BOOT/grub/x86_64-efi
+      cp /boot-ab/grub/grub.cfg /boot/efi/EFI/BOOT/grub/grub.cfg
+      cp /boot-ab/grub/grubenv "$ESP_ENV"
+      sed -i "s#^grubenv=.*#grubenv=$ESP_ENV#" /etc/rauc/system.conf
+      echo '/dev/vda15 /boot/efi vfat defaults,nofail 0 2' >> /etc/fstab
+      echo "env=$ESP_ENV" > /etc/otabench-bootenv.conf
+      systemctl restart rauc
+      rauc status mark-good
+      grub-editenv "$ESP_ENV" list | tr '\n' ' '
+      sync
+  rebundle:  # the slot image must carry the reconfigured system: rebuild v2 from slot A
+    run: |
+      rm -rf /data/staging /data/b-v2
+      mkdir -p /data/staging
+      cp -ax /. /data/staging/
+      rm -rf /data/staging/usr/share/doc/* /data/staging/usr/share/man/* \
+        /data/staging/usr/share/locale/* /data/staging/var/lib/apt/lists/*
+      echo 2 > /data/staging/etc/otabench-version
+      sz=$(du -sxm /data/staging | cut -f1)
+      img=$((sz * 125 / 100 + 64))
+      mkdir -p /data/b-v2
+      mkfs.ext4 -q -F -L rootfs -d /data/staging /data/b-v2/rootfs.ext4 ${img}M
+      sed 's/@VERSION@/2/' /root/manifest.raucm > /data/b-v2/manifest.raucm
+      rm -f /data/bundles/v2.raucb
+      rauc bundle --cert=/data/keys/dev.cert.pem --key=/data/keys/dev.key.pem \
+        /data/b-v2 /data/bundles/v2.raucb > /dev/null
+      rm -rf /data/b-v2 /data/staging
+      ls -l /data/bundles/v2.raucb
+
+variants:
+  ext4-c5: {steps: []}  # as built: ext4, default commit=5
+  ext4-c1:
+    steps:
+      - {step: fstab, env: {FS: ext4, OPTS: "defaults,commit=1"}}
+      - {run: "mount -o remount,commit=1 /boot-ab"}
+  ext4-c30:
+    steps:
+      - {step: fstab, env: {FS: ext4, OPTS: "defaults,commit=30"}}
+      - {run: "mount -o remount,commit=30 /boot-ab"}
+  ext4-wb1:  # both writeback knobs at 1 s
+    steps: [{step: sysctl, env: {WRITEBACK: 100, EXPIRE: 100}}]
+  ext4-wbonly:  # which knob sets the ~5 s window? only the writeback period
+    steps: [{step: sysctl, env: {WRITEBACK: 100}}]
+  ext4-exponly:  # ... only the expiry age
+    steps: [{step: sysctl, env: {EXPIRE: 100}}]
+  ext2:
+    steps: [{step: reformat, env: {FS: ext2, MOD: ext2}}]
+  vfat:
+    steps: [dosfstools, {step: reformat, env: {FS: vfat, MOD: fat}}]
+  ext4-inplace:
+    steps: [inplace, rebundle]
+  ext2-inplace:
+    steps: [{step: reformat, env: {FS: ext2, MOD: ext2}}, inplace, rebundle]
+  vfat-inplace:
+    steps: [dosfstools, {step: reformat, env: {FS: vfat, MOD: fat}}, inplace, rebundle]
+  uefi-esp:  # RAUC's docs suggest the ESP for grubenv on UEFI systems
+    firmware: uefi
+    steps: [uefi, rebundle]
+  uefi-esp-inplace:
+    firmware: uefi
+    steps: [uefi, inplace, rebundle]
