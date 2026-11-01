@@ -76,7 +76,9 @@
           "type": "array", "uniqueItems": true,
           "items": {"type": "string", "pattern": "^(ab:)?[a-z0-9][a-z0-9:*-]*( --torn)?$"}
         },
-        "level": {"enum": ["process", "block", "system"]}
+        "level": {"enum": ["process", "block", "system"]},
+        "bench_gap": {"type": "string", "minLength": 20,
+                      "description": "why the bench has no scenario for this threat (required when bench is empty)"}
       }
     }
   }

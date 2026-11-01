@@ -219,6 +219,7 @@ threats:
     coverage:
       tuf-conformance: [test_new_timestamp_fast_forward_recovery, test_new_snapshot_fast_forward_recovery, test_targets_fast_forward_recovery]
     bench: []
+    bench_gap: "TUF: covered by the tuf-conformance fast-forward recovery tests, a copy would add no signal; the Uptane variant needs a Director repository."
 
   # ---------------------------------------------------------------- key compromise
   - id: OTA-KEY-01
@@ -276,6 +277,7 @@ threats:
     coverage:
       tuf-conformance: [test_root_rotation, test_non_root_rotations]
     bench: []
+    bench_gap: "TUF: covered by the tuf-conformance rotation tests; SUIT and Uptane key rotation need implementations with persistent trust anchors (the libcsuit example keeps none)."
 
   - id: OTA-KEY-04
     title: Online-key compromise -> indefinite freeze with fresh signatures
@@ -540,6 +542,7 @@ threats:
     coverage:
       tuf-conformance: [test_graph_traversal, test_targetfile_search]
     bench: []
+    bench_gap: "TUF: covered by tuf-conformance target search; A/B updaters need an artifact role with a foreign compatible string (RAUC compatible, SWUpdate hardware-compatibility), not built yet."
 
   - id: OTA-INST-02
     title: Partial bundle installation (multi-ECU / multi-image)
@@ -557,6 +560,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Needs multi-image or multi-ECU updates (Uptane Primary and Secondaries, SUIT multi-component); the tested configurations install one image."
 
   - id: OTA-PARSE-01
     title: Malformed metadata / manifest triggers parser fault
@@ -589,6 +593,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Needs a notion of required target sets (Uptane Director); none of the tested implementations exposes it."
 
   - id: OTA-INST-04
     title: TOCTOU between verification and use
@@ -604,7 +609,7 @@ threats:
       verified: true
     expected: block
     coverage: {}
-    bench: []
+    bench: [ab:toctou]
 
   - id: OTA-INST-05
     title: Wrong delta precursor
@@ -619,6 +624,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Needs delta updates (Uptane/SUIT delta precursors, RAUC adaptive updates, SWUpdate delta handler), not configured in the tested images."
 
   - id: OTA-AUTH-04
     title: Extra data after a valid image
@@ -649,6 +655,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Needs implementations that distinguish debug or pre-production builds (SUIT conditions, separate signing certificates); not configured."
 
   - id: OTA-AUTHZ-01
     title: Unapproved firmware / override of critical manifest elements
@@ -668,6 +675,7 @@ threats:
     coverage:
       tuf-conformance: [test_cached_role_is_verified_against_current_delegator]
     bench: []
+    bench_gap: "TUF: covered by tuf-conformance (cached role verified against the current delegator); the Uptane Director/Image cross-check needs an Uptane implementation."
 
   - id: OTA-CONF-01
     title: Eavesdropping on update content (image disclosure)
@@ -685,6 +693,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Needs encrypted images (SUIT encryption info, RAUC crypt bundles); the oracle would inspect traffic and storage. Not configured."
 
   - id: OTA-CONF-02
     title: Confidential manifest element exposure
@@ -700,6 +709,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "SUIT encrypted manifest elements; the libcsuit example and test manifests have none."
 
   - id: OTA-DOS-06
     title: Drop-request (update traffic blocked)
@@ -729,6 +739,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Uptane-specific (replay of image-less Director metadata across devices); Uptane is not in the evaluation."
 
   - id: OTA-TIME-01
     title: Absent or invalid time attestation
@@ -747,6 +758,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Needs control of the client's clock (Uptane time server or libfaketime). TUF states no requirement (§7.1 bogus clocks) and every TUF client trusts the host clock by design, so the scenario would not separate implementations."
 
   - id: OTA-REP-01
     title: Version-report replay / attacker-authored version report
@@ -762,6 +774,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Uptane and SUIT version reports; none of the tested implementations sends reports."
 
   - id: OTA-NET-02
     title: Missing transport / update-server authentication
@@ -782,6 +795,7 @@ threats:
     expected: block
     coverage: {}
     bench: []
+    bench_gap: "Transport security is outside the TUF (§1.5.1) and Uptane models; for RAUC and SWUpdate it is a deployment setting (HTTPS, client certificates). The client suite deliberately runs over plain HTTP with a network attacker, i.e. it shows that authenticity does not depend on TLS."
 
   - id: OTA-PARSE-02
     title: Unsupported spec / encoding version accepted

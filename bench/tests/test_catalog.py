@@ -18,7 +18,8 @@ CATALOG = ROOT / "catalog" / "threats.yaml"
 # scenario names of scripts/pilot_ab.py (+ replay_state.py), as the catalog writes them
 AB = {"happy", "broken", "broken-unconfirmed", "attacker", "downgrade", "cut-firstboot",
       "cut-unconfirmed", "crash-replay", "window:*", "reorder:*", "reorder:* --torn",
-      "replay-state-liveness"}
+      "replay-state-liveness", "toctou"}
+OTHER = {"rauc-sigcover"}  # scripts/rauc_sigcover.py
 SUIT = {"suit-payload-substitution", "suit-manifest-tamper", "suit-signature-tamper",
         "suit-extra-data", "suit-malformed"}  # scripts/suit_bench.py
 
@@ -36,6 +37,8 @@ def test_bench_ids_exist() -> None:
                 assert sid[3:] in AB, (t["id"], sid)
             elif sid.startswith("suit-"):
                 assert sid in SUIT, (t["id"], sid)
+            elif sid in OTHER:
+                continue
             else:
                 assert sid in REGISTRY, (t["id"], sid)
 
@@ -66,3 +69,10 @@ def test_schema_rejects_bad_entries(tmp_path: Path) -> None:
     dup["threats"][2]["id"] = dup["threats"][3]["id"]
     with pytest.raises(CatalogError, match="duplicate"):
         load_catalog(_write(tmp_path, dup))
+
+
+def test_every_unexecuted_threat_states_why() -> None:
+    """D1: a threat without a bench scenario carries the reason in `bench_gap`."""
+    cat = load_catalog(CATALOG)
+    missing = [t["id"] for t in cat["threats"] if not t.get("bench") and not t.get("bench_gap")]
+    assert not missing, missing
