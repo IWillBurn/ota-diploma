@@ -11,8 +11,31 @@ import yaml
 ICON = {"PASS": "✅", "FAIL": "❌", "PARTIAL": "🟡", "ERROR": "⚠️", None: "·"}
 
 
-def load_catalog(path: Path) -> dict:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+SCHEMA = Path(__file__).resolve().parent.parent / "catalog" / "threats.schema.json"
+
+
+class CatalogError(ValueError):
+    pass
+
+
+def load_catalog(path: Path, schema: Path = SCHEMA) -> dict:
+    """Load the threat catalog and refuse it unless it matches catalog/threats.schema.json
+    and every id is unique."""
+    catalog = yaml.safe_load(path.read_text(encoding="utf-8"))
+    import json
+
+    import jsonschema
+
+    try:
+        jsonschema.validate(catalog, json.loads(schema.read_text(encoding="utf-8")))
+    except jsonschema.ValidationError as e:
+        where = "/".join(str(p) for p in e.absolute_path)
+        raise CatalogError(f"{path.name}: {where}: {e.message}") from None
+    ids = [t["id"] for t in catalog["threats"]]
+    dup = sorted({i for i in ids if ids.count(i) > 1})
+    if dup:
+        raise CatalogError(f"{path.name}: duplicate ids {dup}")
+    return catalog
 
 
 def coverage_table(catalog: dict) -> list[dict]:
@@ -58,7 +81,10 @@ def _metric_str(r: dict) -> str:
         v = m["bytes_pushed"]
         parts.append(f"{v / 1048576:.1f} MiB" if v >= 1048576 else f"{v / 1024:.0f} KiB"
                      if v >= 10240 else f"{v} B")
-    if "survival_rate" in m:
+    if "survival_rate" in m and m.get("census"):
+        # every point of a defined set was tried: a census, not a sample -> no interval
+        parts.append(f"survived {m.get('survived')}/{m.get('trials')} kill points (census)")
+    elif "survival_rate" in m:
         lo, hi = wilson(int(m.get("survived", 0)), int(m.get("trials", 0)))
         parts.append(f"survival {m['survival_rate']:.0%} [{lo:.0%}–{hi:.0%}] (n={m.get('trials')})")
     if isinstance(m.get("mean_recovery_s"), (int, float)):

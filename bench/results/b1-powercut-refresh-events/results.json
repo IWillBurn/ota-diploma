@@ -1,0 +1,321 @@
+{
+  "otabench_version": "0.3.0",
+  "started": "2026-11-01T14:46:08+00:00",
+  "host": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.15"
+  },
+  "params": {
+    "trials": 10,
+    "seed": 1,
+    "caps": {
+      "endless_bytes": 67108864,
+      "endless_seconds": 30.0,
+      "slow_seconds": 120.0
+    }
+  },
+  "clients": [
+    {
+      "name": "python-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/python-tuf/python_tuf.py",
+      "language": "Python",
+      "version": "tuf 7.0.1 (ngclient)",
+      "control": false,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "go-tuf",
+      "spec": "tuf",
+      "command": "bench/clients/bin/go-tuf.exe",
+      "language": "Go",
+      "version": "go-tuf v2.4.2",
+      "control": false,
+      "env": {
+        "PATH": "C:/Program Files/Git/usr/bin;C:\\Users\\eugen\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\local\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\Git\\mingw64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Users\\eugen\\bin;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\Program Files\\Git\\cmd;C:\\Users\\eugen\\.local\\bin;C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\Go\\bin;C:\\Program Files\\nodejs;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;C:\\Users\\eugen\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\eugen\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\eugen\\AppData\\Local\\Unity\\bin;C:\\Users\\eugen\\.dotnet\\tools;C:\\Users\\eugen\\go\\bin;C:\\Users\\eugen\\AppData\\Roaming\\npm;C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2025.2.6.3\\bin;C:\\Users\\eugen\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand;C:\\Users\\eugen\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\copilot-shim;C:\\Program Files\\Git\\usr\\bin\\vendor_perl;C:\\Program Files\\Git\\usr\\bin\\core_perl"
+      }
+    },
+    {
+      "name": "tuf-js",
+      "spec": "tuf",
+      "command": "bench/clients/tuf-js/client.js",
+      "language": "TypeScript/Node",
+      "version": "tuf-js 6.0.1",
+      "control": false,
+      "env": {}
+    },
+    {
+      "name": "naive",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "Python",
+      "version": "negative control",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages"
+      }
+    },
+    {
+      "name": "naive-nosig",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (no signature check)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "sig"
+      }
+    },
+    {
+      "name": "naive-anykey",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (signature by any root key accepted)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "role-keys"
+      }
+    },
+    {
+      "name": "naive-nohash",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (no artifact hash check)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "hash"
+      }
+    },
+    {
+      "name": "naive-keeptorn",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (keeps artifact with bad hash)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "keep-torn"
+      }
+    },
+    {
+      "name": "naive-lazyroot",
+      "spec": "tuf",
+      "command": "bench/clients/naive/naive_client.py",
+      "language": "",
+      "version": "mutant (trusted root replaced non-atomically across requests)",
+      "control": true,
+      "env": {
+        "PYTHONPATH": "P:\\Projects\\ota-diploma\\bench\\.venv\\Lib\\site-packages",
+        "OTABENCH_MUTANT": "lazy-root"
+      }
+    }
+  ],
+  "results": [
+    {
+      "client": "python-tuf",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 30.44,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.516,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "go-tuf",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 5.8,
+      "verdict": "PASS",
+      "detail": "15/15 survived (12 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 12,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.088,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "tuf-js",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 15.91,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.272,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "naive",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 23.92,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.386,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "naive-nosig",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 22.92,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.367,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "naive-anykey",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 22.93,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.377,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "naive-nohash",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 22.63,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.368,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "naive-keeptorn",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 22.2,
+      "verdict": "PASS",
+      "detail": "15/15 survived (13 killed mid-run)",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 15,
+        "survival_rate": 1.0,
+        "mean_recovery_s": 0.359,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "-"
+      }
+    },
+    {
+      "client": "naive-lazyroot",
+      "scenario": "powercut-refresh",
+      "threats": [
+        "OTA-PWR-01"
+      ],
+      "title": "Process killed at every network operation of a metadata update incl. root rotation",
+      "wall_s": 21.84,
+      "verdict": "PARTIAL",
+      "detail": "13/15 survived (13 killed mid-run) | 1x recovery refresh failed: naive client: Can't open C:\\Users\\eugen\\AppData\\Local\\Temp\\otabench-naive-lazyroot-us931jw4\\metadata; 1x recovery refresh failed: naive client: Can't open C:\\Users\\eugen\\AppData\\Local\\Temp\\otabench-naive-lazyroot-7vkdxjf0\\metadata",
+      "metrics": {
+        "trials": 15,
+        "crashed": 13,
+        "survived": 13,
+        "survival_rate": 0.867,
+        "mean_recovery_s": 0.354,
+        "requests": 5,
+        "request_seq": "2.root.json 3.root.json timestamp.json 3.snapshot.json 3.targets.json",
+        "request_points_not_reached": 0,
+        "failed_at": "1:2.root.json@sent+10ms 2:3.root.json@request"
+      }
+    }
+  ]
+}

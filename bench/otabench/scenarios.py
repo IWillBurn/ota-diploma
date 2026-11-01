@@ -31,7 +31,7 @@ from tuf.api.metadata import Metadata, MetaFile, TargetFile
 from tuf.api.serialization.json import JSONSerializer
 
 from .adapter import ClientRunner, ClientSpec
-from .server import AdversarialServer, Rule, Scene, role, role_version, target
+from .server import AdversarialServer, Rule, Scene, nth_request, role, role_version, target
 
 FW1 = b"firmware 1.0 (vulnerable)\n" * 512
 FW2 = b"firmware 2.0 (patched)   \n" * 512
@@ -361,40 +361,79 @@ def _artifact_state(r: ClientRunner, good: bytes) -> str:
     return ",".join(out)
 
 
+PHASES = ("request", "sent", "sent+10ms")
+
+
+def _rotation_scene(ctx: Ctx) -> tuple[Scene, ClientRunner]:
+    """Client at root v1 / targets v2; repository at root v2 (rotated timestamp key)
+    and targets v3: the next refresh walks the whole client workflow."""
+    scene, r = ctx.fresh()
+    _require(r.refresh().ok, "initial refresh failed")
+    scene.sim.rotate_keys("timestamp")
+    scene.sim.publish(["root"])
+    _publish_fw2(scene)
+    return scene, r
+
+
+def _kill_at(r: ClientRunner, phase: str) -> dict:
+    """Rule callbacks that kill the client at a given moment of its i-th request."""
+    if phase == "request":  # the client waits for this response: kill before answering
+        def on_start(_: str) -> None:
+            r.kill_switch.set()
+            r.proc_done.wait(5)
+        return {"on_start": on_start}
+    delay = 0.010 if phase == "sent+10ms" else 0.0
+
+    def on_sent(_: str) -> None:  # the client is parsing / verifying / storing it
+        if delay:
+            time.sleep(delay)
+        r.kill_switch.set()
+    return {"on_sent": on_sent}
+
+
 @scenario("powercut-refresh", ["OTA-PWR-01"],
-          "Process killed at a random point of a metadata update incl. root rotation")
+          "Process killed at every network operation of a metadata update incl. root rotation")
 def powercut_refresh(ctx: Ctx) -> Outcome:
-    rnd = random.Random(f"{ctx.seed}-{ctx.client.name}-refresh")
-    survived = crashed = 0
+    """Event-based crash points (like the MCUboot simulator's 'fail at operation i'): a
+    rehearsal refresh counts the client's N requests; then for every i in 1..N the
+    client is killed (a) when request i arrives, before it is answered, (b) right after
+    response i is sent, (c) 10 ms later. After each kill, a plain refresh must recover
+    to root v2 / targets v3 with a parseable trust store."""
+    scene, r = _rotation_scene(ctx)
+    before = len(scene.records())
+    _require(r.refresh().ok, "rehearsal refresh failed")
+    seq = [rec.path for rec in scene.records()[before:]]
+    _require(bool(seq), "rehearsal refresh made no requests")
+    survived = crashed = not_reached = 0
     rec_times: list[float] = []
-    points: dict[str, int] = {}
     reasons: dict[str, int] = {}
-    for _ in range(ctx.trials):
-        scene, r = ctx.fresh()
-        _require(r.refresh().ok, "initial refresh failed")
-        scene.sim.rotate_keys("timestamp")  # root v2 rotates the timestamp key
-        scene.sim.publish(["root"])
-        _publish_fw2(scene)
-        point = rnd.choice(["root", "timestamp", "snapshot", "targets"])
-        points[point] = points.get(point, 0) + 1
-        killer = _Killer(r, rnd.uniform(0, 0.03))
-        scene.add_rule(Rule(role(point), "normal", on_sent=killer))
-        res = r.refresh()
-        killer.disarm()
-        crashed += int(res.killed)
-        scene.clear_rules()
-        res2 = r.refresh()
-        parse_ok = all(r.metadata_parseable().values())
-        vers = (r.trusted_version("root"), r.trusted_version("targets"))
-        if res2.ok and parse_ok and vers == (2, 3):
-            survived += 1
-            rec_times.append(res2.duration)
-        else:
-            why = (f"recovery refresh failed: {res2.stderr_tail[:120]}" if not res2.ok else
-                   "unparseable trust store" if not parse_ok else f"stale versions {vers}")
-            reasons[why] = reasons.get(why, 0) + 1
+    failed_at: list[str] = []
+    for i, path in enumerate(seq, 1):
+        for phase in PHASES:
+            scene, r = _rotation_scene(ctx)
+            scene.add_rule(Rule(nth_request(i), "normal", **_kill_at(r, phase)))
+            res = r.refresh()
+            r.kill_switch.clear()
+            crashed += int(res.killed)
+            not_reached += int(not res.killed and phase == "request")
+            scene.clear_rules()
+            res2 = r.refresh()
+            parse_ok = all(r.metadata_parseable().values())
+            vers = (r.trusted_version("root"), r.trusted_version("targets"))
+            if res2.ok and parse_ok and vers == (2, 3):
+                survived += 1
+                rec_times.append(res2.duration)
+            else:
+                why = (f"recovery refresh failed: {res2.stderr_tail[:100]}" if not res2.ok else
+                       "unparseable trust store" if not parse_ok else f"stale versions {vers}")
+                reasons[why] = reasons.get(why, 0) + 1
+                failed_at.append(f"{i}:{path.rsplit('/', 1)[-1]}@{phase}")
+    n = len(seq) * len(PHASES)
     return _trials_outcome(ctx, survived, crashed, rec_times, reasons,
-                           {"kill_points": ",".join(f"{k}:{v}" for k, v in sorted(points.items()))})
+                           {"census": 1, "requests": len(seq),
+                            "request_seq": " ".join(q.rsplit("/", 1)[-1] for q in seq),
+                            "request_points_not_reached": not_reached,
+                            "failed_at": " ".join(failed_at) or "-"}, n=n)
 
 
 @scenario("powercut-download", ["OTA-PWR-02"],
@@ -402,14 +441,17 @@ def powercut_refresh(ctx: Ctx) -> Outcome:
 def powercut_download(ctx: Ctx) -> Outcome:
     rnd = random.Random(f"{ctx.seed}-{ctx.client.name}-download")
     # control: the same 2 MiB download without any fault must work, otherwise a
-    # platform problem would be misreported as a crash-consistency failure
-    scene, r = ctx.fresh()
-    big = random.Random(f"{ctx.seed}-control").randbytes(2 * 1024 * 1024)
-    scene.sim.add_artifact("targets", big, "fw.bin")
-    scene.sim.publish(["targets", "snapshot", "timestamp"])
-    res = r.download("fw.bin")
-    _require(res.ok and r.downloaded() == [big],
-             f"honest 2 MiB download fails without any fault: {res.stderr_tail[:140]}")
+    # platform problem would be misreported as a crash-consistency failure. Three times:
+    # a flaky platform crash (tuf-js / libuv on Windows) passed a single control once.
+    for k in range(CONTROL_RUNS):
+        scene, r = ctx.fresh()
+        big = random.Random(f"{ctx.seed}-control-{k}").randbytes(2 * 1024 * 1024)
+        scene.sim.add_artifact("targets", big, "fw.bin")
+        scene.sim.publish(["targets", "snapshot", "timestamp"])
+        res = r.download("fw.bin")
+        _require(res.ok and r.downloaded() == [big],
+                 f"honest 2 MiB download fails without any fault (control {k + 1}/{CONTROL_RUNS}, "
+                 f"exit {res.exit_code}): {res.stderr_tail[:120]}")
     survived = crashed = torn_seen = 0
     rec_times: list[float] = []
     reasons: dict[str, int] = {}
@@ -429,6 +471,10 @@ def powercut_download(ctx: Ctx) -> Outcome:
         torn_seen += int("BAD" in after_crash)
         scene.clear_rules()
         res2 = r.download("fw.bin")
+        _require(_protocol_exit(res2),
+                 f"retry after the kill crashed outside the CLI protocol (exit {res2.exit_code}, "
+                 f"trial {i + 1}); same class as a platform crash, not a crash-consistency "
+                 f"verdict: {res2.stderr_tail[:100]}")
         if res2.ok and r.downloaded() == [big]:
             survived += 1
             rec_times.append(res2.duration)
@@ -440,17 +486,31 @@ def powercut_download(ctx: Ctx) -> Outcome:
                            {"torn_file_observed": torn_seen})
 
 
+CONTROL_RUNS = 3
+
+
+def _protocol_exit(res) -> bool:
+    """The CLI protocol allows exit codes 0 and 1 only. Anything else from a run that the
+    bench did not kill (an abort, an access violation, 0xC0000409 = fast-fail) is a crash
+    of the client process; the bench reports it as ERROR instead of guessing a verdict."""
+    return res.killed or res.timed_out or res.exit_code in (0, 1)
+
+
 def _trials_outcome(ctx: Ctx, survived: int, crashed: int, rec: list[float],
-                    reasons: dict[str, int], extra: dict) -> Outcome:
-    m = {"trials": ctx.trials, "crashed": crashed, "survived": survived,
-         "survival_rate": round(survived / ctx.trials, 3),
+                    reasons: dict[str, int], extra: dict, n: int | None = None) -> Outcome:
+    n = ctx.trials if n is None else n
+    m = {"trials": n, "crashed": crashed, "survived": survived,
+         "survival_rate": round(survived / n, 3),
          "mean_recovery_s": round(sum(rec) / len(rec), 3) if rec else "-", **extra}
-    if survived == ctx.trials:
+    # One verdict rule for both levels (ch. 2, table 2.6): a census of crash points is
+    # exhaustive over a defined set, so a single failed point is a counterexample -> FAIL.
+    # Random trials are a sample: all survived -> PASS, none -> FAIL, otherwise PARTIAL.
+    if survived == n:
         v = "PASS"
-    elif survived == 0:
+    elif survived == 0 or extra.get("census"):
         v = "FAIL"
     else:
         v = "PARTIAL"
-    why = "; ".join(f"{n}x {k}" for k, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:3])
-    return Outcome(v, f"{survived}/{ctx.trials} survived ({crashed} killed mid-run)"
+    why = "; ".join(f"{c}x {k}" for k, c in sorted(reasons.items(), key=lambda kv: -kv[1])[:3])
+    return Outcome(v, f"{survived}/{n} survived ({crashed} killed mid-run)"
                    + (f" | {why}" if why else ""), m)

@@ -15,7 +15,7 @@ git -C $conf checkout $confCommit
 
 Set-Location $bench
 uv venv --python 3.13 .venv
-uv pip install --python .venv\Scripts\python.exe "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" "pyyaml==6.0.3" $conf
+uv pip install --python .venv\Scripts\python.exe "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" "pyyaml==6.0.3" "jsonschema==4.23.0" "pytest==9.1.1" $conf
 
 New-Item -ItemType Directory -Force clients\bin | Out-Null
 go build -C (Join-Path $conf "clients\go-tuf") -o (Join-Path $bench "clients\bin\go-tuf.exe") .

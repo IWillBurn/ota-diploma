@@ -1,7 +1,8 @@
 # Clients under test. Every entry speaks the tuf-conformance CLI protocol
 # (init / refresh / download), see third_party/tuf-conformance/CLIENT-CLI.md.
 # Placeholders: {python} base interpreter (venv site-packages injected via
-# PYTHONPATH so a kill reaches the real process), {node}, {root} = bench dir.
+# PYTHONPATH so a kill reaches the real process), {node}, {root} = bench dir,
+# {exe} = ".exe" on Windows and "" elsewhere.
 clients:
   - name: python-tuf
     spec: tuf
@@ -13,7 +14,7 @@ clients:
     spec: tuf
     language: Go
     version: go-tuf v2.4.2
-    command: ["{root}/clients/bin/go-tuf.exe"]
+    command: ["{root}/clients/bin/go-tuf{exe}"]
     # the conformance client shells out to `date +%s` (faketime support)
     path_prepend: ["C:/Program Files/Git/usr/bin"]
 
@@ -59,3 +60,10 @@ clients:
     control: true
     command: ["{python}", "{root}/clients/naive/naive_client.py"]
     env: {OTABENCH_MUTANT: keep-torn}
+
+  - name: naive-lazyroot
+    spec: tuf
+    version: mutant (trusted root replaced non-atomically across requests)
+    control: true
+    command: ["{python}", "{root}/clients/naive/naive_client.py"]
+    env: {OTABENCH_MUTANT: lazy-root}

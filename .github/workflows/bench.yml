@@ -1,0 +1,52 @@
+# Unit tests of the bench and a quick MVP run (TUF clients) on Linux.
+# The A/B pilot needs QEMU with KVM and a prebuilt image; it is not run here.
+name: bench
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TUF_CONFORMANCE_COMMIT: 3d3fbb8164a7b0d404cff08b13594104ec3fef4f
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: tuf-conformance (pinned) and the go-tuf client
+        run: |
+          git clone https://github.com/theupdateframework/tuf-conformance third_party/tuf-conformance
+          git -C third_party/tuf-conformance checkout "$TUF_CONFORMANCE_COMMIT"
+          mkdir -p bench/clients/bin
+          (cd third_party/tuf-conformance/clients/go-tuf && go build -o "$GITHUB_WORKSPACE/bench/clients/bin/go-tuf" .)
+      - name: Python and Node dependencies
+        working-directory: bench
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" "pyyaml==6.0.3" \
+            "jsonschema==4.23.0" "pytest==9.1.1" ../third_party/tuf-conformance
+          (cd clients/tuf-js && npm ci --no-audit --no-fund)
+      - name: Unit tests
+        working-directory: bench
+        run: .venv/bin/python -m pytest -q tests
+      - name: Catalog coverage
+        working-directory: bench
+        run: .venv/bin/python -m otabench coverage | tail -1
+      - name: MVP, quick (short caps, 3 trials)
+        working-directory: bench
+        run: .venv/bin/python -m otabench run --quick --jobs 8 --out results/ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: otabench-matrix
+          path: bench/results/ci

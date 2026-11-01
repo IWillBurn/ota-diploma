@@ -101,7 +101,7 @@ kill попал бы не в него.
 | endless-metadata / endless-artifact | OTA-DOS-01/02 | **нет**: транспортный уровень, поток без Content-Length |
 | slow-metadata / slow-artifact | OTA-DOS-03/04 | **нет**: капельная отдача ниже порога read-timeout |
 | dropped-connection | OTA-NET-01 | **нет**: обрыв посреди артефакта и восстановление |
-| powercut-refresh | OTA-PWR-01 | **нет**: kill в случайной точке обновления метаданных с ротацией root |
+| powercut-refresh | OTA-PWR-01 | **нет**: kill в каждой событийной точке обновления метаданных с ротацией root (запрос i × 3 фазы) |
 | powercut-download | OTA-PWR-02 | **нет**: kill во время загрузки и записи артефакта 2 МиБ |
 
 **Вердикты.** `PASS`: атака заблокирована или сбой пережит. `FAIL`: атака

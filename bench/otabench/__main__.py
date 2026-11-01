@@ -39,8 +39,20 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--out", default="")
     rep = sub.add_parser("report", help="re-render reports from results.json")
     rep.add_argument("results")
+    th = sub.add_parser("threats", help="threat x implementation matrix over both levels")
+    th.add_argument("--mvp", default="", help="results.json of an MVP run")
+    th.add_argument("--pilot", nargs="*", default=[], help="pilot.json files (latest wins)")
+    th.add_argument("--out", required=True)
     a = p.parse_args(argv)
     catalog = load_catalog(CATALOG)
+
+    if a.cmd == "threats":
+        from .threatmatrix import load_pilots, write
+
+        mvp = json.loads(Path(a.mvp).read_text(encoding="utf-8")) if a.mvp else None
+        for f in write(catalog, mvp, load_pilots([Path(x) for x in a.pilot]), Path(a.out)):
+            print(f)
+        return 0
 
     if a.cmd == "list":
         for sid, (threats, title, _) in sc.REGISTRY.items():

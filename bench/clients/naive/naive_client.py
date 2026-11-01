@@ -20,6 +20,9 @@ comma-separated list of additional checks to switch off. Every scenario should
   role-keys   accept a signature by ANY key listed in root, not the role's keys
   hash        do not verify artifact hashes
   keep-torn   do not delete an artifact whose hash did not match
+  lazy-root   replace the trusted root non-atomically across network requests: delete
+              root.json when a rotation starts, write the newest root when the chain
+              ends (the remove-then-rename pattern, stretched over the fetch loop)
 
 CLI is the tuf-conformance client-under-test protocol (init / refresh / download).
 """
@@ -74,6 +77,8 @@ def refresh(metadata_url: str, metadata_dir: str) -> Metadata:
     root_md = Metadata.from_file(os.path.join(metadata_dir, "root.json"))
     root = root_md.signed
     # root rotation: follow N+1.root.json while it exists (signature-checked only)
+    root_path = os.path.join(metadata_dir, "root.json")
+    newest = None
     while True:
         try:
             raw = fetch(f"{base}/{root.version + 1}.root.json")
@@ -82,7 +87,14 @@ def refresh(metadata_url: str, metadata_dir: str) -> Metadata:
         new = Metadata.from_bytes(raw)
         verify(new, root, "root")
         root = new.signed
-        save(os.path.join(metadata_dir, "root.json"), raw)
+        if "lazy-root" in MUTANT:
+            if newest is None and os.path.exists(root_path):
+                os.remove(root_path)
+            newest = raw
+        else:
+            save(root_path, raw)
+    if newest is not None:
+        save(root_path, newest)
 
     raw = fetch(f"{base}/timestamp.json")
     ts = Metadata.from_bytes(raw)

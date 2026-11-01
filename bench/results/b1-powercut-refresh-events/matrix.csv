@@ -1,0 +1,10 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+powercut-refresh,OTA-PWR-01,python-tuf,PASS,,,1.0,15,0.516,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,go-tuf,PASS,,,1.0,15,0.088,,15/15 survived (12 killed mid-run)
+powercut-refresh,OTA-PWR-01,tuf-js,PASS,,,1.0,15,0.272,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive,PASS,,,1.0,15,0.386,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-nosig,PASS,,,1.0,15,0.367,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-anykey,PASS,,,1.0,15,0.377,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-nohash,PASS,,,1.0,15,0.368,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-keeptorn,PASS,,,1.0,15,0.359,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-lazyroot,PARTIAL,,,0.867,15,0.354,,13/15 survived (13 killed mid-run) | 1x recovery refresh failed: naive client: Can't open C:\Users\eugen\AppData\Local\Temp\otabench-naive-lazyroot-us931jw4\metadata; 1x recovery refresh failed: naive client: Can't open C:\Users\eugen\AppData\Local\Temp\otabench-naive-lazyroot-7vkdxjf0\metadata

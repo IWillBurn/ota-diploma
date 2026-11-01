@@ -43,6 +43,18 @@ def role_version(name: str, version: int) -> Matcher:
     return lambda p: p == f"metadata/{version}.{name}.json"
 
 
+def nth_request(n: int) -> Matcher:
+    """Match the n-th request (1-based) this rule sees, whatever its path. Used for
+    event-based fault injection: 'act at the client's i-th network operation'."""
+    seen = [0]
+
+    def _m(path: str) -> bool:
+        seen[0] += 1
+        return seen[0] == n
+
+    return _m
+
+
 def target(name: str | None = None) -> Matcher:
     def _m(path: str) -> bool:
         if not path.startswith("targets/"):

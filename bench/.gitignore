@@ -20,3 +20,6 @@ results/*.log
 !results/pilot-ab-20261101-171703/
 !results/pilot-ab-20261101-173621/
 !results/pilot-ab-20261101-173816/
+!results/b1-powercut-refresh-events/
+!results/full-2026-11-01-v3/
+!results/threat-matrix-2026-11-01/

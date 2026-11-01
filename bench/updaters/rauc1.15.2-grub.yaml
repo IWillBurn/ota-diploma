@@ -1,0 +1,42 @@
+# Device-level adapter: RAUC 1.15.2 (latest upstream release, built from the release
+# tarball over Debian 12's package by scripts/build_rauc_upgrade.py) with the GRUB backend.
+# Everything else - commands, status, bootlog, variants - is inherited from rauc-grub.
+
+name: rauc1.15.2-grub
+extends: rauc-grub
+description: RAUC 1.15.2 (upstream release, built in the guest) with the GRUB backend; slots A=vda1, B=vda2
+image: P:/vm/ab-v1-rauc1.15.2.qcow2  # built by scripts/build_rauc_upgrade.py
+
+steps:
+  # RAUC >= 1.12 can reject older bundles: `min-bundle-version` (SemVer) in system.conf.
+  # The guard must ship with the new system, so v2 carries it; versions become SemVer.
+  minver:
+    run: |
+      rm -rf /data/staging && mkdir -p /data/staging
+      cp -ax /. /data/staging/
+      rm -rf /data/staging/usr/share/doc/* /data/staging/usr/share/man/* \
+        /data/staging/usr/share/locale/* /data/staging/var/lib/apt/lists/*
+      mk() {  # $1 bundle, $2 /etc/otabench-version, $3 manifest version
+        echo "$2" > /data/staging/etc/otabench-version
+        sz=$(du -sxm /data/staging | cut -f1)
+        img=$((sz * 125 / 100 + 64))
+        rm -rf "/data/b-$1" && mkdir -p "/data/b-$1"
+        mkfs.ext4 -q -F -L rootfs -d /data/staging "/data/b-$1/rootfs.ext4" "${img}M"
+        sed "s/@VERSION@/$3/" /root/manifest.raucm > "/data/b-$1/manifest.raucm"
+        rm -f "/data/bundles/$1.raucb"
+        rauc bundle --cert=/data/keys/dev.cert.pem --key=/data/keys/dev.key.pem \
+          "/data/b-$1" "/data/bundles/$1.raucb" > /dev/null
+        rm -rf "/data/b-$1"
+      }
+      mk v1 1 1.0.0
+      sed -i '/^min-bundle-version=/d; s/^\[system\]$/[system]\nmin-bundle-version=2.0.0/' \
+        /data/staging/etc/rauc/system.conf
+      grep -q '^min-bundle-version=2.0.0$' /data/staging/etc/rauc/system.conf
+      mk v2 2 2.0.0
+      rm -rf /data/staging
+      rauc info /data/bundles/v1.raucb 2>/dev/null | grep -i version | head -2
+      rauc info /data/bundles/v2.raucb 2>/dev/null | grep -i version | head -2
+
+variants:
+  minver:  # the built-in downgrade guard enabled: `downgrade:minver` must now PASS
+    steps: [minver]

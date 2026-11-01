@@ -12,6 +12,7 @@
 | Каталог угроз v0.2 (40 угроз; ссылки не сверены у OTA-PWR-05, -06, OTA-NET-02) | `bench/catalog/threats.yaml` | готово, см. «Проверить» ниже |
 | Пилот уровня ОС: RAUC 1.8 + GRUB в QEMU | `docs/pilot-ab.md`, `bench/scripts/pilot_ab.py` | работает |
 | Протокол адаптера v2 (уровень устройства): всё про RAUC и GRUB вынесено из сценариев в `bench/updaters/rauc-grub.yaml` | `docs/adapter-protocol.md`, `bench/otabench/device.py` | готово (01.11, задача A1) |
+| MVP v3: событийные точки обрыва в `powercut-refresh`, мутант `naive-lazyroot`, единое правило вердиктов, JSON Schema каталога, сводная матрица угроз двух уровней | `bench/results/full-2026-11-01-v3/`, `bench/results/threat-matrix-2026-11-01/` | готово (01.11) |
 | Блочное воспроизведение точек обрыва (`blklogwrites`) | `bench/otabench/writelog.py` | работает (префиксная модель) |
 | Окно «обновление теряется после успеха» и его механизм | `docs/pilot-ab.md`, раздел «Механизм окна» | готово (01.11): 8 конфигураций, механизм установлен |
 | Модель перестановок несброшенных записей | `WriteLog.crash_states()`, сценарий `reorder:*` | готово (01.11) для ext4, ext2, vfat |
@@ -39,7 +40,7 @@
 Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Порядок на ближайшее время:
 
 1. ~~**A1** — адаптер уровня ОС~~ — сделано: `docs/adapter-protocol.md`.
-2. **B1** — `powercut-refresh` с точками обрыва по событию (go-tuf прерван лишь в 2 из 10 испытаний).
+2. ~~**B1** — событийные точки обрыва~~ — сделано; также B2–B4, A5, C4, C5 (см. бэклог).
 3. **C1** — актуальный RAUC (1.15+); без этого issue в RAUC не отправлять.
 4. **A3** — второй системный апдейтер (SWUpdate или Mender).
 5. **E1–E3** — согласовать главы, источники по ГОСТ, введение и заключение.
@@ -54,6 +55,8 @@
 | Что | Команда | Интерпретатор |
 |---|---|---|
 | MVP (TUF) | `bench\.venv\Scripts\python.exe -m otabench run --quick` | venv стенда |
+| сводная матрица угроз | `bench\.venv\Scripts\python.exe -m otabench threats --mvp results\<run>\results.json --pilot results\pilot-ab-*\pilot.json --out results\<dir>` | venv стенда |
+| автотесты стенда | `bench\.venv\Scripts\python.exe -m pytest -q bench\tests` | venv стенда |
 | сборка A/B-образа (~6 мин) | `python scripts\build_ab_image.py` → `P:\vm\ab-v1.qcow2` | системный Python 3.13 |
 | пилот A/B | `bench\.venv\Scripts\python.exe scripts\pilot_ab.py [--updater rauc-grub] --only <сценарии>` | venv стенда (нужен PyYAML: адаптер — YAML) |
 | список сценариев пилота | `happy, broken, broken-unconfirmed, attacker, downgrade, cut-firstboot, cut-unconfirmed, crash-replay, window:<cfg>, reorder:<cfg> [--torn], happy:<cfg>`; `<cfg>` = `ext4-c5, ext4-c1, ext4-c30, ext4-wb1, ext4-wbonly, ext4-exponly, ext2, vfat, ext4-inplace, ext2-inplace, vfat-inplace, uefi-esp, uefi-esp-inplace` | |

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/IWillBurn/ota-diploma/bench/catalog/threats.schema.json",
+  "title": "otabench threat catalog",
+  "description": "Schema of bench/catalog/threats.yaml. Field meanings are documented in the header comment of that file.",
+  "type": "object",
+  "required": ["version", "threats"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "threats": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/threat"}
+    }
+  },
+  "$defs": {
+    "strings": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "threat": {
+      "type": "object",
+      "required": ["id", "title", "class", "property", "attacker", "ecosystems", "refs",
+                   "expected", "coverage", "bench"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^OTA-[A-Z]+-\\d{2}$"},
+        "title": {"type": "string", "minLength": 3},
+        "class": {"enum": ["authenticity", "freshness", "key-compromise", "availability",
+                           "fault-tolerance", "installation", "parsing", "confidentiality"]},
+        "property": {"type": "string", "minLength": 3},
+        "attacker": {"enum": ["net", "online-keys", "offline-keys", "fault"]},
+        "ecosystems": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"enum": ["tuf", "uptane", "suit", "ab-updater"]}
+        },
+        "refs": {
+          "type": "object",
+          "required": ["verified"],
+          "additionalProperties": false,
+          "properties": {
+            "verified": {"type": "boolean"},
+            "tuf": {"$ref": "#/$defs/strings"},
+            "uptane": {"$ref": "#/$defs/strings"},
+            "suit": {"$ref": "#/$defs/strings"},
+            "isvs": {"$ref": "#/$defs/strings"},
+            "cra": {"$ref": "#/$defs/strings"},
+            "en18031": {"$ref": "#/$defs/strings"},
+            "etsi303645": {"$ref": "#/$defs/strings"},
+            "unr156": {"$ref": "#/$defs/strings"},
+            "nist800193": {"$ref": "#/$defs/strings"},
+            "fstec117": {"$ref": "#/$defs/strings"},
+            "fstec239": {"$ref": "#/$defs/strings"},
+            "fstec_method": {"$ref": "#/$defs/strings"}
+          }
+        },
+        "spec_status": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"enum": ["tuf", "uptane", "suit", "isvs", "cra", "en18031",
+                                     "etsi303645", "unr156", "nist800193", "fstec117",
+                                     "fstec239", "fstec_method"]},
+          "additionalProperties": {"type": "string", "minLength": 3}
+        },
+        "expected": {"enum": ["block", "survive", "out-of-scope"]},
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tuf-conformance": {"$ref": "#/$defs/strings"},
+            "oss-fuzz": {"$ref": "#/$defs/strings"},
+            "mcuboot-sim": {"$ref": "#/$defs/strings"},
+            "mender-integration": {"$ref": "#/$defs/strings"},
+            "aktualizr-tests": {"$ref": "#/$defs/strings"}
+          }
+        },
+        "bench": {
+          "type": "array", "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^(ab:)?[a-z0-9][a-z0-9:*-]*( --torn)?$"}
+        },
+        "level": {"enum": ["process", "block", "system"]}
+      }
+    }
+  }
+}

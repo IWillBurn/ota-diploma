@@ -42,6 +42,7 @@ def load_clients(path: Path) -> list[ClientSpec]:
         "{python}": sys._base_executable,  # base interpreter: kill hits the real process
         "{root}": str(ROOT),
         "{node}": shutil.which("node") or "node",
+        "{exe}": ".exe" if os.name == "nt" else "",
     }
     site = str(Path(sys.prefix) / ("Lib/site-packages" if os.name == "nt" else
                                    f"lib/python{sys.version_info[0]}.{sys.version_info[1]}/site-packages"))
@@ -86,6 +87,7 @@ class ClientRunner:
         self.metadata_dir.mkdir()
         self.target_dir.mkdir()
         self.kill_switch = threading.Event()
+        self.proc_done = threading.Event()  # set once the current run's process is gone
 
     def close(self) -> None:
         self._tmp.cleanup()
@@ -133,6 +135,7 @@ class ClientRunner:
     def _run(self, args: list[str], timeout: float) -> RunResult:
         env = {**os.environ, **self.spec.env}
         self.kill_switch.clear()
+        self.proc_done.clear()
         t0 = time.monotonic()
         proc = subprocess.Popen(  # noqa: S603
             [*self.spec.command, *args], env=env,
@@ -153,6 +156,7 @@ class ClientRunner:
                 break
             time.sleep(0.002)
         code = proc.wait()
+        self.proc_done.set()
         dur = time.monotonic() - t0
         reader.join(1)
         lines = [ln for ln in b"".join(err_chunks).decode(errors="replace").splitlines()

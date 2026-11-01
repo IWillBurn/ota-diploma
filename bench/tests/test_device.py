@@ -130,3 +130,25 @@ def test_install_substitutes_quoted_path(tmp_path: Path) -> None:
 
     rc, secs, last = d.install(VM, "v2")
     assert (rc, last) == (0, "last") and VM.agent.cmd == "inst '/x/my v2.bin'"
+
+
+def test_extends_inherits_and_overrides(tmp_path: Path) -> None:
+    base = _adapter(tmp_path, MINIMAL)
+    (tmp_path / "child.yaml").write_text(textwrap.dedent("""\
+        name: child
+        extends: t
+        image: @IMG@
+        commands: {install: "inst2 {artifact}"}
+        variants:
+          w: {steps: [s1]}
+        """).replace("@IMG@", base.image.as_posix()), encoding="utf-8")
+    c = Device("child", tmp_path / "child.yaml")
+    assert c.name == "child" and c.cmd_install == "inst2 {artifact}"
+    assert c.cmd_status == "st"  # inherited inside the merged `commands` mapping
+    assert set(c.variants) == {"v", "u", "w"} and c.initial == ("A", "1")
+
+
+def test_real_rauc_upgrade_adapter() -> None:
+    d = Device("rauc1.15.2-grub")
+    assert d.cmd_install == Device("rauc-grub").cmd_install
+    assert "minver" in d.variants and len(d.variants) == 14

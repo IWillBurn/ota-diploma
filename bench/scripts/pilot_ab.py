@@ -62,6 +62,7 @@ class Pilot:
         self.uefi = False  # set while a UEFI variant is under test
         self.torn = False  # reorder: also emit sector-torn states (--torn)
         self.updater_version: str | None = None
+        self.base_override: Path | None = None  # system scenarios on a variant
 
     # ---------------------------------------------------------------- helpers
     def fresh(self, name: str, base: Path | None = None, base_fmt: str = "qcow2",
@@ -69,7 +70,8 @@ class Pilot:
         self.n += 1
         d = self.work / name
         d.mkdir(exist_ok=True)
-        ov = make_overlay(base or self.dev.image, d / f"{name}-{self.n}.qcow2", base_fmt)
+        ov = make_overlay(base or self.base_override or self.dev.image,
+                          d / f"{name}-{self.n}.qcow2", base_fmt)
         return VM(ov, d, log_writes=log, name=f"{name}-{self.n}", uefi=self.uefi).start()
 
     def boot_runs(self, vm: VM) -> list[dict]:
@@ -204,6 +206,15 @@ class Pilot:
     def happy_variant(self, config: str) -> dict:
         base = self.variant(config)
         return self._on_variant(config, lambda c: self.happy(base, f"happy-{c}"))
+
+    def on_variant(self, config: str, fn) -> dict:
+        """Run a system scenario on the variant `config` instead of the base image."""
+        base = self.variant(config)
+        self.base_override = base
+        try:
+            return self._on_variant(config, lambda c: fn())
+        finally:
+            self.base_override = None
 
     def _window_impl(self, config: str, offsets: tuple[int, ...], region: int) -> dict:
         """When does the bootloader start to see the new A/B state after a successful
@@ -612,6 +623,9 @@ def main() -> int:
         plan[f"window:{cfg}"] = (lambda c: lambda: p.window(c, offs, a.region))(cfg)
         plan[f"reorder:{cfg}"] = (lambda c: lambda: p.reorder(c, a.region))(cfg)
         plan[f"happy:{cfg}"] = (lambda c: lambda: p.happy_variant(c))(cfg)
+        for sname, fn in (("broken", p.broken), ("attacker", p.attacker),
+                          ("downgrade", p.downgrade), ("cut-firstboot", p.cut_firstboot)):
+            plan[f"{sname}:{cfg}"] = (lambda c, f: lambda: p.on_variant(c, f))(cfg, fn)
     names = a.only.split(",") if a.only else list(plan)
     unknown = [n for n in names if n not in plan]
     if unknown:

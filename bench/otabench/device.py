@@ -30,6 +30,13 @@ class AdapterError(Exception):
     """The adapter definition cannot serve a request (missing role, variant, ...)."""
 
 
+def _merge(base: dict, over: dict) -> dict:
+    out = dict(base)
+    for k, v in over.items():
+        out[k] = _merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
 @dataclass(frozen=True)
 class Artifact:
     role: str
@@ -44,7 +51,7 @@ class Device:
         self.file = Path(path) if path else UPDATERS / f"{name}.yaml"
         if not self.file.exists():
             raise AdapterError(f"no adapter definition {self.file}")
-        raw = yaml.safe_load(self.file.read_text(encoding="utf-8"))
+        raw = self._load(self.file)
         self.name = str(raw.get("name", name))
         self.description = str(raw.get("description", ""))
         self.image = Path(raw["image"])
@@ -78,6 +85,18 @@ class Device:
                 ref = item if isinstance(item, str) else item.get("step")
                 if ref is not None and ref not in self.steps:
                     raise AdapterError(f"{self.name}: variant {v} refers to unknown step {ref!r}")
+
+    @classmethod
+    def _load(cls, path: Path, depth: int = 0) -> dict:
+        """Read an adapter file; `extends: <name>` inherits another adapter in the same
+        directory (mappings merge recursively, everything else is replaced)."""
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        parent = raw.pop("extends", None)
+        if not parent:
+            return raw
+        if depth > 4:
+            raise AdapterError(f"{path.name}: `extends` chain too deep")
+        return _merge(cls._load(path.parent / f"{parent}.yaml", depth + 1), raw)
 
     # ------------------------------------------------------------------ static facts
     def other(self, slot: str) -> str:

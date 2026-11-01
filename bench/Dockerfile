@@ -20,7 +20,6 @@ COPY --from=gobuild /out/go-tuf /work/bench/clients/bin/go-tuf
 WORKDIR /work/bench
 COPY bench/ /work/bench/
 RUN python -m venv .venv \
- && .venv/bin/pip install --no-cache-dir "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" "pyyaml==6.0.3" /work/third_party/tuf-conformance \
- && cd clients/tuf-js && npm install --no-audit --no-fund \
- && sed -i 's#{root}/clients/bin/go-tuf.exe#{root}/clients/bin/go-tuf#' /work/bench/clients.yaml
+ && .venv/bin/pip install --no-cache-dir "tuf==7.0.1" "securesystemslib[crypto]==1.6.0" "pyyaml==6.0.3" "jsonschema==4.23.0" "pytest==9.1.1" /work/third_party/tuf-conformance \
+ && cd clients/tuf-js && npm ci --no-audit --no-fund
 ENTRYPOINT [".venv/bin/python", "-m", "otabench"]
