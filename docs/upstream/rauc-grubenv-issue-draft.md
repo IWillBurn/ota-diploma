@@ -41,6 +41,14 @@ following the documented `ORDER`/`<slot>_OK`/`<slot>_TRY` scheme. We see two eff
    `Failed marking slot rootfs.1 non-bootable: grub backend: Failed to run grub-editenv`.
    The device has dropped out of OTA until someone repairs the environment.
 
+3. **Even ext4 can end with an empty grubenv.** Restored crash states show a zero-length
+   grubenv on ext4 with default settings: on RAUC 1.15.2 right at the start of an install (when
+   the target slot is marked bad), on RAUC 1.8 at the final rewrite (one of 222 states of a
+   reordering model over the whole install, and it is a plain in-order prefix state). ext4 has
+   committed the truncation before the new data got blocks — the known zero-length window of
+   delayed allocation. From the 1.15.2 state `rauc install` fails (`Failed getting primary slot:
+   grub backend: grub-editenv failed`): the device left OTA on the default configuration.
+
 A custom backend (`bootloader=custom`) with the same variables, which rewrites the
 1024-byte block **in place** (no `O_TRUNC`, `pwrite` + `fsync`, as GRUB's own `save_env`
 does), removed both effects in all our crash states on ext4, ext2 and vfat. A
