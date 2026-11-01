@@ -1,6 +1,6 @@
 # Состояние работы и как продолжить
 
-Последнее обновление: 01.11.2026, ~22:15.
+Последнее обновление: 01.11.2026, 22:25 (остановка).
 
 ## Что уже сделано
 
@@ -44,11 +44,11 @@
 
 ## С чего продолжить (по приоритету)
 
-Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Состояние на 01.11.2026, ~22:15:
+Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. **Остановлено 01.11.2026 в 22:25 по просьбе автора** в стабильной точке: все запущенные прогоны завершены и закоммичены, фоновых процессов и ВМ нет; тихая очередь была снята до первых замеров (незаконченный `net-slow:stream` удалён, результата не дал).
 
-1. **Идут фоновые очереди** (журналы в `P:\vm`): `pilot-q1.log` (перестановки RAUC вокруг записи окружения), `pilot-q2.log` (резервированное окружение в модели разрыва), затем `quiet-batch.sh` → `pilot-quiet.log` — **окна на тихом хосте** (ждёт, пока не останется ни одного `pilot_ab.py`/`replay_state.py`; одна ВМ за раз): `net-slow:stream`, `rauc-grub window:ext4-c5,ext4-redundant`, `rauc1.15.2-grub window:ext4-c5,ext4-exponly,ext4-wbonly`, `swupdate-grub window:ext4-c5,vfat` с метками до 90 с, повтор реплея `replay-rauc18-1535b.log`; после неё `q5.sh` → `pilot-q5.log` (`reorder:ext4-inplace-rootro --torn` с повторной загрузкой BRICK).
-2. **Текст главы 4 почти готов в заготовках** (`docs/thesis/drafts/`: `ch4_new_43.md`, `ch4_new_43_net.md`, `ch4_tail.md`, `fill_values.json`, `fill.py`, `ch4_patch_b.py`). После очередей: вписать в `fill_values.json` значения меток `W_RAUC1152`, `W_SWU`, `RAUC_SLOW`, `T418_RAUC_SLOW`, `RED_RESULT`, `T418_RED`, `CONCL_RED`, `CONCL_RAUC_NET`; `python fill.py` (должно остаться 0 меток); `python ch4_patch_b.py`. Заготовки лежат в репозитории.
-3. Вставить в `docs/pilot-ab.md` новые разделы (заготовка `pilot_new_sections.md`), обновить сводную матрицу (`otabench threats … --out results/threat-matrix-2026-11-02`), примеры соответствия, `scored-draft.md` (окна), заключение (окна SWUpdate/RAUC 1.15.2), Word-сборку.
+1. **Не выполнено — окна на тихом хосте** (одна ВМ за раз, ничего параллельно). Готовый скрипт: `bash bench/scripts/queue_quiet_windows.sh` (ждёт, пока нет `pilot_ab.py`/`replay_state.py`, пишет `P:\vm\pilot-quiet.log`, ~1,5–1,7 ч): `rauc1.15.2-grub net-slow:stream`; `rauc-grub window:ext4-c5,ext4-redundant`; `rauc1.15.2-grub window:ext4-c5,ext4-exponly,ext4-wbonly`; `swupdate-grub window:ext4-c5,vfat` (метки до 90 с); повтор реплея RAUC 1.8 с проверкой живучести (`replay-rauc18-1535b.log`). Затем `bash bench/scripts/queue_rootro_rerun.sh` (~20 мин): `reorder:ext4-inplace-rootro --torn` с повторной загрузкой BRICK — первый прогон содержит ложный BRICK, записанный до правила Р24.
+2. **Глава 4: заготовки в `docs/thesis/drafts/`.** Осталось вписать в `fill_values.json` метки `W_RAUC1152`, `W_SWU` (из окон), `RAUC_SLOW`, `T418_RAUC_SLOW`, `CONCL_RAUC_NET` (из `net-slow:stream`), затем `python fill.py` (0 меток) и `python ch4_patch_b.py`. Остальные метки уже заполнены (B5, fsck, две копии окружения, сетевые сценарии, перестановки SWUpdate).
+3. После этого: вставить `drafts/pilot_new_sections.md` в `docs/pilot-ab.md`; сводная матрица (`otabench threats … --out results/threat-matrix-2026-11-02`, список MVP-прогонов — в истории команд этой сессии: v4 Linux, d1, d2 ×2, tough, d5 ×2); окна в `scored-draft.md`, `swupdate-draft.md` (метка `<<window>>`) и заключение; пересборка Word (`node docs/thesis/tools/build_docx.js`).
 4. Не публиковать черновики в `docs/upstream/` (RAUC, SWUpdate, tuf-conformance, go-tuf, tough, libcsuit) без согласия автора.
 
 Новое с прошлого обновления: TOCTOU (контроль FAIL, апдейтеры PASS); подпись бандла > 2 ГиБ (RAUC 1.8 принимает подмену); tough (4-й клиент TUF); фаззинг метаданных TUF (паника go-tuf v2.4.2, исправлена в master, не выпущена) и конверта SUIT; сетевые атаки на SWUpdate и потоковую установку RAUC (ложное сообщение SWUpdate о неудаче); выпадение из OTA на ext4 (RAUC 1.15.2, 1.8) и у SWUpdate на ext2/vfat; корень только для чтения и fsck в initramfs против OTA-PWR-06; две копии окружения; B5 (всё окно, 222 состояния); ложный BRICK под нагрузкой → повторная загрузка (Р24); пороги сервера по сумме байтов (Р25).
