@@ -19,7 +19,22 @@ Extra for the harness: dump (print the variables).
 import os
 import sys
 
-ENV = os.environ.get("OTABENCH_GRUBENV", "/boot-ab/grub/grubenv")
+def _env_path() -> str:
+    """$OTABENCH_GRUBENV, else env= in /etc/otabench-bootenv.conf, else /boot-ab/grub/grubenv."""
+    if os.environ.get("OTABENCH_GRUBENV"):
+        return os.environ["OTABENCH_GRUBENV"]
+    try:
+        with open("/etc/otabench-bootenv.conf", encoding="utf-8") as f:
+            for line in f:
+                key, _, val = line.strip().partition("=")
+                if key == "env" and val:
+                    return val
+    except OSError:
+        pass
+    return "/boot-ab/grub/grubenv"
+
+
+ENV = _env_path()
 SIZE = 1024
 HEADER = b"# GRUB Environment Block\n"
 

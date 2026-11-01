@@ -22,6 +22,8 @@ from pathlib import Path
 
 QEMU_DIR = Path(r"C:\Program Files\qemu")
 DEFAULT_ACCEL = "whpx,kernel-irqchip=off"
+OVMF_CODE = QEMU_DIR / "share" / "edk2-x86_64-code.fd"
+OVMF_VARS = QEMU_DIR / "share" / "edk2-i386-vars.fd"  # QEMU ships the x86 vars template as i386
 
 
 def qemu_exe(name: str) -> str:
@@ -236,14 +238,18 @@ class VM:
     def __init__(self, disk: Path, work: Path, *, disk_format: str = "qcow2",
                  log_writes: Path | None = None, net: bool = False, mem: int = 1024,
                  smp: int = 2, accel: str = DEFAULT_ACCEL, name: str = "vm",
-                 discard: bool = False, cold_reboot: bool | None = None) -> None:
+                 discard: bool = False, cold_reboot: bool | None = None,
+                 uefi: bool = False) -> None:
         self.disk, self.work, self.fmt = Path(disk), Path(work), disk_format
         self.log_writes, self.net, self.mem, self.smp, self.accel = log_writes, net, mem, smp, accel
-        self.discard, self.name = discard, name
+        self.discard, self.name, self.uefi = discard, name, uefi
         self.cold_reboot = ("whpx" in accel) if cold_reboot is None else cold_reboot
         self.work.mkdir(parents=True, exist_ok=True)
         self.serial_log = self.work / f"{name}-serial.log"
         self.qemu_log = self.work / f"{name}-qemu.log"
+        self.vars = self.work / f"{name}-ovmf-vars.fd"
+        if uefi and not self.vars.exists():  # per-VM writable copy of the NVRAM template
+            self.vars.write_bytes(OVMF_VARS.read_bytes())
         self.qmp, self.agent = QMP(0), GuestAgent(0)
         self._new_ports()
         self.proc: subprocess.Popen | None = None
@@ -270,6 +276,9 @@ class VM:
              "-nic", "user,model=virtio-net-pci" if self.net else "none"]
         if self.cold_reboot:
             c.append("-no-reboot")
+        if self.uefi:
+            c += ["-drive", f"if=pflash,format=raw,unit=0,readonly=on,file={OVMF_CODE}",
+                  "-drive", f"if=pflash,format=raw,unit=1,file={self.vars}"]
         if self.log_writes:
             append = self._log_started
             if not append:

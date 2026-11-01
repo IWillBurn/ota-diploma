@@ -35,6 +35,9 @@ AB = Path(r"P:\vm\ab-v1.qcow2")
 GRUB_RX = re.compile(r"otabench-grub: (RESCUE|ORDER=\[([^\]]*)\] A_OK=(\S*) A_TRY=(\S*) "
                      r"B_OK=(\S*) B_TRY=(\S*) -> (\w))")
 READY_S = 180
+ENV_LIST = ("E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf); "
+            "[ -n \"$E\" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null); "
+            "[ -n \"$E\" ] || E=/boot-ab/grub/grubenv; grub-editenv \"$E\" list")
 CHECK_READY_S = 120  # per crash state; a fallback boot needs ~25 s
 VARIANT_DIR = Path(r"P:\vm\variants")
 _FSTAB = "sed -i 's#^LABEL=boot .*#/dev/vda3 /boot-ab {fs} {opts} 0 2#' /etc/fstab"
@@ -94,12 +97,34 @@ VARIANTS["ext4-inplace"] = _INPLACE + " && " + _REBUNDLE
 VARIANTS["ext2-inplace"] = VARIANTS["ext2"] + " && " + _INPLACE + " && " + _REBUNDLE
 VARIANTS["vfat-inplace"] = VARIANTS["vfat"] + " && " + _INPLACE + " && " + _REBUNDLE
 
+# --- UEFI: GRUB for x86_64-efi on the real ESP (vda15, vfat), grubenv on the ESP --------
+# RAUC's GRUB integration docs suggest the EFI partition for grubenv on UEFI systems.
+_ESP_ENV = "/boot/efi/EFI/BOOT/grub/grubenv"
+_UEFI = (
+    "mkdir -p /boot/efi && (mountpoint -q /boot/efi || mount -t vfat /dev/vda15 /boot/efi)"
+    " && grub-install --target=x86_64-efi --efi-directory=/boot/efi"
+    # unsigned core: Debian's signed (shim) GRUB ignores --boot-directory and boots the stock menu
+    " --boot-directory=/boot/efi/EFI/BOOT --removable --no-nvram --no-uefi-secure-boot"
+    " --modules='part_gpt ext2 fat' 2>&1 | tail -1"
+    " && test -s /boot/efi/EFI/BOOT/BOOTX64.EFI && test -d /boot/efi/EFI/BOOT/grub/x86_64-efi"
+    " && cp /boot-ab/grub/grub.cfg /boot/efi/EFI/BOOT/grub/grub.cfg"
+    " && cp /boot-ab/grub/grubenv " + _ESP_ENV +
+    " && sed -i 's#^grubenv=.*#grubenv=" + _ESP_ENV + "#' /etc/rauc/system.conf"
+    " && echo '/dev/vda15 /boot/efi vfat defaults,nofail 0 2' >> /etc/fstab"
+    " && echo 'env=" + _ESP_ENV + "' > /etc/otabench-bootenv.conf"
+    " && systemctl restart rauc && rauc status mark-good && grub-editenv " + _ESP_ENV + " list"
+    " | tr '\\n' ' ' && sync")
+VARIANTS["uefi-esp"] = _UEFI + " && " + _REBUNDLE
+VARIANTS["uefi-esp-inplace"] = _UEFI + " && " + _INPLACE + " && " + _REBUNDLE
+UEFI_VARIANTS = {"uefi-esp", "uefi-esp-inplace"}
+
 
 class Pilot:
     def __init__(self, work: Path) -> None:
         self.work = work
         work.mkdir(parents=True, exist_ok=True)
         self.n = 0
+        self.uefi = False  # set while a UEFI variant is under test
 
     # ---------------------------------------------------------------- helpers
     def fresh(self, name: str, base: Path = AB, base_fmt: str = "qcow2",
@@ -108,7 +133,7 @@ class Pilot:
         d = self.work / name
         d.mkdir(exist_ok=True)
         ov = make_overlay(base, d / f"{name}-{self.n}.qcow2", base_fmt)
-        return VM(ov, d, log_writes=log, name=f"{name}-{self.n}").start()
+        return VM(ov, d, log_writes=log, name=f"{name}-{self.n}", uefi=self.uefi).start()
 
     @staticmethod
     def grub_runs(vm: VM) -> list[dict]:
@@ -128,7 +153,7 @@ class Pilot:
     def state(vm: VM) -> dict:
         rc, out, _ = vm.agent.sh(
             "sed -n 's/.*rauc.slot=\\([AB]\\).*/\\1/p' /proc/cmdline; cat /etc/otabench-version;"
-            " echo ---; grub-editenv /boot-ab/grub/grubenv list; echo ---;"
+            " echo ---; " + ENV_LIST + "; echo ---;"
             " rauc status --output-format=json 2>/dev/null", 60)
         head, env, rauc = (out.split("---\n") + ["", ""])[:3]
         lines = head.split()
@@ -168,7 +193,7 @@ class Pilot:
     def wait_confirmed(vm: VM, slot: str, timeout: float = 90) -> bool:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            rc, out, _ = vm.agent.sh("grub-editenv /boot-ab/grub/grubenv list", 30)
+            rc, out, _ = vm.agent.sh(ENV_LIST, 30)
             env = dict(kv.split("=", 1) for kv in out.split() if "=" in kv)
             if env.get(f"{slot}_OK") == "1" and env.get(f"{slot}_TRY") == "0":
                 return True
@@ -239,7 +264,14 @@ class Pilot:
         tmp.rename(out)
         return out
 
-    def window(self, config: str, offsets: tuple[int, ...], region: int) -> dict:
+    def window(self, config: str, *args, **kw) -> dict:
+        self.uefi = config in UEFI_VARIANTS
+        try:
+            return self._window_impl(config, *args, **kw)
+        finally:
+            self.uefi = False
+
+    def _window_impl(self, config: str, offsets: tuple[int, ...], region: int) -> dict:
         """When does the bootloader start to see the new A/B state after a successful
         `rauc install`, for one /boot-ab configuration? Also replays every write in the
         `region` log entries before install completion (where grubenv is rewritten)."""
@@ -298,7 +330,14 @@ class Pilot:
                             for x in offsets},
                 "points": results}
 
-    def reorder(self, config: str, region: int) -> dict:
+    def reorder(self, config: str, *args, **kw) -> dict:
+        self.uefi = config in UEFI_VARIANTS
+        try:
+            return self._reorder_impl(config, *args, **kw)
+        finally:
+            self.uefi = False
+
+    def _reorder_impl(self, config: str, region: int) -> dict:
         """Volatile-cache model: between two FLUSH barriers the disk may persist any subset
         of the writes. Bounded subsets (none / all / only one / all but one) for every
         barrier interval in the last `region` log entries before install completion."""
@@ -358,6 +397,14 @@ class Pilot:
                 "diverged": sum(r["diverged"] for r in results), "points": results}
 
     # ---------------------------------------------------------------- scenarios
+    def happy_variant(self, config: str) -> dict:
+        base = self.variant(config)
+        self.uefi = config in UEFI_VARIANTS
+        try:
+            return self.happy(base, f"happy-{config}")
+        finally:
+            self.uefi = False
+
     def happy(self, base: Path = AB, name: str = "happy") -> dict:
         vm = self.fresh(name, base=base)
         try:
@@ -598,7 +645,7 @@ def main() -> int:
     for cfg in VARIANTS:
         plan[f"window:{cfg}"] = (lambda c: lambda: p.window(c, offs, a.region))(cfg)
         plan[f"reorder:{cfg}"] = (lambda c: lambda: p.reorder(c, a.region))(cfg)
-        plan[f"happy:{cfg}"] = (lambda c: lambda: p.happy(p.variant(c), f"happy-{c}"))(cfg)
+        plan[f"happy:{cfg}"] = (lambda c: lambda: p.happy_variant(c))(cfg)
     names = a.only.split(",") if a.only else list(plan)
     results = {}
     for n in names:

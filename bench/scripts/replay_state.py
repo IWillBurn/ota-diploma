@@ -24,7 +24,9 @@ from otabench.vm import VM, make_overlay, qemu_exe  # noqa: E402
 from otabench.writelog import WriteLog  # noqa: E402
 
 PROBE = ("sed -n 's/.*rauc.slot=\\([AB]\\).*/\\1/p' /proc/cmdline; cat /etc/otabench-version;"
-         " echo ---; ls -l /boot-ab/grub/grubenv; grub-editenv /boot-ab/grub/grubenv list 2>&1;"
+         " echo ---; E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf);"
+         " [ -n \"$E\" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null);"
+         " [ -n \"$E\" ] || E=/boot-ab/grub/grubenv; ls -l $E; grub-editenv $E list 2>&1;"
          " echo ---; rauc status --output-format=json 2>&1 | head -c 600")
 
 
@@ -36,6 +38,7 @@ def main() -> int:
     ap.add_argument("--base-end", type=int, required=True)
     ap.add_argument("--extra", default="", help="comma-separated entry indices")
     ap.add_argument("--liveness", action="store_true")
+    ap.add_argument("--uefi", action="store_true", help="boot with OVMF (uefi-* variants)")
     ap.add_argument("--work", default=r"P:\vm\postmortem")
     a = ap.parse_args()
     work = Path(a.work)
@@ -50,7 +53,7 @@ def main() -> int:
         wl.apply_with_undo(raw, extra)
         ov = make_overlay(raw, work / "state.qcow2", "raw")
         name = f"state-{a.base_end}-{'-'.join(map(str, extra)) or 'none'}"
-        vm = VM(ov, work, name=name).start()
+        vm = VM(ov, work, name=name, uefi=a.uefi).start()
         try:
             ready = vm.agent.wait(150)
             out["ready"] = ready
