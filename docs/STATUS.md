@@ -1,6 +1,6 @@
 # Состояние работы и как продолжить
 
-Последнее обновление: 01.11.2026, ~17:45.
+Последнее обновление: 01.11.2026, ~20:15.
 
 ## Что уже сделано
 
@@ -25,6 +25,13 @@
 | Черновики глав ВКР 1–4 + рисунки | `docs/thesis/ch1…ch4*.md`, `docs/figures/fig4-*.svg` (генерирует `bench/scripts/make_figures.py`) | первые черновики (01.11): ~9,5 + 7 + 8 + 8,4 тыс. слов |
 | Репозиторий | https://github.com/IWillBurn/ota-diploma, ветка работы `uefi-esp` | `main` = исходный импорт; **коммиты без соавторства Claude** |
 | Черновик issue для tuf-conformance | `docs/upstream/tuf-conformance-transport-tests.md` | черновик, **не опубликован** |
+| RAUC 1.15.2 (из исходников) и SWUpdate 2024.12.1 на том же A/B-образе | `updaters/rauc1.15.2-grub.yaml`, `updaters/swupdate-grub.yaml`, `results/pilot-ab-20261101-181255/`, `-183354/`, `-184534/` | системный и блочный уровень пройдены; окно под нагрузкой, ждёт чистого повтора |
+| SUIT (libcsuit) — третья экосистема | `scripts/suit_bench.py`, `results/suit-2026-11-01/` | готово (01.11) |
+| TOCTOU (OTA-INST-04) с контрольным установщиком `naive-rauc-grub` | сценарий `toctou` в `pilot_ab.py` | код готов, прогон идёт (журнал `P:\vm\pilot-q1.log`) |
+| Подпись бандла plain > 2 ГиБ (CVE-2026-34155) | `scripts/rauc_sigcover.py`, `clients/rauc-verify/`, `results/rauc-sigcover-2026-11-01/` | готово: RAUC 1.8 (Debian 12) принимает подмену, 1.15.2 — нет |
+| Корень только для чтения против OTA-PWR-06 | вариант `ext4-inplace-rootro`, `results/pilot-ab-20261101-191247/`, `-192320/` | 0 записей в слот A, 0 BRICK в модели разрыва |
+| Word-версия ВКР по ГОСТ 7.32 | `docs/thesis/tools/build_docx.js`, `render_figures.ps1` → `docs/thesis/build/` | собирается; формулы перепечатать вручную |
+| Введение, заключение, статьи | `docs/thesis/intro.md`, `conclusion.md`, `docs/papers/vak-article-draft.md`, `scored-draft.md` | черновики |
 
 Главные результаты на сегодня:
 * MVP: python-tuf и go-tuf не прерывают медленную отдачу (≥120 с), tuf-js прерывает через 100 с. Это расхождение реализаций, значимое для Uptane §5.4, а не для TUF.
@@ -39,11 +46,10 @@
 
 Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Порядок на ближайшее время:
 
-1. ~~**A1** — адаптер уровня ОС~~ — сделано: `docs/adapter-protocol.md`.
-2. ~~**B1** — событийные точки обрыва~~ — сделано; также B2–B4, A5, C4, C5 (см. бэклог).
-3. **C1** — актуальный RAUC (1.15+); без этого issue в RAUC не отправлять.
-4. **A3** — второй системный апдейтер (SWUpdate или Mender).
-5. **E1–E3** — согласовать главы, источники по ГОСТ, введение и заключение.
+1. Дождаться очередей `P:\vm\pilot-q1.log` (TOCTOU, перестановки SWUpdate с `--region-at env --settle 35`) и `P:\vm\pilot-b6.log` (B5: перестановки по всему окну).
+2. На **тихом** хосте (одна ВМ) повторить окна: `rauc-grub window:ext4-c5`; `rauc1.15.2-grub window:ext4-c5,ext4-exponly,ext4-wbonly`; `swupdate-grub window:ext4-c5`. Прогоны под нагрузкой дали RAUC 1.15.2 «старое до +20 с», SWUpdate «до +6 с» — не доверять.
+3. Внести результаты в `docs/pilot-ab.md` и гл. 4 (новые п. 4.3.9–4.3.11: RAUC 1.15.2 и SWUpdate, корень только для чтения, подпись и TOCTOU), обновить табл. 4.1, 4.3, выводы и п. 4.5; затем заключение и `scored-draft.md` (пометки [rerun]/[pending]).
+4. Добавить `ab:toctou` в каталог (OTA-INST-04) и пересчитать покрытие (ожидается 26 / 15 / 10).
 
 ## Проверить перед тем, как писать главы
 * ✅ (01.11) Названия тестов `mcuboot-sim`, `mender-integration`, `aktualizr-tests` в каталоге существуют (сверено с коммитами, см. шапку `threats.yaml`). Что проверяет каждый тест — `docs/external-tests.md` (01.11).

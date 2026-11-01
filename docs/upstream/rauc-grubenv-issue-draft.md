@@ -1,7 +1,11 @@
 # Draft issue for rauc/rauc
 
-> **Status: draft, not posted.** Post only after the author has reviewed it and, ideally,
-> after reproducing on current RAUC (1.15+). UEFI with grubenv on the ESP: reproduced
+> **Status: draft, not posted.** Post only after the author has reviewed it.
+> Current RAUC: reproduced 2026-11-01 on RAUC 1.15.2 built from the release tarball
+> (`results/pilot-ab-20261101-183354/`): ext4 11 of 26 reordering states with GRUB/OS
+> disagreement, vfat 4 of 28 and ESP 2 of 28 with an unreadable grubenv, the in-place
+> backend 0 of 24 on vfat. The window length on 1.15.2 was measured under host load and
+> is being repeated. UEFI with grubenv on the ESP: reproduced
 > 2026-11-01 (OVMF, unsigned GRUB on the ESP; torn grubenv → `rauc install` refuses;
 > the in-place backend removes it) — see docs/pilot-ab.md «Проверка на UEFI».
 > Checked 2026-11-01: no existing RAUC issue on grubenv power-loss robustness
@@ -17,7 +21,8 @@
 
 We test A/B updaters with power cuts in QEMU. Every guest write is logged
 (`blklogwrites`), then the disk is rebuilt at crash points and booted. Setup: RAUC 1.8
-(Debian 12), GRUB 2.06, BIOS boot, grubenv on a separate partition, our `grub.cfg`
+(Debian 12) and RAUC 1.15.2 (release tarball), GRUB 2.06, BIOS boot and UEFI (OVMF),
+grubenv on a separate partition or on the ESP, our `grub.cfg`
 following the documented `ORDER`/`<slot>_OK`/`<slot>_TRY` scheme. We see two effects of
 `grub-editenv` truncating and rewriting the file.
 
@@ -56,7 +61,8 @@ Reproduction scripts and data: (link to the otabench repository once public).
 
 ## Notes for the author (not part of the issue)
 * Evidence: `docs/pilot-ab.md`, sections «Механизм окна», «Модель перестановок», «Исправление».
-* Before posting: (1) repeat with current RAUC; (2) repeat with UEFI GRUB and grubenv on
-  the real ESP; (3) Linux/KVM host. Our reordering model emulates a volatile disk cache;
+* Before posting: (1) ~~repeat with current RAUC~~ done on 1.15.2 (window length still to be
+  re-measured on a quiet host); (2) ~~UEFI GRUB with grubenv on the real ESP~~ done;
+  (3) Linux/KVM host — not available, say so in the issue. Our reordering model emulates a volatile disk cache;
   say so explicitly if asked whether real eMMC shows it.
 * No @-handles in the issue.
