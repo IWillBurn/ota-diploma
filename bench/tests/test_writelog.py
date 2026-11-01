@@ -196,3 +196,27 @@ def test_bootenv_rejects_damaged_block(tmp_path: Path) -> None:
     env.write_bytes(b"")  # what a torn truncate+rewrite leaves on vfat
     r = _bootenv(env, "get-primary")
     assert r.returncode != 0 and "not a 1024-byte" in r.stderr
+
+
+def _bootenv_r(env: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(BOOTENV), *args], capture_output=True, text=True,
+                          env={**os.environ, "OTABENCH_GRUBENV": str(env), "OTABENCH_REDUNDANT": "1"})
+
+
+def test_bootenv_redundant_copies(tmp_path: Path) -> None:
+    env = _env(tmp_path, b"ORDER=A B\nA_OK=1\nA_TRY=0\nB_OK=0\nB_TRY=0\n")
+    copy1 = Path(str(env) + ".1")
+    assert _bootenv_r(env, "init-redundant").returncode == 0
+    assert b"SEQ=1" in env.read_bytes() and b"SEQ=0" in copy1.read_bytes()
+    assert _bootenv_r(env, "set-primary", "B").returncode == 0  # goes to the older copy
+    assert b"SEQ=2" in copy1.read_bytes() and b"ORDER=B A" in copy1.read_bytes()
+    assert b"ORDER=A B" in env.read_bytes()  # the previous state stays intact
+    assert _bootenv_r(env, "get-primary").stdout.strip() == "B"
+    copy1.write_bytes(b"")  # torn / emptied newer copy: fall back to the older one
+    assert _bootenv_r(env, "get-primary").stdout.strip() == "A"
+    assert _bootenv_r(env, "set", "A_TRY=1").returncode == 0  # rewrites the unreadable copy
+    assert b"SEQ=2" in copy1.read_bytes() and b"A_TRY=1" in copy1.read_bytes()
+    env.write_bytes(b"")
+    copy1.write_bytes(b"")
+    r = _bootenv_r(env, "dump")
+    assert r.returncode != 0 and "no readable copy" in r.stderr

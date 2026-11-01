@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-"""RAUC custom bootloader backend for otabench: GRUB environment, written IN PLACE.
+"""RAUC custom bootloader backend for otabench: GRUB environment, written IN PLACE,
+or kept as two redundant copies.
 
 RAUC's built-in GRUB backend calls `grub-editenv`, which truncates and rewrites
 grubenv. The file then gets a new data block, i.e. its *metadata* changes. GRUB
@@ -10,40 +11,50 @@ after a power cut. GRUB's own `save_env` instead overwrites the existing blocks
 in place. This backend does the same: open without O_TRUNC, pwrite the 1024-byte
 block at offset 0, fsync. No allocation, no metadata change.
 
+Redundant mode (`redundant=1` in /etc/otabench-bootenv.conf), the other mitigation
+under test: two copies, <env> and <env>.1, each with a counter SEQ. The current copy
+is the readable one with the higher SEQ (GRUB picks it the same way, see the
+`redundant` step of the rauc-grub adapter). A change is written to the OTHER copy
+with SEQ+1 -- deliberately like grub-editenv (truncate, write, fsync), so that only
+the redundancy protects against a torn or empty file.
+
 Same variables and semantics as RAUC's GRUB backend (ORDER, <slot>_OK, <slot>_TRY).
 RAUC 1.8 calls:  get-primary | set-primary <bootname> | get-state <bootname> |
                  set-state <bootname> good|bad
-Extra for the harness: dump (print the variables).
+Extra for the harness: dump (print the variables of the current copy),
+set KEY=VAL... (used to undo a boot confirmation), init-redundant.
 """
 
 import os
 import sys
 
-def _env_path() -> str:
-    """$OTABENCH_GRUBENV, else env= in /etc/otabench-bootenv.conf, else /boot-ab/grub/grubenv."""
-    if os.environ.get("OTABENCH_GRUBENV"):
-        return os.environ["OTABENCH_GRUBENV"]
+
+def _conf() -> dict[str, str]:
+    out = {}
     try:
         with open("/etc/otabench-bootenv.conf", encoding="utf-8") as f:
             for line in f:
                 key, _, val = line.strip().partition("=")
-                if key == "env" and val:
-                    return val
+                if key and val:
+                    out[key] = val
     except OSError:
         pass
-    return "/boot-ab/grub/grubenv"
+    return out
 
 
-ENV = _env_path()
+CONF = _conf()
+# $OTABENCH_GRUBENV, else env= in /etc/otabench-bootenv.conf, else /boot-ab/grub/grubenv
+ENV = os.environ.get("OTABENCH_GRUBENV") or CONF.get("env") or "/boot-ab/grub/grubenv"
+REDUNDANT = (os.environ.get("OTABENCH_REDUNDANT") or CONF.get("redundant")) == "1"
+COPIES = [ENV, ENV + ".1"]
 SIZE = 1024
 HEADER = b"# GRUB Environment Block\n"
+BINARY = getattr(os, "O_BINARY", 0)  # only matters for tests on Windows
 
 
-def read() -> tuple[list[bytes], dict[str, str]]:
-    with open(ENV, "rb") as f:
-        buf = f.read()
+def parse(buf: bytes) -> tuple[list[bytes], dict[str, str]] | None:
     if len(buf) != SIZE or not buf.startswith(HEADER):
-        sys.exit(f"otabench-bootenv: {ENV} is not a {SIZE}-byte GRUB environment block")
+        return None
     comments, env = [], {}
     for line in buf.split(b"\n"):
         if not line or set(line) == {ord("#")}:
@@ -57,14 +68,50 @@ def read() -> tuple[list[bytes], dict[str, str]]:
     return comments, env
 
 
-def write(comments: list[bytes], env: dict[str, str]) -> None:
+def _load(path: str):
+    try:
+        with open(path, "rb") as f:
+            return parse(f.read())
+    except OSError:
+        return None
+
+
+def read() -> tuple[int, list[bytes], dict[str, str]]:
+    """(index of the current copy, comments, variables)."""
+    if not REDUNDANT:
+        got = _load(ENV)
+        if got is None:
+            sys.exit(f"otabench-bootenv: {ENV} is not a {SIZE}-byte GRUB environment block")
+        return 0, got[0], got[1]
+    best = None
+    for i, path in enumerate(COPIES):
+        got = _load(path)
+        if got is None:
+            continue
+        seq = int(got[1].get("SEQ", "0") or 0)
+        if best is None or seq > best[0]:
+            best = (seq, i, got)
+    if best is None:
+        sys.exit(f"otabench-bootenv: no readable copy of {ENV}")
+    return best[1], best[2][0], best[2][1]
+
+
+def _block(comments: list[bytes], env: dict[str, str]) -> bytes:
     body = b"".join(c + b"\n" for c in comments)
     body += b"".join(f"{k}={v}\n".encode() for k, v in env.items())
     if len(body) > SIZE:
         sys.exit("otabench-bootenv: environment too large")
-    block = body + b"#" * (SIZE - len(body))
-    # no O_TRUNC: same blocks, no metadata change (O_BINARY only matters on Windows tests)
-    fd = os.open(ENV, os.O_RDWR | getattr(os, "O_BINARY", 0))
+    return body + b"#" * (SIZE - len(body))
+
+
+def write(current: int, comments: list[bytes], env: dict[str, str]) -> None:
+    if REDUNDANT:
+        env["SEQ"] = str(int(env.get("SEQ", "0") or 0) + 1)
+        path, flags = COPIES[1 - current], os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    else:  # no O_TRUNC: same blocks, no metadata change
+        path, flags = ENV, os.O_RDWR
+    block = _block(comments, env)
+    fd = os.open(path, flags | BINARY, 0o644)
     try:
         os.lseek(fd, 0, os.SEEK_SET)
         if os.write(fd, block) != SIZE:
@@ -83,7 +130,20 @@ def main(argv: list[str]) -> int:
         print(__doc__, file=sys.stderr)
         return 2
     cmd, args = argv[0], argv[1:]
-    comments, env = read()
+    if cmd == "init-redundant":  # two valid copies of the current single environment
+        got = _load(ENV)
+        if got is None:
+            sys.exit(f"otabench-bootenv: {ENV} is not readable")
+        for path, seq in ((COPIES[0], "1"), (COPIES[1], "0")):
+            env = dict(got[1], SEQ=seq)
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | BINARY, 0o644)
+            try:
+                os.write(fd, _block(got[0], env))
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+        return 0
+    current, comments, env = read()
     if cmd == "dump":
         for k, v in env.items():
             print(f"{k}={v}")
@@ -101,13 +161,21 @@ def main(argv: list[str]) -> int:
         slot = args[0]
         env["ORDER"] = " ".join([slot] + [s for s in order(env) if s != slot])
         env[f"{slot}_OK"], env[f"{slot}_TRY"] = "1", "0"
-        write(comments, env)
+        write(current, comments, env)
         return 0
     if cmd == "set-state":
         slot, state = args
         env[f"{slot}_OK"] = "1" if state == "good" else "0"
         env[f"{slot}_TRY"] = "0"
-        write(comments, env)
+        write(current, comments, env)
+        return 0
+    if cmd == "set":
+        for kv in args:
+            key, sep, val = kv.partition("=")
+            if not sep:
+                sys.exit(f"otabench-bootenv: set needs KEY=VALUE, got {kv!r}")
+            env[key] = val
+        write(current, comments, env)
         return 0
     print(f"otabench-bootenv: unknown command {cmd}", file=sys.stderr)
     return 2

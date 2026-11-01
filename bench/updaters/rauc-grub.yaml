@@ -30,7 +30,9 @@ commands:
     [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
     [ -n "$E" ] || E=/boot-ab/grub/grubenv
     S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
-    L=$(grub-editenv "$E" list 2>/dev/null)
+    if grep -qx 'redundant=1' /etc/otabench-bootenv.conf 2>/dev/null
+    then L=$(/usr/local/sbin/otabench-bootenv dump 2>/dev/null)  # the current of two copies
+    else L=$(grub-editenv "$E" list 2>/dev/null); fi
     get() { printf '%s\n' "$L" | sed -n "s/^$1=//p"; }
     echo "slot=$S"
     echo "version=$(cat /etc/otabench-version 2>/dev/null)"
@@ -48,7 +50,9 @@ commands:
     [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
     [ -n "$E" ] || E=/boot-ab/grub/grubenv
     S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
-    grub-editenv "$E" set "${S}_TRY=1" && sync
+    if grep -qx 'redundant=1' /etc/otabench-bootenv.conf 2>/dev/null
+    then /usr/local/sbin/otabench-bootenv set "${S}_TRY=1" && sync
+    else grub-editenv "$E" set "${S}_TRY=1" && sync; fi
   # SHA-256 of a slot's whole block device: oracle of the toctou scenario
   # (is the installed image the one that was verified?)
   slot_digest: |
@@ -63,7 +67,8 @@ commands:
     E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf)
     [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
     [ -n "$E" ] || E=/boot-ab/grub/grubenv
-    ls -l "$E"; grub-editenv "$E" list 2>&1
+    ls -l "$E" "$E.1" 2>&1; grub-editenv "$E" list 2>&1
+    if [ -e "$E.1" ]; then echo "--- $E.1"; grub-editenv "$E.1" list 2>&1; fi
     echo ---; rauc status --output-format=json 2>&1 | head -c 600
 
 # Bootloader decisions as printed on the serial console by vm/guest/grub.cfg.
@@ -121,6 +126,35 @@ steps:
       rauc status mark-good
       /usr/local/sbin/otabench-bootenv dump | tr '\n' ' '
       rauc status --output-format=json > /dev/null
+  redundant:  # the other mitigation (B6): two copies of grubenv with a counter SEQ
+    upload: {/usr/local/sbin/otabench-bootenv: vm/guest/otabench-bootenv}
+    run: |
+      chmod 755 /usr/local/sbin/otabench-bootenv
+      echo redundant=1 >> /etc/otabench-bootenv.conf
+      sed -i -e 's/^bootloader=grub$/bootloader=custom/' -e '/^grubenv=/d' /etc/rauc/system.conf
+      printf '\n[handlers]\nbootloader-custom-backend=/usr/local/sbin/otabench-bootenv\n' >> /etc/rauc/system.conf
+      /usr/local/sbin/otabench-bootenv init-redundant
+      python3 - /boot-ab/grub/grub.cfg <<'PY'
+      import sys
+      p = sys.argv[1]
+      s = open(p).read()
+      pick = ("set SEQ=0\nset S0=0\nset S1=0\n"
+              "if load_env --file $prefix/grubenv SEQ; then set S0=$SEQ; fi\n"
+              "set SEQ=0\n"
+              "if load_env --file $prefix/grubenv.1 SEQ; then set S1=$SEQ; fi\n"
+              "set ENVF=$prefix/grubenv\n"
+              "if [ $S1 -gt $S0 ]; then set ENVF=$prefix/grubenv.1; fi\n"
+              "echo \"otabench-grub: env copies SEQ=$S0/$S1 -> $ENVF\"\n"
+              "load_env --file $ENVF\n")
+      assert s.count("\nload_env\n") == 1 and s.count("save_env A_TRY B_TRY") == 1
+      s = s.replace("\nload_env\n", "\n" + pick, 1)
+      s = s.replace("save_env A_TRY B_TRY", "save_env --file $ENVF A_TRY B_TRY", 1)
+      open(p, "w").write(s)
+      PY
+      grep -q 'save_env --file $ENVF' /boot-ab/grub/grub.cfg
+      systemctl restart rauc
+      rauc status mark-good
+      /usr/local/sbin/otabench-bootenv dump | tr '\n' ' '
   uefi:  # GRUB for x86_64-efi on the real ESP (vda15, vfat), grubenv on the ESP
     run: |
       ESP_ENV=/boot/efi/EFI/BOOT/grub/grubenv
@@ -206,6 +240,10 @@ variants:
     steps: [inplace, rootro, rebundle]
   ext4-inplace-fsck:  # the fix plus fsck -y of the rw root in the initramfs (OTA-PWR-06)
     steps: [inplace, fsckroot, rebundle]
+  ext4-redundant:  # instead of the in-place write: two copies with a counter (B6)
+    steps: [redundant, rebundle]
+  vfat-redundant:
+    steps: [dosfstools, {step: reformat, env: {FS: vfat, MOD: fat}}, redundant, rebundle]
   uefi-esp:  # RAUC's docs suggest the ESP for grubenv on UEFI systems
     firmware: uefi
     steps: [uefi, rebundle]
