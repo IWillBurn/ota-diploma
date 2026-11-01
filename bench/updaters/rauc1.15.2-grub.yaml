@@ -40,9 +40,9 @@ steps:
   # RAUC streaming installs only verity bundles: re-bundle v2 (same content) as verity
   verity:
     run: |
-      rm -rf /data/b-v2 && mkdir -p /data/b-v2
+      rm -rf /data/b-v2
       rauc extract --keyring=/etc/rauc/keyring.pem /data/bundles/v2.raucb /data/b-v2 > /dev/null
-      sed -i '/^verity-/d; /^format=/d; /^\[bundle\]/d' /data/b-v2/manifest.raucm
+      sed -i '/^verity-/d; /^format=/d; /^\[bundle\]/d; /^sha256=/d; /^size=/d' /data/b-v2/manifest.raucm
       echo '' >> /data/b-v2/manifest.raucm
       echo '[bundle]' >> /data/b-v2/manifest.raucm
       echo 'format=verity' >> /data/b-v2/manifest.raucm
@@ -50,6 +50,7 @@ steps:
       rauc bundle --cert=/data/keys/dev.cert.pem --key=/data/keys/dev.key.pem /data/b-v2 /data/bundles/v2.raucb > /dev/null
       rm -rf /data/b-v2
       rauc info --keyring=/etc/rauc/keyring.pem /data/bundles/v2.raucb 2>/dev/null | grep -i 'bundle format' | head -1
+      echo nbd > /etc/modules-load.d/otabench-nbd.conf
       modprobe nbd && lsmod | grep -q '^nbd'
 
 variants:

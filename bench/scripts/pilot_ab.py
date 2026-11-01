@@ -664,14 +664,24 @@ class Pilot:
             ok = rc not in (0, None) and untouched
             why = (f"slow download ({NET_SLOW_BPS} B/s) aborted after {t_inst:.0f} s" if ok else
                    f"no abort within {limit:.0f} s at {NET_SLOW_BPS} B/s" if rc is None else f"rc={rc}")
-        else:  # endless
-            ok = rc is not None and (rc == 0 and pair == self.dev.updated or rc != 0 and untouched)
-            why = (f"install returned after {t_inst:.0f} s, {extra / 2**20:.0f} MiB past the artifact"
-                   if ok else f"still reading after {limit:.0f} s ({extra / 2**20:.0f} MiB past the artifact)")
-        return {"verdict": "PASS" if ok else "FAIL", "detail": why, "mode": srv.mode if kind == "ok" else kind,
+        else:  # endless: the threat (OTA-DOS-02) is unbounded reading; the report is noted apart
+            ok = rc is not None
+            switched = not untouched
+            mismatch = (rc == 0) != switched if rc is not None else None
+            why = (f"stopped {extra / 2**20:.0f} MiB past the artifact after {t_inst:.0f} s" if ok else
+                   f"still reading after {limit:.0f} s ({extra / 2**20:.0f} MiB past the artifact)")
+            if mismatch:
+                why += ("; reported FAILURE although the boot state was switched to the new slot"
+                        if switched else "; reported success, but the boot state was not switched")
+        # the honest network install is the baseline: if it fails, nothing else can be judged
+        verdict = "PASS" if ok else ("ERROR" if kind == "ok" else "FAIL")
+        if kind == "ok" and not ok:
+            why = f"precondition: the honest network install did not work (rc={rc}: {tail.splitlines()[-2:] if tail else last})"
+        return {"verdict": verdict, "detail": why, "mode": srv.mode if kind == "ok" else kind,
                 "install_rc": rc, "install_s": round(t_inst, 1), "install_msg": last, "install_tail": tail,
                 "requests": reqs, "bytes_past_artifact": extra, "artifact_size": size,
                 "boot_untouched_after_failure": untouched, "control_install": ctl,
+                "status_mismatch": ((rc == 0) == untouched) if rc is not None else None,
                 "after_reboot": f"{pair[0]}/{pair[1]}", "before": s0, "after": s1}
 
     def cut_firstboot(self, delay: float = 3.0, confirm: bool = True) -> dict:
@@ -865,7 +875,7 @@ def main() -> int:
     RUN_INFO.update(params=vars(a), git_commit=_git_commit(), check_ready_s=CHECK_READY_S)
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
             "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot, "toctou": p.toctou,
-            **{f"net:{k}": (lambda k: lambda: p.net(k))(k) for k in ("ok", "tamper", "drop", "slow", "endless")},
+            **{f"net-{k}": (lambda k: lambda: p.net(k))(k) for k in ("ok", "tamper", "drop", "slow", "endless")},
             "broken-unconfirmed": lambda: p.broken(confirm=False),
             "cut-unconfirmed": lambda: p.cut_firstboot(confirm=False),
             "crash-replay": lambda: p.crash_replay(

@@ -99,6 +99,8 @@ def load_pilots(paths: list[Path]) -> dict[tuple[str, str], dict[str, dict]]:
         for name, r in d["results"].items():
             torn_run = params_torn or any(p.get("torn") for p in _points(r))
             kind, _, cfg = name.partition(":")
+            if kind == "net":  # first network runs were named net:<mode>, now net-<mode>
+                kind, cfg = f"net-{cfg}", ""
             cfg = cfg or "ext4-c5"  # system scenarios run on the adapter's base image
             key = f"{kind}{' --torn' if torn_run and kind == 'reorder' else ''}"
             out[(adapter, cfg)][key] = r
