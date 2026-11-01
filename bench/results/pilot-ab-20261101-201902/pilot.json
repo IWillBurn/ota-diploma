@@ -1,0 +1,139 @@
+{
+  "started": "20261101-201902",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "swupdate-grub",
+    "only": "toctou",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "settle": 0.0,
+    "sample_intervals": 15,
+    "region_at": "end",
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "058ad1b",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "swupdate-grub",
+    "file": "updaters\\swupdate-grub.yaml",
+    "version": "swupdate 2024.12.1+dfsg-3~bpo12+1",
+    "image": "P:\\vm\\ab-v1-swupdate.qcow2"
+  },
+  "results": {
+    "toctou": {
+      "verdict": "PASS",
+      "metric": "census",
+      "detail": "all trials safe: held-2 blocked, held-6 blocked, held-12 blocked, late-6 blocked",
+      "control": {
+        "trial": "control",
+        "install_rc": 0,
+        "install_s": 51.5,
+        "install_msg": "[INFO ] : No SWUPDATE running :  Waiting for requests...",
+        "attacker": "",
+        "slot_digest": "f645b612db64aa3302cbbb78541fb51bac608b06df1776bbe613c08675c6c44d",
+        "outcome": "genuine",
+        "safe": true,
+        "boot_before": [
+          "A B",
+          "0",
+          "0"
+        ],
+        "boot_after": [
+          "B A",
+          "1",
+          "0"
+        ]
+      },
+      "trials": [
+        {
+          "trial": "held-2",
+          "install_rc": 1,
+          "install_s": 2.2,
+          "install_msg": "[ERROR] : SWUPDATE failed [1] Image invalid or corrupted. Not installing ...",
+          "attacker": "swapped 313999872 bytes at +2.00s in 3.19s",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-6",
+          "install_rc": 1,
+          "install_s": 6.3,
+          "install_msg": "[ERROR] : SWUPDATE failed [1] Image invalid or corrupted. Not installing ...",
+          "attacker": "swapped 313999872 bytes at +6.00s in 2.54s",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-12",
+          "install_rc": 1,
+          "install_s": 67.4,
+          "install_msg": "[ERROR] : SWUPDATE failed [0] ERROR install_from_file.c : endupdate : 55 : SWUpdate *failed* !",
+          "attacker": "swapped 313999872 bytes at +12.00s in 4.10s",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "late-6",
+          "install_rc": 1,
+          "install_s": 6.4,
+          "install_msg": "[ERROR] : SWUPDATE failed [0] ERROR install_from_file.c : endupdate : 55 : SWUpdate *failed* !",
+          "attacker": "swapped 313999872 bytes at +6.00s in 1.83s",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        }
+      ],
+      "wall_s": 302.7
+    }
+  }
+}

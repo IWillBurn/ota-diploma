@@ -542,6 +542,7 @@ class Pilot:
                     time.sleep(0.5)
             vm.agent.sh(f"touch {d}/go", 10)
             rc, t_inst, last = self.dev.install(vm, "v2", path=b)
+            tail = self.dev.last_output
             s1 = self.state(vm)
             alog = vm.agent.sh(f"sleep 2; cat {d}/attacker.log 2>/dev/null", 30)[1].strip() if mode else ""
             digest = self.dev.slot_digest(vm, self.dev.target_slot) if rc == 0 else None
@@ -555,7 +556,7 @@ class Pilot:
         else:
             outcome = "genuine" if ref is None or digest == ref else "substituted"
         return {"trial": tag, "install_rc": rc, "install_s": round(t_inst, 1),
-                "install_msg": last, "attacker": alog, "slot_digest": digest,
+                "install_msg": last, "install_tail": tail, "attacker": alog, "slot_digest": digest,
                 "outcome": outcome, "safe": outcome in ("blocked", "genuine"),
                 "boot_before": boot(s0), "boot_after": boot(s1)}
 

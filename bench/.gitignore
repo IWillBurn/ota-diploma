@@ -37,3 +37,8 @@ results/.suit-work/
 !results/pilot-ab-20261101-183354/
 !results/d2-timestamp-same-version/
 clients/tough/target/
+!results/tough-linux-2026-11-01/
+!results/pilot-ab-20261101-200758/
+!results/pilot-ab-20261101-201530/
+!results/pilot-ab-20261101-201902/
+!results/pilot-ab-20261101-202405/

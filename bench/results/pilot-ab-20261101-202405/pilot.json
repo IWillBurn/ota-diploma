@@ -1,0 +1,139 @@
+{
+  "started": "20261101-202405",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "rauc1.15.2-grub",
+    "only": "toctou",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "settle": 0.0,
+    "sample_intervals": 15,
+    "region_at": "end",
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "058ad1b",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "rauc1.15.2-grub",
+    "file": "updaters\\rauc1.15.2-grub.yaml",
+    "version": "rauc 1.15.2",
+    "image": "P:\\vm\\ab-v1-rauc1.15.2.qcow2"
+  },
+  "results": {
+    "toctou": {
+      "verdict": "PASS",
+      "metric": "census",
+      "detail": "all trials safe: held-2 blocked, held-6 blocked, held-12 blocked, late-6 genuine",
+      "control": {
+        "trial": "control",
+        "install_rc": 0,
+        "install_s": 30.4,
+        "install_msg": "Installing `/data/otabench-toctou/update.raucb` succeeded",
+        "attacker": "",
+        "slot_digest": "201347ab96cda4beeb82d55f50ee20658f59a808e0a09c545314f6073f904a9e",
+        "outcome": "genuine",
+        "safe": true,
+        "boot_before": [
+          "A B",
+          "0",
+          "0"
+        ],
+        "boot_after": [
+          "B A",
+          "1",
+          "0"
+        ]
+      },
+      "trials": [
+        {
+          "trial": "held-2",
+          "install_rc": 1,
+          "install_s": 0.2,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` failed",
+          "attacker": "",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-6",
+          "install_rc": 1,
+          "install_s": 0.2,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` failed",
+          "attacker": "",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-12",
+          "install_rc": 1,
+          "install_s": 0.2,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` failed",
+          "attacker": "",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "late-6",
+          "install_rc": 0,
+          "install_s": 17.5,
+          "install_msg": "Installing `/data/otabench-toctou/update.raucb` succeeded",
+          "attacker": "swap failed at +6.00s: [Errno 13] Permission denied: '/data/otabench-toctou/update.raucb'",
+          "slot_digest": "201347ab96cda4beeb82d55f50ee20658f59a808e0a09c545314f6073f904a9e",
+          "outcome": "genuine",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "B A",
+            "1",
+            "0"
+          ]
+        }
+      ],
+      "wall_s": 239.9
+    }
+  }
+}

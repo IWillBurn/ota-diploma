@@ -1,0 +1,139 @@
+{
+  "started": "20261101-200758",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "naive-rauc-grub",
+    "only": "toctou",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "settle": 0.0,
+    "sample_intervals": 15,
+    "region_at": "end",
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "9cd88f5",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "naive-rauc-grub",
+    "file": "updaters\\naive-rauc-grub.yaml",
+    "version": "naive-rauc-grub",
+    "image": "P:\\vm\\ab-v1.qcow2"
+  },
+  "results": {
+    "toctou": {
+      "verdict": "FAIL",
+      "metric": "census",
+      "detail": "3 of 4 trials unsafe: held-6 substituted; held-12 substituted; late-6 substituted",
+      "control": {
+        "trial": "control",
+        "install_rc": 0,
+        "install_s": 34.1,
+        "install_msg": "CMS Verification successful",
+        "attacker": "",
+        "slot_digest": "fc102efb1ea7d1b56142535b918589e628d66daf89f4b6aabefec3206f5c47de",
+        "outcome": "genuine",
+        "safe": true,
+        "boot_before": [
+          "A B",
+          "0",
+          "0"
+        ],
+        "boot_after": [
+          "B A",
+          "1",
+          "0"
+        ]
+      },
+      "trials": [
+        {
+          "trial": "held-2",
+          "install_rc": 4,
+          "install_s": 2.8,
+          "install_msg": "40576A19B47F0000:error:1700006D:CMS routines:CMS_verify:content verify error:../crypto/cms/cms_smime.c:494:",
+          "attacker": "swapped 285648171 bytes at +2.00s in 3.86s",
+          "slot_digest": null,
+          "outcome": "blocked",
+          "safe": true,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "A B",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-6",
+          "install_rc": 0,
+          "install_s": 32.0,
+          "install_msg": "CMS Verification successful",
+          "attacker": "swapped 285648171 bytes at +6.00s in 2.98s",
+          "slot_digest": "315f14b683a7b128a35b5730f4b744b4457d289df18fafa6b64bd1ae2e01a3cb",
+          "outcome": "substituted",
+          "safe": false,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "B A",
+            "1",
+            "0"
+          ]
+        },
+        {
+          "trial": "held-12",
+          "install_rc": 0,
+          "install_s": 31.4,
+          "install_msg": "CMS Verification successful",
+          "attacker": "swapped 285648171 bytes at +12.01s in 1.59s",
+          "slot_digest": "315f14b683a7b128a35b5730f4b744b4457d289df18fafa6b64bd1ae2e01a3cb",
+          "outcome": "substituted",
+          "safe": false,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "B A",
+            "1",
+            "0"
+          ]
+        },
+        {
+          "trial": "late-6",
+          "install_rc": 0,
+          "install_s": 30.9,
+          "install_msg": "CMS Verification successful",
+          "attacker": "swapped 285648171 bytes at +6.01s in 3.26s",
+          "slot_digest": "315f14b683a7b128a35b5730f4b744b4457d289df18fafa6b64bd1ae2e01a3cb",
+          "outcome": "substituted",
+          "safe": false,
+          "boot_before": [
+            "A B",
+            "0",
+            "0"
+          ],
+          "boot_after": [
+            "B A",
+            "1",
+            "0"
+          ]
+        }
+      ],
+      "wall_s": 451.3
+    }
+  }
+}

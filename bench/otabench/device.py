@@ -73,6 +73,7 @@ class Device:
         self.cmd_debug = c.get("debug")
         self.cmd_unconfirm = c.get("unconfirm")
         self.cmd_slot_digest = c.get("slot_digest")
+        self.last_output = ""
         bl = raw.get("bootlog") or {}
         run, rescue = bl.get("run"), bl.get("rescue")
         if run and "(?P<slot>" not in run:
@@ -128,6 +129,7 @@ class Device:
         t = time.monotonic()
         rc, out, err = vm.agent.sh(cmd, timeout)
         lines = (out + err).strip().splitlines()
+        self.last_output = "\n".join(lines[-8:])  # the reason is often not on the last line
         return rc, time.monotonic() - t, lines[-1] if lines else ""
 
     def status(self, vm, timeout: float = 60) -> dict:
