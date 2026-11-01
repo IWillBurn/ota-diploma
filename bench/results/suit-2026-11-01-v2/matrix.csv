@@ -1,0 +1,15 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+suit-baseline,,libcsuit,PASS,,,,,,,
+suit-baseline,,libcsuit-example,PASS,,,,,,,
+suit-mutations,OTA-PARSE-01 OTA-AUTH-02,libcsuit,PASS,,,,,,,"0 crashes or timeouts of 436 mutated envelopes; 0 installed the payload, 52 reported success without installing anything; empty success: flip0001 flip0119 flip0121 flip0122 trunc0008 trunc0016"
+suit-mutations,OTA-PARSE-01 OTA-AUTH-02,libcsuit-example,PASS,,,,,,,"0 crashes or timeouts of 436 mutated envelopes; 0 installed the payload, 52 reported success without installing anything; empty success: flip0001 flip0119 flip0121 flip0122 trunc0008 trunc0016"
+suit-payload-substitution,OTA-AUTH-01,libcsuit,PASS,,,,,,,rejected; the fetched bytes stay in the destination component (the manifest fetches straight into it)
+suit-payload-substitution,OTA-AUTH-01,libcsuit-example,FAIL,,,,,,,payload with a wrong digest accepted
+suit-manifest-tamper,OTA-AUTH-02,libcsuit,PASS,,,,,,,rejected
+suit-manifest-tamper,OTA-AUTH-02,libcsuit-example,PASS,,,,,,,rejected
+suit-signature-tamper,OTA-AUTH-02,libcsuit,PASS,,,,,,,rejected
+suit-signature-tamper,OTA-AUTH-02,libcsuit-example,PASS,,,,,,,rejected
+suit-extra-data,OTA-AUTH-04,libcsuit,PASS,,,,,,,accepted exactly the signed length
+suit-extra-data,OTA-AUTH-04,libcsuit-example,PASS,,,,,,,accepted exactly the signed length
+suit-malformed,OTA-PARSE-01,libcsuit,FAIL,,,,,,,"0 crashes, 6 accepted of 21 malformed inputs"
+suit-malformed,OTA-PARSE-01,libcsuit-example,FAIL,,,,,,,"0 crashes, 6 accepted of 21 malformed inputs"

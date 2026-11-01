@@ -21,6 +21,12 @@ reports the result of `suit_process_envelope()` to a status tracker would report
 an update that was never decoded. Expected: an error whenever no authenticated manifest
 could be decoded.
 
+A structured run confirms it: of 436 mutations of the genuine `suit_manifest_expU.suit` envelope
+(every byte inverted, truncations every 8 bytes), processed with the genuine payload, none
+crashed and none installed anything, but 52 returned `SUIT_SUCCESS` without processing: all 48
+truncations from 8 to 384 bytes, and an inverted byte in the outer map key of the authentication
+wrapper (offset 1), of the manifest (offset 119) or in the manifest's length (offsets 121, 122).
+
 **2. NULL dereference in the default report printing.** With the unmodified process example,
 a truncated envelope, random input, or a valid envelope with one byte of the COSE signature
 flipped crash with SIGSEGV:

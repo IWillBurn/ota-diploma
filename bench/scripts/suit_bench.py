@@ -136,8 +136,53 @@ def scenarios(work: Path, genuine: bytes) -> dict:
             return "FAIL", f"{len(crashes)} crashes, {len(accepted)} accepted of {len(inputs)} malformed inputs"
         return "PASS", f"{len(inputs)} malformed inputs rejected without a crash"
 
+    def mutations(c):
+        """Structured fuzzing (backlog D5): every byte of the genuine envelope inverted, and
+        truncations every 8 bytes, each with the genuine payload. One container runs all
+        inputs; exit code 0 = accepted, >= 124 = timeout or signal (crash)."""
+        data = subprocess.run(["docker", "run", "--rm", "--entrypoint", "cat", IMAGE, MANIFEST],
+                              capture_output=True, check=True).stdout
+        mut = work / "mut"
+        for f in mut.glob("*") if mut.exists() else []:
+            f.unlink()
+        mut.mkdir(exist_ok=True)
+        names = {}
+        for i in range(len(data)):
+            b = bytearray(data)
+            b[i] ^= 0xFF
+            names[f"flip{i:04d}"] = bytes(b)
+        for n in range(0, len(data), 8):
+            names[f"trunc{n:04d}"] = data[:n]
+        for k, v in names.items():
+            (mut / f"{k}.suit").write_bytes(v)
+        script = ("P=/libcsuit/examples/otabench/suit_manifest_process; "
+                  "for f in /w/mut/*.suit; do rm -rf /tmp/o; mkdir -p /tmp/o; "
+                  f"timeout 10 $P $f -p /tmp/o -u {URI} -f /w/good.ta >/dev/null 2>&1; rc=$?; "
+                  "n=$(find /tmp/o -type f -name ta | wc -l); "
+                  "echo \"$(basename $f .suit) $rc $n\"; done")
+        cmd = ["docker", "run", "--rm", "-v", f"{work.resolve()}:/w", "--entrypoint", "sh"]
+        for k, v in c["env"].items():
+            cmd += ["-e", f"{k}={v}"]
+        p = subprocess.run(cmd + [IMAGE, "-c", script], capture_output=True, text=True, timeout=3600,
+                           env={**os.environ, "MSYS_NO_PATHCONV": "1"})
+        rows = [ln.split() for ln in p.stdout.splitlines() if len(ln.split()) == 3]
+        rcs = {r[0]: int(r[1]) for r in rows}
+        stored = {r[0]: int(r[2]) > 0 for r in rows}
+        if len(rcs) != len(names):
+            return "ERROR", f"precondition: {len(rcs)} of {len(names)} inputs ran ({p.stderr[-160:]})"
+        crashes = sorted(k for k, rc in rcs.items() if rc >= 124)
+        accepted = sorted(k for k, rc in rcs.items() if rc == 0 and stored[k])
+        empty = sorted(k for k, rc in rcs.items() if rc == 0 and not stored[k])
+        detail = (f"{len(crashes)} crashes or timeouts of {len(names)} mutated envelopes; "
+                  f"{len(accepted)} installed the payload, {len(empty)} reported success without "
+                  "installing anything" + (f"; installed: {' '.join(accepted[:12])}" if accepted else "")
+                  + (f"; empty success: {' '.join(empty[:6])}" if empty else "")
+                  + (f"; crashed: {' '.join(f'{k}({rcs[k]})' for k in crashes[:8])}" if crashes else ""))
+        return ("FAIL" if crashes else "PASS"), detail
+
     return {
         "suit-baseline": ([], "expU with the genuine payload", baseline),
+        "suit-mutations": (["OTA-PARSE-01", "OTA-AUTH-02"], "every byte of the envelope inverted, truncations every 8 bytes", mutations),
         "suit-payload-substitution": (["OTA-AUTH-01"], "payload altered, digest mismatch", substitution),
         "suit-manifest-tamper": (["OTA-AUTH-02"], "one byte of the signed manifest flipped", tampered(5, None, "tampered manifest")),
         "suit-signature-tamper": (["OTA-AUTH-02"], "one byte of the COSE signature flipped", tampered(None, 60, "tampered signature")),

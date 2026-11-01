@@ -45,3 +45,4 @@ clients/tough/target/
 !results/d5-fuzz-metadata/
 !results/d5-fuzz-linux/
 !results/d5-fuzz-tufjs/
+!results/suit-2026-11-01-v2/
