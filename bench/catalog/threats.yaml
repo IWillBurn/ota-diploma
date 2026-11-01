@@ -501,6 +501,24 @@ threats:
     bench: [ab:reorder:*, ab:replay-state-liveness]  # vfat: zero-length grubenv -> rauc install refuses; fixed by *-inplace
     level: block
 
+  - id: OTA-PWR-06
+    title: Power loss corrupts the RUNNING slot (writable rootfs) during an update
+    class: fault-tolerance
+    property: the A/B fallback target stays intact while the inactive slot is written
+    attacker: fault
+    ecosystems: [ab-updater]
+    refs:
+      unr156: ["7.2.2.1.1 restore previous version or safe state after a failed or interrupted update"]
+      nist800193: ["4.1.2(2) operational or recoverable after power loss mid flash write"]
+      verified: false  # entry added 2026-11-01 from pilot results; refs reused from OTA-PWR-03
+    # observed only under the sector-atomicity (--torn) model: torn ext4 journal block of slot A
+    # -> "error loading journal" -> root unmountable -> panic loop; mitigations: read-only rootfs,
+    # 4 KiB atomic writes / eMMC reliable write, fsck in initramfs
+    expected: survive
+    coverage: {}
+    bench: [ab:reorder:* --torn]
+    level: block
+
   # ---------------------------------------------------------------- installation / parsing
   - id: OTA-INST-01
     title: Wrong software installation (wrong device/hardware class)
