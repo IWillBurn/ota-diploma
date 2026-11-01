@@ -43,10 +43,16 @@ def main(argv: list[str] | None = None) -> int:
     th.add_argument("--mvp", nargs="*", default=[], help="results.json of MVP runs (later wins)")
     th.add_argument("--pilot", nargs="*", default=[], help="pilot.json files (latest wins)")
     th.add_argument("--out", required=True)
+    co = sub.add_parser("compliance", help="evidence per regulation clause for one implementation")
+    co.add_argument("--mvp", nargs="*", default=[])
+    co.add_argument("--pilot", nargs="*", default=[])
+    co.add_argument("--impl", required=True, help="a column of the threat matrix, e.g. python-tuf")
+    co.add_argument("--regs", default="cra,unr156,en18031,nist800193,fstec117,fstec239,fstec_method")
+    co.add_argument("--out", required=True)
     a = p.parse_args(argv)
     catalog = load_catalog(CATALOG)
 
-    if a.cmd == "threats":
+    if a.cmd in ("threats", "compliance"):
         from .threatmatrix import load_pilots, write
 
         mvp = None
@@ -60,7 +66,13 @@ def main(argv: list[str] | None = None) -> int:
             new = {(r["scenario"], r["client"]) for r in run["results"]}
             mvp["results"] = [r for r in mvp["results"] if (r["scenario"], r["client"]) not in new]
             mvp["results"] += run["results"]
-        for f in write(catalog, mvp, load_pilots([Path(x) for x in a.pilot]), Path(a.out)):
+        pilots = load_pilots([Path(x) for x in a.pilot])
+        if a.cmd == "compliance":
+            from .compliance import write as write_compliance
+
+            print(write_compliance(catalog, mvp, pilots, a.impl, a.regs.split(","), Path(a.out)))
+            return 0
+        for f in write(catalog, mvp, pilots, Path(a.out)):
             print(f)
         return 0
 

@@ -1,0 +1,190 @@
+scenario,threats,client,verdict,time_to_abort_s,bytes_pushed,survival_rate,trials,mean_recovery_s,torn_file_observed,detail
+baseline,,python-tuf,PASS,,,,,,,
+baseline,,go-tuf,PASS,,,,,,,
+baseline,,tuf-js,PASS,,,,,,,
+baseline,,naive,PASS,,,,,,,
+baseline,,naive-nosig,PASS,,,,,,,
+baseline,,naive-anykey,PASS,,,,,,,
+baseline,,naive-nohash,PASS,,,,,,,
+baseline,,naive-keeptorn,PASS,,,,,,,
+baseline,,naive-lazyroot,PASS,,,,,,,
+arb-target-substitution,OTA-AUTH-01,python-tuf,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,go-tuf,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,tuf-js,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,naive,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,naive-nosig,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,naive-anykey,PASS,,,,,,,rejected
+arb-target-substitution,OTA-AUTH-01,naive-nohash,FAIL,,,,,,,malicious artifact stored in target dir
+arb-target-substitution,OTA-AUTH-01,naive-keeptorn,FAIL,,,,,,,malicious artifact stored in target dir
+arb-target-substitution,OTA-AUTH-01,naive-lazyroot,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,python-tuf,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,go-tuf,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,tuf-js,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,naive,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,naive-nosig,FAIL,,,,,,,"tampered metadata accepted, payload stored"
+arb-metadata-tamper,OTA-AUTH-02,naive-anykey,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,naive-nohash,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,naive-keeptorn,PASS,,,,,,,rejected
+arb-metadata-tamper,OTA-AUTH-02,naive-lazyroot,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,python-tuf,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,go-tuf,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,tuf-js,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,naive,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,naive-nosig,FAIL,,,,,,,forged signature accepted
+arb-keyid-spoofing,OTA-AUTH-03,naive-anykey,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,naive-nohash,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,naive-keeptorn,PASS,,,,,,,rejected
+arb-keyid-spoofing,OTA-AUTH-03,naive-lazyroot,PASS,,,,,,,rejected
+freeze-expired-timestamp,OTA-FRESH-01,python-tuf,PASS,,,,,,,expired metadata rejected
+freeze-expired-timestamp,OTA-FRESH-01,go-tuf,PASS,,,,,,,expired metadata rejected
+freeze-expired-timestamp,OTA-FRESH-01,tuf-js,PASS,,,,,,,expired metadata rejected
+freeze-expired-timestamp,OTA-FRESH-01,naive,FAIL,,,,,,,expired timestamp accepted
+freeze-expired-timestamp,OTA-FRESH-01,naive-nosig,FAIL,,,,,,,expired timestamp accepted
+freeze-expired-timestamp,OTA-FRESH-01,naive-anykey,FAIL,,,,,,,expired timestamp accepted
+freeze-expired-timestamp,OTA-FRESH-01,naive-nohash,FAIL,,,,,,,expired timestamp accepted
+freeze-expired-timestamp,OTA-FRESH-01,naive-keeptorn,FAIL,,,,,,,expired timestamp accepted
+freeze-expired-timestamp,OTA-FRESH-01,naive-lazyroot,FAIL,,,,,,,expired timestamp accepted
+rollback-timestamp,OTA-FRESH-02,python-tuf,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,go-tuf,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,tuf-js,PASS,,,,,,,rejected
+rollback-timestamp,OTA-FRESH-02,naive,FAIL,,,,,,,trusted timestamp rolled back to v2
+rollback-timestamp,OTA-FRESH-02,naive-nosig,FAIL,,,,,,,trusted timestamp rolled back to v2
+rollback-timestamp,OTA-FRESH-02,naive-anykey,FAIL,,,,,,,trusted timestamp rolled back to v2
+rollback-timestamp,OTA-FRESH-02,naive-nohash,FAIL,,,,,,,trusted timestamp rolled back to v2
+rollback-timestamp,OTA-FRESH-02,naive-keeptorn,FAIL,,,,,,,trusted timestamp rolled back to v2
+rollback-timestamp,OTA-FRESH-02,naive-lazyroot,FAIL,,,,,,,trusted timestamp rolled back to v2
+mix-and-match,OTA-FRESH-03,python-tuf,PASS,,,,,,,rejected
+mix-and-match,OTA-FRESH-03,go-tuf,PASS,,,,,,,rejected
+mix-and-match,OTA-FRESH-03,tuf-js,PASS,,,,,,,rejected
+mix-and-match,OTA-FRESH-03,naive,FAIL,,,,,,,inconsistent targets trusted
+mix-and-match,OTA-FRESH-03,naive-nosig,FAIL,,,,,,,inconsistent targets trusted
+mix-and-match,OTA-FRESH-03,naive-anykey,FAIL,,,,,,,inconsistent targets trusted
+mix-and-match,OTA-FRESH-03,naive-nohash,FAIL,,,,,,,inconsistent targets trusted
+mix-and-match,OTA-FRESH-03,naive-keeptorn,FAIL,,,,,,,inconsistent targets trusted
+mix-and-match,OTA-FRESH-03,naive-lazyroot,FAIL,,,,,,,inconsistent targets trusted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,python-tuf,PASS,,,,,,,rejected
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,go-tuf,PASS,,,,,,,rejected
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,tuf-js,PASS,,,,,,,rejected
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive-nosig,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive-anykey,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive-nohash,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive-keeptorn,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-downgrade,OTA-KEY-01 OTA-FRESH-02,naive-lazyroot,FAIL,,,,,,,downgrade to vulnerable firmware accepted
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,python-tuf,PASS,,,,,,,rejected
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,go-tuf,PASS,,,,,,,rejected
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,tuf-js,PASS,,,,,,,rejected
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive,PASS,,,,,,,rejected
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive-nosig,FAIL,,,,,,,targets signed by wrong role accepted
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive-anykey,FAIL,,,,,,,targets signed by wrong role accepted
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive-nohash,PASS,,,,,,,rejected
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive-keeptorn,PASS,,,,,,,rejected
+online-keys-arbitrary,OTA-KEY-02 OTA-AUTH-01,naive-lazyroot,PASS,,,,,,,rejected
+endless-metadata,OTA-DOS-01,python-tuf,PASS,0.6,3276800,,,,,client aborted the transfer itself
+endless-metadata,OTA-DOS-01,go-tuf,PASS,0.04,327680,,,,,client aborted the transfer itself
+endless-metadata,OTA-DOS-01,tuf-js,PASS,0.5,2949120,,,,,client aborted the transfer itself
+endless-metadata,OTA-DOS-01,naive,FAIL,1.38,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-metadata,OTA-DOS-01,naive-nosig,FAIL,1.24,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-metadata,OTA-DOS-01,naive-anykey,FAIL,1.21,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-metadata,OTA-DOS-01,naive-nohash,FAIL,1.52,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-metadata,OTA-DOS-01,naive-keeptorn,FAIL,1.28,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-metadata,OTA-DOS-01,naive-lazyroot,FAIL,1.5,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-artifact,OTA-DOS-02,python-tuf,PASS,0.58,3145728,,,,,client aborted the transfer itself
+endless-artifact,OTA-DOS-02,go-tuf,PASS,0.06,327680,,,,,client aborted the transfer itself
+endless-artifact,OTA-DOS-02,tuf-js,PASS,0.54,2621440,,,,,client aborted the transfer itself
+endless-artifact,OTA-DOS-02,naive,FAIL,0.78,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-artifact,OTA-DOS-02,naive-nosig,FAIL,0.78,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-artifact,OTA-DOS-02,naive-anykey,FAIL,0.78,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+endless-artifact,OTA-DOS-02,naive-nohash,FAIL,0.63,67108864,,,,,over-long artifact stored
+endless-artifact,OTA-DOS-02,naive-keeptorn,FAIL,0.77,67108864,,,,,over-long artifact stored
+endless-artifact,OTA-DOS-02,naive-lazyroot,FAIL,0.72,67108864,,,,,"client never gave up, harness cap hit (64 MiB accepted)"
+slow-metadata,OTA-DOS-03,python-tuf,FAIL,120.63,240,,,,,"client never gave up, harness cap hit (still waiting after 121s)"
+slow-metadata,OTA-DOS-03,go-tuf,FAIL,120.12,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,tuf-js,PASS,100.38,200,,,,,client aborted the transfer itself
+slow-metadata,OTA-DOS-03,naive,FAIL,120.46,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,naive-nosig,FAIL,120.45,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,naive-anykey,FAIL,120.43,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,naive-nohash,FAIL,120.4,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,naive-keeptorn,FAIL,120.39,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-metadata,OTA-DOS-03,naive-lazyroot,FAIL,120.41,240,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,python-tuf,FAIL,120.33,7558,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,go-tuf,FAIL,120.03,7501,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,tuf-js,PASS,100.19,6238,,,,,client aborted the transfer itself
+slow-artifact,OTA-DOS-04,naive,FAIL,120.28,7476,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,naive-nosig,FAIL,120.28,7483,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,naive-anykey,FAIL,120.28,7482,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,naive-nohash,FAIL,120.31,7483,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,naive-keeptorn,FAIL,120.36,7485,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+slow-artifact,OTA-DOS-04,naive-lazyroot,FAIL,120.36,7475,,,,,"client never gave up, harness cap hit (still waiting after 120s)"
+dropped-connection,OTA-NET-01,python-tuf,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,go-tuf,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,tuf-js,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,naive,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,naive-nosig,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,naive-anykey,PASS,,,,,,,recovered
+dropped-connection,OTA-NET-01,naive-nohash,FAIL,,,,,,,truncated artifact reported as success
+dropped-connection,OTA-NET-01,naive-keeptorn,FAIL,,,,,,,did not recover: stale torn file trusted
+dropped-connection,OTA-NET-01,naive-lazyroot,PASS,,,,,,,recovered
+powercut-refresh,OTA-PWR-01,python-tuf,PASS,,,1.0,15,0.276,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,go-tuf,FAIL,,,0.8,15,0.02,,12/15 survived (10 killed mid-run) | 2x recovery refresh failed: ; 1x recovery refresh failed: 6 [/work/bench/clients/bin/go-tuf --metadata-url http://127.0.0.1:42891/powercut-refresh--go-tuf--16
+powercut-refresh,OTA-PWR-01,tuf-js,PASS,,,1.0,15,0.239,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive,PASS,,,1.0,15,0.288,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-nosig,PASS,,,1.0,15,0.298,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-anykey,PASS,,,1.0,15,0.29,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-nohash,PASS,,,1.0,15,0.283,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-keeptorn,PASS,,,1.0,15,0.32,,15/15 survived (13 killed mid-run)
+powercut-refresh,OTA-PWR-01,naive-lazyroot,FAIL,,,0.933,15,0.319,,14/15 survived (13 killed mid-run) | 1x recovery refresh failed: naive client: Can't open /tmp/otabench-naive-lazyroot-pja3878q/metadata/root.json
+powercut-download,OTA-PWR-02,python-tuf,PASS,,,1.0,10,0.289,0,10/10 survived (10 killed mid-run)
+powercut-download,OTA-PWR-02,go-tuf,PASS,,,1.0,10,0.035,0,10/10 survived (10 killed mid-run)
+powercut-download,OTA-PWR-02,tuf-js,ERROR,,,,,,,"precondition: honest 2 MiB download fails without any fault (control 1/3, exit 1): } | Node.js v24.22.2"
+powercut-download,OTA-PWR-02,naive,FAIL,,,0.0,10,-,10,0/10 survived (10 killed mid-run) | 1x after crash [fw.bin:BAD 688128B] -> after retry exit=0 [fw.bin:BAD 688128B]; 1x after crash [fw.bin:BAD 1933312B] -> after retry exit=0 [fw.bin:BAD 1933312B]; 1x after crash [fw.bin:BAD 1310720B] -> after retry exit=0 [fw.bin:BAD 1310720B]
+powercut-download,OTA-PWR-02,naive-nosig,PARTIAL,,,0.1,10,0.24,9,1/10 survived (9 killed mid-run) | 1x after crash [fw.bin:BAD 1425408B] -> after retry exit=0 [fw.bin:BAD 1425408B]; 1x after crash [fw.bin:BAD 294912B] -> after retry exit=0 [fw.bin:BAD 294912B]; 1x after crash [fw.bin:BAD 1753088B] -> after retry exit=0 [fw.bin:BAD 1753088B]
+powercut-download,OTA-PWR-02,naive-anykey,PARTIAL,,,0.1,10,0.291,9,1/10 survived (10 killed mid-run) | 1x after crash [fw.bin:BAD 147456B] -> after retry exit=0 [fw.bin:BAD 147456B]; 1x after crash [fw.bin:BAD 1523712B] -> after retry exit=0 [fw.bin:BAD 1523712B]; 1x after crash [fw.bin:BAD 360448B] -> after retry exit=0 [fw.bin:BAD 360448B]
+powercut-download,OTA-PWR-02,naive-nohash,FAIL,,,0.0,10,-,10,0/10 survived (10 killed mid-run) | 1x after crash [fw.bin:BAD 1835008B] -> after retry exit=0 [fw.bin:BAD 1835008B]; 1x after crash [fw.bin:BAD 262144B] -> after retry exit=0 [fw.bin:BAD 262144B]; 1x after crash [fw.bin:BAD 1032192B] -> after retry exit=0 [fw.bin:BAD 1032192B]
+powercut-download,OTA-PWR-02,naive-keeptorn,PARTIAL,,,0.1,10,0.266,9,1/10 survived (9 killed mid-run) | 1x after crash [fw.bin:BAD 1507328B] -> after retry exit=0 [fw.bin:BAD 1507328B]; 1x after crash [fw.bin:BAD 606208B] -> after retry exit=0 [fw.bin:BAD 606208B]; 1x after crash [fw.bin:BAD 1753088B] -> after retry exit=0 [fw.bin:BAD 1753088B]
+powercut-download,OTA-PWR-02,naive-lazyroot,PARTIAL,,,0.1,10,0.3,9,1/10 survived (9 killed mid-run) | 1x after crash [fw.bin:BAD 1114112B] -> after retry exit=0 [fw.bin:BAD 1114112B]; 1x after crash [fw.bin:BAD 229376B] -> after retry exit=0 [fw.bin:BAD 229376B]; 1x after crash [fw.bin:BAD 114688B] -> after retry exit=0 [fw.bin:BAD 114688B]
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,python-tuf,PASS,,,,,,,freeze detected: expired targets rejected
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,go-tuf,PASS,,,,,,,freeze detected: expired targets rejected
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,tuf-js,PASS,,,,,,,freeze detected: expired targets rejected
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-nosig,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-anykey,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-nohash,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-keeptorn,FAIL,,,,,,,expired targets accepted under fresh online signatures
+online-keys-freeze,OTA-KEY-04 OTA-FRESH-01,naive-lazyroot,FAIL,,,,,,,expired targets accepted under fresh online signatures
+mirror-errors,OTA-DOS-05,python-tuf,PASS,,,,,,,"failure reported after 0.27s, trust store intact"
+mirror-errors,OTA-DOS-05,go-tuf,PASS,,,,,,,"failure reported after 0.01s, trust store intact"
+mirror-errors,OTA-DOS-05,tuf-js,PASS,,,,,,,"failure reported after 3.26s, trust store intact"
+mirror-errors,OTA-DOS-05,naive,PASS,,,,,,,"failure reported after 0.22s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-nosig,PASS,,,,,,,"failure reported after 0.21s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-anykey,PASS,,,,,,,"failure reported after 0.20s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-nohash,PASS,,,,,,,"failure reported after 0.33s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-keeptorn,PASS,,,,,,,"failure reported after 0.31s, trust store intact"
+mirror-errors,OTA-DOS-05,naive-lazyroot,PASS,,,,,,,"failure reported after 0.32s, trust store intact"
+drop-requests,OTA-DOS-06,python-tuf,PASS,,,,,,,"failure reported after 0.37s, trust store intact"
+drop-requests,OTA-DOS-06,go-tuf,PASS,,,,,,,"failure reported after 0.01s, trust store intact"
+drop-requests,OTA-DOS-06,tuf-js,PASS,,,,,,,"failure reported after 3.21s, trust store intact"
+drop-requests,OTA-DOS-06,naive,PASS,,,,,,,"failure reported after 0.35s, trust store intact"
+drop-requests,OTA-DOS-06,naive-nosig,PASS,,,,,,,"failure reported after 0.37s, trust store intact"
+drop-requests,OTA-DOS-06,naive-anykey,PASS,,,,,,,"failure reported after 0.38s, trust store intact"
+drop-requests,OTA-DOS-06,naive-nohash,PASS,,,,,,,"failure reported after 0.44s, trust store intact"
+drop-requests,OTA-DOS-06,naive-keeptorn,PASS,,,,,,,"failure reported after 0.44s, trust store intact"
+drop-requests,OTA-DOS-06,naive-lazyroot,PASS,,,,,,,"failure reported after 0.39s, trust store intact"
+extra-data-artifact,OTA-AUTH-04,python-tuf,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,go-tuf,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,tuf-js,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive-nosig,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive-anykey,PASS,,,,,,,rejected
+extra-data-artifact,OTA-AUTH-04,naive-nohash,FAIL,,,,,,,bytes after the signed image were stored
+extra-data-artifact,OTA-AUTH-04,naive-keeptorn,FAIL,,,,,,,bytes after the signed image were stored
+extra-data-artifact,OTA-AUTH-04,naive-lazyroot,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,python-tuf,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,go-tuf,FAIL,,,,,,,metadata of an unsupported major spec version became trusted
+unsupported-spec-version,OTA-PARSE-02,tuf-js,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-nosig,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-anykey,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-nohash,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-keeptorn,PASS,,,,,,,rejected
+unsupported-spec-version,OTA-PARSE-02,naive-lazyroot,PASS,,,,,,,rejected

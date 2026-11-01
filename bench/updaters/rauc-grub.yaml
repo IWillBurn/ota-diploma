@@ -136,6 +136,14 @@ steps:
       rauc status mark-good
       grub-editenv "$ESP_ENV" list | tr '\n' ' '
       sync
+  rootro:  # mitigation for OTA-PWR-06: both slots boot with a read-only root
+    run: |
+      sed -i 's/^set CMDLINE="rw /set CMDLINE="ro /' /boot-ab/grub/grub.cfg
+      grep -q '^set CMDLINE="ro ' /boot-ab/grub/grub.cfg
+      if ! grep -q '^tmpfs /tmp ' /etc/fstab; then
+        echo 'tmpfs /tmp tmpfs defaults,mode=1777 0 0' >> /etc/fstab
+        echo 'tmpfs /var/tmp tmpfs defaults,mode=1777 0 0' >> /etc/fstab
+      fi
   rebundle:  # the slot image must carry the reconfigured system: rebuild v2 from slot A
     run: |
       rm -rf /data/staging /data/b-v2
@@ -181,6 +189,8 @@ variants:
     steps: [{step: reformat, env: {FS: ext2, MOD: ext2}}, inplace, rebundle]
   vfat-inplace:
     steps: [dosfstools, {step: reformat, env: {FS: vfat, MOD: fat}}, inplace, rebundle]
+  ext4-inplace-rootro:  # the fix plus a read-only root: does OTA-PWR-06 disappear?
+    steps: [inplace, rootro, rebundle]
   uefi-esp:  # RAUC's docs suggest the ESP for grubenv on UEFI systems
     firmware: uefi
     steps: [uefi, rebundle]

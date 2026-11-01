@@ -46,6 +46,7 @@ CHECK_READY_S = 120  # per crash state; a fallback boot needs ~25 s
 VARIANT_DIR = Path(r"P:\vm\variants")
 VERDICTS = ("OK", "DEGRADED", "INCONSISTENT", "BRICK")
 # a 4 KiB block with a unique tag, written with O_DIRECT: finds a moment in the write log
+ENV_HEADER = b"# GRUB Environment Block"
 MARK = ("yes {tag} | head -c 4096 > /tmp/m && dd if=/tmp/m of={dir}/{name} bs=4096 "
         "count=1 oflag=direct conv=fsync status=none")
 
@@ -61,6 +62,8 @@ class Pilot:
         self.n = 0
         self.uefi = False  # set while a UEFI variant is under test
         self.torn = False  # reorder: also emit sector-torn states (--torn)
+        self.settle = 0.0  # reorder: seconds between install return and the end marker
+        self.region_at = "end"  # reorder: region before the end marker | around env writes
         self.updater_version: str | None = None
         self.base_override: Path | None = None  # system scenarios on a variant
 
@@ -271,7 +274,7 @@ class Pilot:
                             for x in offsets},
                 "points": results}
 
-    def _reorder_impl(self, config: str, region: int) -> dict:
+    def _reorder_impl(self, config: str, region: int) -> dict:  # noqa: C901
         """Volatile-cache model: between two FLUSH barriers the disk may persist any subset
         of the writes. Bounded subsets (none / all / only one / all but one) for every
         barrier interval in the last `region` log entries before install completion."""
@@ -286,14 +289,30 @@ class Pilot:
                 raise RuntimeError(f"variant {config} did not boot/confirm")
             self.mark(vm, tag_a, "mark-start")
             rc, t_inst, _ = self.install(vm, "v2")
+            if self.settle:  # let background writeback reach the disk before the end marker
+                time.sleep(self.settle)
             self.mark(vm, tag_b, "mark-end")
         finally:
             vm.power_cut()
         wl = WriteLog(log)
         e0 = wl.find(tag_a.encode())
         e_inst = wl.find(tag_b.encode(), e0)
-        states = sorted(wl.crash_states(max(e0, e_inst - region), e_inst, torn=self.torn),
+        lo, hi = max(e0, e_inst - region), e_inst
+        env_idx: list[int] = []
+        if self.region_at == "env":  # around the last boot-environment write
+            env_idx = wl.find_all(ENV_HEADER, e0, e_inst)
+            if not env_idx:
+                raise RuntimeError("precondition: no boot-environment write between the markers")
+            # the last environment write is the slot switch; earlier ones (marking the
+            # target slot bad before writing it) are outside the window of interest
+            lo = max(e0, env_idx[-1] - region)
+            hi = min(e_inst, env_idx[-1] + region // 2)
+        # the open interval after the last flush is a crash point too (no-fsync writers)
+        states = sorted(wl.crash_states(lo, hi, torn=self.torn, open_tail=self.region_at == "env"),
                         key=lambda x: (x["base_end"], x["label"]))
+        if not states:
+            raise RuntimeError(f"precondition: the reordering model has no state in entries "
+                               f"[{lo}, {hi}] (no FLUSH-bounded interval with volatile writes)")
         raw = d / "replay.raw"
         subprocess.run([qemu_exe("qemu-img"), "convert", "-O", "raw", str(base), str(raw)], check=True)
         applied, results = 0, []
@@ -320,6 +339,8 @@ class Pilot:
         np_counts = _counts(nonprefix)
         bad = counts["INCONSISTENT"] + counts["BRICK"]
         return {"verdict": "FAIL" if bad else "PASS", "config": config,
+                "region": [lo, hi], "region_at": self.region_at, "settle_s": self.settle,
+                "env_entries": env_idx,
                 "detail": f"{len(results)} states in {len({tuple(r['interval']) for r in results})} "
                           f"barrier intervals: {counts}; non-prefix states only: {np_counts}",
                 "install_rc": rc, "install_s": round(t_inst, 1), "counts": counts,
@@ -609,6 +630,11 @@ def main() -> int:
     ap.add_argument("--offsets", default="0,1,2,3,4,5,6,8,10,15,20,30")
     ap.add_argument("--torn", action="store_true",
                     help="reorder: also tear multi-sector writes at sector granularity")
+    ap.add_argument("--settle", type=float, default=0.0,
+                    help="reorder: wait this long after the install before the end marker")
+    ap.add_argument("--region-at", choices=("end", "env"), default="end",
+                    help="reorder: region before the end marker (default) or around the "
+                         "boot-environment writes, incl. the open interval after the last flush")
     ap.add_argument("--work", default="")
     ap.add_argument("--variant-dir", default=str(VARIANT_DIR))
     ap.add_argument("--keep-disks", action="store_true",
@@ -619,6 +645,7 @@ def main() -> int:
     work = Path(a.work) if a.work else Path(r"P:\vm\pilot") / stamp
     p = Pilot(work, dev, Path(a.variant_dir))
     p.torn = a.torn
+    p.settle, p.region_at = a.settle, a.region_at
     RUN_INFO.update(params=vars(a), git_commit=_git_commit(), check_ready_s=CHECK_READY_S)
     plan = {"happy": p.happy, "broken": p.broken, "attacker": p.attacker,
             "downgrade": p.downgrade, "cut-firstboot": p.cut_firstboot,

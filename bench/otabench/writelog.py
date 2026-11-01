@@ -83,6 +83,12 @@ class WriteLog:
                     return e.idx
         raise LookupError(f"pattern {pattern[:40]!r} not found in {self.path}")
 
+    def find_all(self, pattern: bytes, start: int = 0, end: int | None = None) -> list[int]:
+        """Indices of all write entries in [start, end) whose payload contains pattern."""
+        with open(self.path, "rb") as f:
+            return [e.idx for e in self.entries[start:end]
+                    if e.is_write and pattern in self.data(e, f)]
+
     def apply(self, raw: Path, start: int, end: int) -> int:
         """Apply entries[start:end] to a raw disk image; returns bytes written."""
         n = 0
@@ -97,7 +103,7 @@ class WriteLog:
 
     # ---------------------------------------------------------------- reordering model
     def crash_states(self, start: int, end: int, max_volatile: int = 8,
-                     torn: bool = False) -> list[dict]:
+                     torn: bool = False, open_tail: bool = False) -> list[dict]:
         """Crash states that a disk with a volatile write cache may expose, for crashes
         between consecutive FLUSH barriers inside [start, end].
 
@@ -108,10 +114,20 @@ class WriteLog:
         w in V, all but one w in V. Each state: {"label", "base_end" (exclusive prefix),
         "extra" (entry indices applied on top, in log order)}.
 
+        open_tail=True also treats (last flush, end] as an interval: a writer that never
+        flushes (SWUpdate's grubenv) leaves its writes volatile at a crash at `end`.
+
         torn=True adds sector-level tearing: a device only guarantees that a single
         sector is written atomically, so a multi-sector write w may persist only its
         first k sectors (k = 1 and k = half). Such states carry "partial": [w, k]."""
         flushes = [e.idx for e in self.entries[start:end + 1] if e.flags & FLUSH]
+        if open_tail:
+            # writes after the last flush are still volatile at a crash at `end`: add the
+            # open interval (last flush before `start` or in the region, end]
+            before = [e.idx for e in self.entries[:start] if e.flags & FLUSH]
+            if not flushes or flushes[0] > start:
+                flushes = ([before[-1]] if before else [start - 1]) + flushes
+            flushes.append(end + 1)
         states: list[dict] = []
         for a, b in zip(flushes, flushes[1:]):
             inner = [e for e in self.entries[a + 1:b] if e.is_write]
