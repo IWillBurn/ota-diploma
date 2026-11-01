@@ -18,7 +18,7 @@ CATALOG = ROOT / "catalog" / "threats.yaml"
 # scenario names of scripts/pilot_ab.py (+ replay_state.py), as the catalog writes them
 AB = {"happy", "broken", "broken-unconfirmed", "attacker", "downgrade", "cut-firstboot",
       "cut-unconfirmed", "crash-replay", "window:*", "reorder:*", "reorder:* --torn",
-      "replay-state-liveness", "toctou"}
+      "replay-state-liveness", "toctou", "net-ok", "net-tamper", "net-drop", "net-slow", "net-endless"}
 OTHER = {"rauc-sigcover"}  # scripts/rauc_sigcover.py
 SUIT = {"suit-payload-substitution", "suit-manifest-tamper", "suit-signature-tamper",
         "suit-extra-data", "suit-malformed"}  # scripts/suit_bench.py

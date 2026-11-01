@@ -32,6 +32,8 @@ COLUMNS = {
     "uefi-esp": "UEFI, grubenv on ESP", "ext4-inplace": "+ in-place env (fix)",
     "ext2-inplace": "+ in-place env (fix)", "vfat-inplace": "+ in-place env (fix)",
     "uefi-esp-inplace": "+ in-place env (fix)",
+    "ext4-inplace-rootro": "+ in-place env, read-only root", "ext4-inplace-fsck": "+ in-place env, fsck -y in initramfs",
+    "stream": "HTTP streaming (verity)", "minver": "min-bundle-version", "nodowngrade": "-N (no downgrade)",
 }
 
 

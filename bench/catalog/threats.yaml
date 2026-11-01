@@ -101,7 +101,7 @@ threats:
       tuf-conformance: [test_repository_substitutes_target_file, test_multiple_changes_to_target]
       mcuboot-sim: [bad_secondary_slot]
       mender-integration: [test_unsigned_artifact_fails_deployment]
-    bench: [arb-target-substitution, online-keys-arbitrary, ab:attacker, suit-payload-substitution]
+    bench: [arb-target-substitution, online-keys-arbitrary, ab:attacker, ab:net-tamper, suit-payload-substitution]
 
   - id: OTA-AUTH-02
     title: Metadata tampering without keys
@@ -327,7 +327,7 @@ threats:
       verified: true
     expected: block
     coverage: {}
-    bench: [endless-artifact]
+    bench: [endless-artifact, ab:net-endless]
 
   - id: OTA-DOS-03
     title: Slow retrieval (metadata)
@@ -361,7 +361,7 @@ threats:
       tuf: "not required since v1.0.7"
     expected: block
     coverage: {}
-    bench: [slow-artifact]
+    bench: [slow-artifact, ab:net-slow]
 
   - id: OTA-DOS-05
     title: Malicious mirror prevents updates (no fallback)
@@ -399,7 +399,7 @@ threats:
     coverage:
       mender-integration: [test_image_download_retry_timeout, test_image_download_retry_download_count, test_image_download_retry_hosts_broken, test_deployed_during_network_outage]
       aktualizr-tests: [test_io_failure.py]
-    bench: [dropped-connection]
+    bench: [dropped-connection, ab:net-drop]
     level: process
 
   - id: OTA-PWR-01

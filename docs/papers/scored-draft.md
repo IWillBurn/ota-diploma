@@ -15,16 +15,17 @@ resilience to power loss during an update is not systematically tested for updat
 all. We present otabench, an open executable benchmark that evaluates update clients and A/B
 updaters as black boxes against one machine-readable catalog of 40 threats spanning TUF, Uptane,
 IETF SUIT and Linux A/B updaters, mapped to specification clauses and regulatory requirements.
-Existing executable suites cover 15 of the 40 threats; otabench covers 25. otabench reuses the
+Existing executable suites cover 15 of the 40 threats; otabench covers 26. otabench reuses the
 tuf-conformance client protocol, adds a device-adapter protocol for A/B updaters in QEMU,
 adversarial repositories, and power-loss injection at process, block and system level, with
 prefix, reordering and sector-tearing crash models over a dm-log-writes trace. Negative-control
-implementations and mutants validate every oracle. Applied to three TUF clients, one SUIT
-processor and three A/B updater versions, otabench finds three specification-level divergences
+implementations and mutants validate every oracle. Applied to four TUF clients, one SUIT
+processor and three A/B updater versions, otabench finds four specification-level divergences
 between TUF clients, a window in which a power cut after a reported-successful RAUC install
 silently reverts the slot switch, bootloader-environment corruption that leaves devices bootable
-but no longer updatable, corruption of the running slot under torn writes, and confirms a
-signature-coverage flaw in the RAUC version shipped by Debian 12. A 30-line in-place
+but no longer updatable — on journaling ext4 with default settings too —, corruption of the
+running slot under torn writes, an A/B updater that reports failure for an update it applied,
+and confirms a signature-coverage flaw in the RAUC version shipped by Debian 12. A 30-line in-place
 environment writer removes the RAUC window and corruption in all tested states.
 
 ## 1 Introduction
@@ -60,9 +61,9 @@ analysis [1, 17] and test derivation for single Uptane implementations [18–20]
    protocols (update clients, A/B updaters), with an adversarial repository, power-loss injection
    at three levels and three block-level crash models, and oracles validated by negative-control
    implementations and mutants (§4).
-3. An evaluation on three TUF clients, one SUIT processor and RAUC 1.8, RAUC 1.15.2 and SWUpdate
-   with GRUB (§5), with findings that process-level crash testing cannot reveal and a fix
-   validated by the same scenarios (§6).
+3. An evaluation on four TUF clients (python-tuf, go-tuf, tuf-js, tough), one SUIT processor and
+   RAUC 1.8, RAUC 1.15.2 and SWUpdate with GRUB (§5), with findings that process-level crash
+   testing cannot reveal and a fix validated by the same scenarios (§6).
 
 ## 2 Background
 
@@ -120,10 +121,10 @@ assertions were read. Table 1 summarizes.
 | key compromise | 4 | 2 | 3 | 2 | 0 |
 | availability | 6 | 0 | 6 | 6 | 0 |
 | fault tolerance | 7 | 3 | 7 | 4 | 0 |
-| installation | 5 | 1 | 0 **[pending: TOCTOU → 1]** | 0 | 4 |
+| installation | 5 | 1 | 1 | 1 | 3 |
 | parsing | 2 | 1 | 2 | 1 | 0 |
 | confidentiality | 2 | 0 | 0 | 0 | 2 |
-| **Total** | **40** | **15** | **25** | **14** | **11** |
+| **Total** | **40** | **15** | **26** | **15** | **10** |
 
 Existing suites cover 15 threats (38%): tuf-conformance 11, the MCUboot simulator 4, Mender's
 tests 2, aktualizr and OSS-Fuzz one each; for two MCUboot tests the developers themselves note
@@ -188,8 +189,8 @@ confidence interval is attached; random trials report survival with a 95% Wilson
 **Setup.** One host (Windows 11, Ryzen 5 3600, 32 GB). Client scenarios ran natively and in a
 Linux container; A/B updaters ran in QEMU 11.1 with WHPX (Debian 12 guest, GRUB 2.06, 2 vCPU,
 1 GiB). Reboots are emulated by power cycles because warm reboots hang under WHPX. Implementations:
-python-tuf 7.0.1, go-tuf v2.4.2, tuf-js 6.0.1, libcsuit (commit 00f5609), RAUC 1.8 (Debian 12
-package), RAUC 1.15.2 (release tarball) and SWUpdate 2024.12.1.
+python-tuf 7.0.1, go-tuf v2.4.2, tuf-js 6.0.1, tough 0.24.0 (Linux only), libcsuit (commit
+00f5609), RAUC 1.8 (Debian 12 package), RAUC 1.15.2 (release tarball) and SWUpdate 2024.12.1.
 
 ### 5.1 TUF clients (RQ2, RQ3)
 
@@ -201,16 +202,28 @@ tuf-js 17/17. All clients survived every process-level kill point; the event-bas
 mutant that replaces root non-atomically, which random delays never did. Every scenario of the
 core set kills at least one mutant.
 
-**Three divergences between implementations of one specification.**
+**Four divergences between implementations of one specification.**
 (1) *Slow retrieval:* at 2 B/s python-tuf and go-tuf did not abort within 120 s; tuf-js aborted
 after 100 s on its overall timeout. Not a TUF 1.0.37 violation, but Uptane clients built on these
 libraries must add this defense themselves.
-(2) *spec_version:* go-tuf accepted correctly signed metadata with `spec_version` 2.0.0 and
-persisted it as trusted; python-tuf and tuf-js rejected it. tuf-conformance has no such test.
+(2) *spec_version:* go-tuf and tough accepted correctly signed metadata with `spec_version`
+2.0.0 and persisted it as trusted; python-tuf and tuf-js rejected it. tuf-conformance has no
+such test.
 (3) *One key under two keyids:* with threshold 2 and the same key listed twice, python-tuf and
-tuf-js count one signature twice, go-tuf does not. The class was published for go-tuf < 0.3.2;
+tuf-js count one signature twice, go-tuf and tough do not. The class was published for go-tuf < 0.3.2;
 python-tuf maintainers consider key uniqueness the delegator's responsibility. This is a
 divergence between documented positions, not a new vulnerability.
+(4) *Equal timestamp version:* TUF 1.0.37 §5.4.3.1 keeps the trusted timestamp when a new one has
+the same version; Uptane 2.1.0 full verification accepts an equal version. python-tuf, go-tuf and
+tuf-js keep the trusted file; tough accepts the equal-version timestamp with new content
+(its check is `old <= new`, citing TUF 1.0.16). The impact is low — the file must still be signed
+by the timestamp key — but it shows that version rules differ between the specifications and
+between implementations of one of them.
+
+**tough.** Connected later with a 105-line Rust adapter and run in the Linux container on the
+whole suite: 17 of 19 attacks blocked (python-tuf 16 of 19 in the same run), endless data aborted
+within 0.25–0.58 s, slow retrieval aborted after ~30 s by its HTTP transport timeout, all 15
+event-based kill points and 10 download kills survived.
 
 ### 5.2 SUIT
 
@@ -241,9 +254,9 @@ before install completion (region); reordering and tearing: bounded subsets in t
 | RAUC 1.8, ext2 | 0/24 (region) | 1/14 env unreadable | — |
 | RAUC 1.8, vfat | 0/24 (region) | 4/22 env unreadable | 0/11 |
 | RAUC 1.8, UEFI ESP | 1/24 env unreadable (region) | 2/20 env unreadable | — |
-| RAUC 1.15.2, ext4 / vfat / ESP | **[pending]** | 11/26 / 4/28 / 2/28 | — |
+| RAUC 1.15.2, ext4 / vfat / ESP | 18/49 DEGRADED, **1 env unreadable at install start** | 11/26 / 4/28 / 2/28 | — |
 | RAUC + in-place writer (ext4, ext2, vfat, ESP) | 0 | 0 | 0–2 BRICK per variant (running slot, §6.3) |
-| SWUpdate, ext4 | 7/46 DEGRADED (2 divergence, 5 rescue) | **[rerun]** | — |
+| SWUpdate, ext4 / ext2 | 7/46 DEGRADED (1 divergence, 6 rescue) | 0/18 / **20/50 env unreadable** | — |
 
 **Window after success (RAUC).** On ext4, a power cut up to 4 s after `rauc install` reported
 success makes GRUB boot the old slot while Linux, after journal replay, sees the new one:
@@ -259,8 +272,13 @@ At +0, +2 and +4 s after success *both* views still show the old state, from +6 
 new one: the update is lost consistently rather than with divergent views **[rerun on a quiet
 host]**.
 
-**Loss of updatability.** On file systems without a journal, the reordering model — never the
-prefix model — produced an empty or invalid `grubenv` (ext2 1 of 14 states, vfat 4 of 22). In
+**Loss of updatability.** On file systems without a journal, the reordering model produced an
+empty or invalid `grubenv` (ext2 1 of 14 states, vfat 4 of 22). On RAUC 1.15.2 with the default
+ext4 the prefix model hit one such state at the start of the install, where RAUC marks the target
+slot bad by rewriting `grubenv`: restored from the trace, the file has zero length, GRUB falls
+back, and `rauc install` fails (`grub-editenv failed`) — ext4 had committed the truncation before
+the new data, the classic zero-length window of delayed allocation. SWUpdate's rename without
+fsync left an unreadable environment in 20 of 50 states on ext2, also in prefix states. In
 the UEFI layout recommended by RAUC's documentation, with `grubenv` on the ESP, even the prefix
 model produced one. Such a device boots, but every further `rauc install` fails with
 `grub-editenv` errors: it has silently dropped out of OTA (OTA-PWR-05). Liveness checks from
@@ -280,8 +298,12 @@ bundle. A small tampered bundle is rejected by both versions (sensitivity contro
 **TOCTOU between verification and use (OTA-INST-04).** The genuine bundle sits in a directory
 owned by an unprivileged update service, which holds a writable descriptor (or opens the file
 late) and overwrites it with the foreign-key artifact 2, 6 or 12 s into the install. The oracle
-compares the digest of the target slot with an unattacked install. **[pending: RAUC 1.8, RAUC
-1.15.2, SWUpdate; the verify-then-reopen control must fail.]**
+compares the digest of the target slot with an unattacked install. The verify-then-reopen
+control installed the attacker's image in 3 of 4 trials (FAIL). RAUC 1.8 and 1.15.2 refused the
+install within 0.2–0.8 s whenever the attacker held a writable descriptor (RAUC ≥ 1.5 takes
+ownership of the bundle and checks leases), and a late open by the attacker failed with EACCES;
+SWUpdate rejected every swapped stream by its per-image hashes. All three PASS, the boot state
+untouched.
 
 ### 5.6 Cost (RQ4)
 
