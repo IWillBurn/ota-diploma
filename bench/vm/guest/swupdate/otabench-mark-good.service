@@ -1,0 +1,10 @@
+[Unit]
+Description=otabench: confirm a good boot of the current slot (SWUpdate integration)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/otabench-mark-good
+
+[Install]
+WantedBy=multi-user.target

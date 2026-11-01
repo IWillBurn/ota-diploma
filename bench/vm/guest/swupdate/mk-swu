@@ -1,0 +1,25 @@
+#!/bin/sh
+# otabench-mk-swu NAME VERSION SEMVER KEY
+# Build /data/swu/NAME.swu from /data/staging: an ext4 slot image (gzip), sw-description
+# from /root/sw-description.in signed with CMS by /data/keys/KEY, packed as cpio (crc).
+set -e
+name=$1 ver=$2 semver=$3 key=$4
+d=/data/swu-build/$name
+rm -rf "$d" && mkdir -p "$d"
+echo "$ver" > /data/staging/etc/otabench-version
+echo "$semver" > /data/staging/etc/otabench-semver
+sz=$(du -sxm /data/staging | cut -f1)
+img=$((sz * 125 / 100 + 64))
+mkfs.ext4 -q -F -L rootfs -d /data/staging "$d/rootfs.ext4" "${img}M"
+gzip -1 -c "$d/rootfs.ext4" > "$d/rootfs.ext4.gz"
+rm "$d/rootfs.ext4"
+sha=$(sha256sum "$d/rootfs.ext4.gz" | cut -d' ' -f1)
+sed -e "s/@VERSION@/$ver/" -e "s/@SEMVER@/$semver/" -e "s/@SHA@/$sha/g" \
+  /root/sw-description.in > "$d/sw-description"
+openssl cms -sign -in "$d/sw-description" -out "$d/sw-description.sig" \
+  -signer "/data/keys/$key.cert.pem" -inkey "/data/keys/$key.key.pem" \
+  -outform DER -nosmimecap -binary
+(cd "$d" && printf 'sw-description\nsw-description.sig\nrootfs.ext4.gz\n' | cpio -o -H crc --quiet) \
+  > "/data/swu/$name.swu"
+rm -rf "$d"
+ls -l "/data/swu/$name.swu"

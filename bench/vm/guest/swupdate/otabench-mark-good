@@ -1,0 +1,7 @@
+#!/bin/sh
+# Confirm the current boot (SWUpdate integration): the slot GRUB booted becomes OK and
+# untried. These are the variables grub.cfg reads; RAUC's `mark-good` sets the same.
+set -e
+S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+[ -n "$S" ]
+grub-editenv /boot-ab/grub/grubenv set "${S}_OK=1" "${S}_TRY=0"

@@ -1,0 +1,99 @@
+# Device-level adapter (adapter protocol v2): SWUpdate with its GRUB bootloader backend,
+# root slots A/B, Debian 12 in QEMU. Image: scripts/build_swupdate_image.py.
+#
+# SWUpdate has no A/B logic of its own; the integration keeps grub.cfg and its variables
+# (ORDER, <S>_OK, <S>_TRY), which the .swu sets in `bootenv` through SWUpdate's GRUB env
+# writer (grubenv.new + rename). Confirmation: otabench-mark-good (grub-editenv).
+
+name: swupdate-grub
+description: SWUpdate 2024.12.1 (Debian bookworm-backports) with the GRUB backend; slots A=vda1, B=vda2
+image: P:/vm/ab-v1-swupdate.qcow2
+slots: [A, B]
+initial: {slot: A, version: "1"}
+scratch_dir: /data
+
+artifacts:
+  v1: {path: /data/swu/v1.swu, version: "1"}
+  v2: {path: /data/swu/v2.swu, version: "2"}
+  v2-broken: {path: /data/swu/v2-broken.swu, version: "2"}
+  v2-attacker: {path: /data/swu/v2-attacker.swu, version: "2"}
+
+commands:
+  version: dpkg-query -W -f='swupdate ${Version}\n' swupdate
+  # the software set selects the inactive slot; -N (no downgrade) only where the image
+  # asks for it (variant nodowngrade)
+  install: |
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    if [ "$S" = A ]; then T=B; else T=A; fi
+    N=""
+    if [ -e /etc/otabench-nodowngrade ]; then N="-N $(cat /etc/otabench-semver)"; fi
+    swupdate -v -B grub -k /etc/swupdate/dev.cert.pem $N -e "stable,copy$T" -i {artifact}
+  reboot: systemctl reboot
+  status: |
+    E=/boot-ab/grub/grubenv
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    L=$(grub-editenv "$E" list 2>/dev/null)
+    get() { printf '%s\n' "$L" | sed -n "s/^$1=//p"; }
+    echo "slot=$S"
+    echo "version=$(cat /etc/otabench-version 2>/dev/null)"
+    printf '%s\n' "$L" | sed -n 's/^\([^=]*=\)/env.\1/p'
+    printf '%s\n' "$L" | sed -n 's/^ORDER=/order=/p'
+    if printf '%s\n' "$L" | grep -q '^ORDER='; then echo env_ok=1; else echo env_ok=0; fi
+    if [ -n "$S" ] && [ "$(get "${S}_OK")" = 1 ] && [ "$(get "${S}_TRY")" = 0 ]
+    then echo confirmed=1; else echo confirmed=0; fi
+    printf '%s\n' "$L" | sed -n 's/^ORDER=\([AB]\).*/primary=\1/p'
+  unconfirm: |
+    S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
+    grub-editenv /boot-ab/grub/grubenv set "${S}_TRY=1" && sync
+  info: |
+    findmnt -no FSTYPE,OPTIONS /boot-ab
+    findmnt -no SOURCE,TARGET /boot/grub
+    cat /proc/sys/vm/dirty_writeback_centisecs /proc/sys/vm/dirty_expire_centisecs
+  debug: |
+    ls -l /boot-ab/grub/; grub-editenv /boot-ab/grub/grubenv list 2>&1
+    echo ---; od -c /boot-ab/grub/grubenv | head -4
+
+bootlog:
+  run: 'otabench-grub: ORDER=\[(?P<order>[^\]]*)\] A_OK=(?P<A_OK>\S*) A_TRY=(?P<A_TRY>\S*) B_OK=(?P<B_OK>\S*) B_TRY=(?P<B_TRY>\S*) -> (?P<slot>\w)'
+  rescue: 'otabench-grub: RESCUE'
+
+steps:
+  dosfstools:
+    run: |
+      (command -v mkfs.vfat || (apt-get update -qq &&
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq dosfstools)) >/dev/null
+  reformat:  # recreate /boot-ab as $FS, reinstall BIOS GRUB with $MOD, restore the bind mount
+    run: |
+      rm -rf /root/bs && mkdir /root/bs && cp -a /boot-ab/. /root/bs/
+      umount /boot/grub
+      umount /boot-ab
+      case "$FS" in
+        ext2) mkfs.ext2 -q -F -L boot /dev/vda3 ;;
+        vfat) mkfs.vfat -n boot /dev/vda3 >/dev/null 2>&1 ;;
+        *) echo "unknown FS $FS"; exit 2 ;;
+      esac
+      mount -t "$FS" /dev/vda3 /boot-ab
+      cp -r /root/bs/. /boot-ab/
+      grub-install --target=i386-pc --boot-directory=/boot-ab --modules="part_gpt $MOD" /dev/vda 2>&1 | tail -1
+      sed -i "s#^LABEL=boot .*#/dev/vda3 /boot-ab $FS defaults,nofail 0 2#" /etc/fstab
+      mount --bind /boot-ab/grub /boot/grub
+      grub-editenv /boot-ab/grub/grubenv list
+      sync
+  nodowngrade:  # SWUpdate's own guard: -N <running version>; v2 must carry the flag too
+    run: |
+      touch /etc/otabench-nodowngrade
+      rm -rf /data/staging && mkdir -p /data/staging
+      cp -ax /. /data/staging/
+      rm -rf /data/staging/usr/share/doc/* /data/staging/usr/share/man/* \
+        /data/staging/usr/share/locale/* /data/staging/var/lib/apt/lists/*
+      otabench-mk-swu v2 2 2.0.0 dev
+      rm -rf /data/staging
+
+variants:
+  ext4-c5: {steps: []}  # as built: ext4 /boot-ab, default commit=5
+  ext2:
+    steps: [{step: reformat, env: {FS: ext2, MOD: ext2}}]
+  vfat:
+    steps: [dosfstools, {step: reformat, env: {FS: vfat, MOD: fat}}]
+  nodowngrade:
+    steps: [nodowngrade]

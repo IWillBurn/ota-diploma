@@ -55,6 +55,8 @@
 #                 required to equal `class` (e.g. OTA-NET-01 is class fault-tolerance)
 #   level         for fault tolerance: process | block | system
 #
+# NOTE (0.3.0, 2026-11-01): OTA-PWR-05 and OTA-PWR-06 added from the A/B pilot results
+# (40 threats); the file is validated against threats.schema.json.
 # NOTE (0.2.0): refs replaced with the clause references recorded in
 # research_notes/Бенчмарк безопасности OTA обновлений/specs_threat_models.md
 # (§7 cross-walk, §7.2 proposed IDs) and regulation_and_standards.md (§7
@@ -67,7 +69,7 @@
 # 12.4, DoS 13.1, downgrade-by-replay 6.3) has no key in this schema.
 # OTA-INST-03 .. OTA-PARSE-02 are the classes proposed in specs_threat_models.md §7.2.
 
-version: 0.2.0
+version: 0.3.0
 threats:
 
   # ---------------------------------------------------------------- authenticity

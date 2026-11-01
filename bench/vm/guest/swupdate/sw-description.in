@@ -1,0 +1,40 @@
+software =
+{
+	version = "@SEMVER@";
+	description = "otabench @VERSION@";
+
+	stable = {
+		copyA: {
+			images: (
+				{
+					filename = "rootfs.ext4.gz";
+					device = "/dev/vda1";
+					type = "raw";
+					compressed = "zlib";
+					sha256 = "@SHA@";
+				}
+			);
+			bootenv: (
+				{ name = "ORDER"; value = "A B"; },
+				{ name = "A_OK"; value = "1"; },
+				{ name = "A_TRY"; value = "0"; }
+			);
+		};
+		copyB: {
+			images: (
+				{
+					filename = "rootfs.ext4.gz";
+					device = "/dev/vda2";
+					type = "raw";
+					compressed = "zlib";
+					sha256 = "@SHA@";
+				}
+			);
+			bootenv: (
+				{ name = "ORDER"; value = "B A"; },
+				{ name = "B_OK"; value = "1"; },
+				{ name = "B_TRY"; value = "0"; }
+			);
+		};
+	};
+}
