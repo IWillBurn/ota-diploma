@@ -233,7 +233,15 @@ Unicode — in seven fields, plus deletions and an unknown field) and re-signs e
 the real timestamp key, so only parsing and validation stand between it and the trust store.
 go-tuf v2.4.2 panics (nil dereference in `TrustedMetadata.UpdateTimestamp`) on 4 inputs whose
 `meta` lacks `snapshot.json`; the nil check was merged on master in September 2026 but is not in
-any release. python-tuf accepts versions up to 10^30, tough up to 2^63, go-tuf and tuf-js reject
+any release. Coverage-guided fuzzing (Go's native fuzzer for go-tuf, atheris for python-tuf; the
+harness re-signs every mutated body, 300 s per target) found it again in 7 s and a second unreleased
+panic in 26 s: an ed25519 key with a public value that is not 32 bytes makes `VerifyDelegate` call
+`crypto/ed25519.Verify`, which panics — for every keyid of the role, with no signature needed
+(fixed on master by #739). go-tuf master and python-tuf showed no failure. Deterministic mutations
+of the updaters' containers — 2386 SWUpdate `.swu` (cpio headers, `sw-description` and its CMS
+signature) and 3236 RAUC bundles each for 1.8 and 1.15.2 (CMS signature, size trailer, squashfs
+superblock) — produced no crash and no install of foreign content; the accepted inputs changed
+only unsigned fields. python-tuf accepts versions up to 10^30, tough up to 2^63, go-tuf and tuf-js reject
 2^63: the largest version — and with it the room for a fast-forward attack by a timestamp-key
 holder — differs per implementation. go-tuf and tough accept any `spec_version`, including the
 empty string. A first run showed a tuf-js "hang" that turned out to be our adapter: the library

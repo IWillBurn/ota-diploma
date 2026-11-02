@@ -19,7 +19,9 @@ CATALOG = ROOT / "catalog" / "threats.yaml"
 AB = {"happy", "broken", "broken-unconfirmed", "attacker", "downgrade", "cut-firstboot",
       "cut-unconfirmed", "crash-replay", "window:*", "reorder:*", "reorder:* --torn",
       "replay-state-liveness", "toctou", "net-ok", "net-tamper", "net-drop", "net-slow", "net-endless"}
-OTHER = {"rauc-sigcover"}  # scripts/rauc_sigcover.py
+OTHER = {"rauc-sigcover",  # scripts/rauc_sigcover.py
+         "fuzz-coverage",  # scripts/fuzz_cov.py
+         "swu-mutations", "rauc-bundle-mutations"}  # scripts/container_mutations.py
 SUIT = {"suit-mutations", "suit-payload-substitution", "suit-manifest-tamper", "suit-signature-tamper",
         "suit-extra-data", "suit-malformed"}  # scripts/suit_bench.py
 

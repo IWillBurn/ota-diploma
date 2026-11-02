@@ -68,3 +68,8 @@ clients/tough/target/
 !results/pilot-ab-20261102-115212/
 !results/pilot-ab-20261102-120148/
 !results/pilot-ab-20261102-121115/
+!results/d5-covfuzz-2026-11-02/
+!results/d5-container-mutations-2026-11-02/
+!results/pilot-ab-20261102-123644/
+results/*/work/
+results/*/work-*/

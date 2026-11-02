@@ -1,0 +1,204 @@
+{
+ "started": "2026-11-02",
+ "budget_s": 300,
+ "results": [
+  {
+   "impl": "go-tuf",
+   "version": "v2.4.2",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.2",
+   "target": "FuzzParse",
+   "budget_s": 300,
+   "wall_s": 45.9,
+   "execs": 133541,
+   "verdict": "FAIL",
+   "detail": "--- FAIL: FuzzParse (26.44s) at /go/pkg/mod/github.com/theupdateframework/go-tuf/v2@v2.4.2/metadata/metadata.go:408 +0x1206; /go/pkg/mod/github.com/theupdateframework/go-tuf/v2@v2.4.2/metadata/trustedmetadata/trustedmetadata.go:353 +0x289",
+   "input": "go test fuzz v1\n[]byte(\"{\\\"signed\\\":{\\\"_type\\\":\\\"root\\\",\\\"keYs\\\":{\\\"bfe1a83869e5bf574e3ff3acbb83f840de84a990d10059f3096f0bf4f2b90c10\\\":{\\\"keYtYpe\\\":\\\"ed25519\\\"}},\\\"roles\\\":{\\\"root\\\":{\\\"keYids\\\":[\\\"bfe1a83869e5bf574e3ff3acbb83f840de84a990d10059f3096f0bf4f2b90c10\\\"],\\\"threshold\\\":1}}}}\")\n",
+   "time_to_failure_s": 45.9
+  },
+  {
+   "impl": "go-tuf",
+   "version": "v2.4.2",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.2",
+   "target": "FuzzTimestampFirst",
+   "budget_s": 300,
+   "wall_s": 321.2,
+   "execs": 2826905,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "v2.4.2",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.2",
+   "target": "FuzzTimestampSecond",
+   "budget_s": 300,
+   "wall_s": 36.5,
+   "execs": 42048,
+   "verdict": "FAIL",
+   "detail": "--- FAIL: FuzzTimestampSecond (7.13s) at /go/pkg/mod/github.com/theupdateframework/go-tuf/v2@v2.4.2/metadata/trustedmetadata/trustedmetadata.go:144 +0x934",
+   "input": "go test fuzz v1\n[]byte(\"{\\\"_type\\\":\\\"timestamp\\\",\\\"expires\\\":\\\"2036-11-02T09:50:47Z\\\",\\\"meta\\\":{\\\"snapshot.zson\\\":{\\\"2ersion\\\":1}},\\\"spec_version\\\":\\\"1.0.31\\\",\\\"version\\\":2}\")\n",
+   "time_to_failure_s": 36.5
+  },
+  {
+   "impl": "go-tuf",
+   "version": "v2.4.2",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.2",
+   "target": "FuzzSnapshot",
+   "budget_s": 300,
+   "wall_s": 324.6,
+   "execs": 3481367,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "v2.4.2",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.2",
+   "target": "FuzzTargets",
+   "budget_s": 300,
+   "wall_s": 318.1,
+   "execs": 2755653,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "v2.4.2",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.2",
+   "target": "FuzzRootUpdate",
+   "budget_s": 300,
+   "wall_s": 33.6,
+   "execs": 89792,
+   "verdict": "FAIL",
+   "detail": "--- FAIL: FuzzRootUpdate (18.39s) at /go/pkg/mod/github.com/theupdateframework/go-tuf/v2@v2.4.2/metadata/metadata.go:408 +0x1206; /go/pkg/mod/github.com/theupdateframework/go-tuf/v2@v2.4.2/metadata/trustedmetadata/trustedmetadata.go:87 +0x4ff",
+   "input": "go test fuzz v1\n[]byte(\"{\\\"_type\\\":\\\"root\\\",\\\"keYs\\\":{\\\"bfe1a83869e5bf574e3ff3acbb83f840de84a990d10059f3096f0bf4f2b90c10\\\":{\\\"keYtYpe\\\":\\\"ed25519\\\"}},\\\"roles\\\":{\\\"root\\\":{\\\"keYids\\\":[\\\"bfe1a83869e5bf574e3ff3acbb83f840de84a990d10059f3096f0bf4f2b90c10\\\"],\\\"threshold\\\":1}},\\\"version\\\":2}\")\n",
+   "time_to_failure_s": 33.6
+  },
+  {
+   "impl": "python-tuf",
+   "version": "7.0.1",
+   "target": "parse",
+   "budget_s": 300,
+   "wall_s": 309.0,
+   "execs": 6148306,
+   "verdict": "PASS",
+   "detail": "no unexpected exception in 300 s"
+  },
+  {
+   "impl": "python-tuf",
+   "version": "7.0.1",
+   "target": "timestamp_first",
+   "budget_s": 300,
+   "wall_s": 309.2,
+   "execs": 2995793,
+   "verdict": "PASS",
+   "detail": "no unexpected exception in 300 s"
+  },
+  {
+   "impl": "python-tuf",
+   "version": "7.0.1",
+   "target": "timestamp_second",
+   "budget_s": 300,
+   "wall_s": 309.0,
+   "execs": 3796308,
+   "verdict": "PASS",
+   "detail": "no unexpected exception in 300 s"
+  },
+  {
+   "impl": "python-tuf",
+   "version": "7.0.1",
+   "target": "snapshot",
+   "budget_s": 300,
+   "wall_s": 309.2,
+   "execs": 5534853,
+   "verdict": "PASS",
+   "detail": "no unexpected exception in 300 s"
+  },
+  {
+   "impl": "python-tuf",
+   "version": "7.0.1",
+   "target": "targets",
+   "budget_s": 300,
+   "wall_s": 309.2,
+   "execs": 5835017,
+   "verdict": "PASS",
+   "detail": "no unexpected exception in 300 s"
+  },
+  {
+   "impl": "python-tuf",
+   "version": "7.0.1",
+   "target": "root_update",
+   "budget_s": 300,
+   "wall_s": 308.6,
+   "execs": 2867976,
+   "verdict": "PASS",
+   "detail": "no unexpected exception in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "master-923b304",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.3-0.20260922114829-923b304b67ac",
+   "target": "FuzzParse",
+   "budget_s": 300,
+   "wall_s": 318.7,
+   "execs": 984368,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "master-923b304",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.3-0.20260922114829-923b304b67ac",
+   "target": "FuzzTimestampFirst",
+   "budget_s": 300,
+   "wall_s": 316.9,
+   "execs": 3673855,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "master-923b304",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.3-0.20260922114829-923b304b67ac",
+   "target": "FuzzTimestampSecond",
+   "budget_s": 300,
+   "wall_s": 316.7,
+   "execs": 3138013,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "master-923b304",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.3-0.20260922114829-923b304b67ac",
+   "target": "FuzzSnapshot",
+   "budget_s": 300,
+   "wall_s": 316.4,
+   "execs": 3525208,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "master-923b304",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.3-0.20260922114829-923b304b67ac",
+   "target": "FuzzTargets",
+   "budget_s": 300,
+   "wall_s": 316.4,
+   "execs": 3498635,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  },
+  {
+   "impl": "go-tuf",
+   "version": "master-923b304",
+   "module": "github.com/theupdateframework/go-tuf/v2 v2.4.3-0.20260922114829-923b304b67ac",
+   "target": "FuzzRootUpdate",
+   "budget_s": 300,
+   "wall_s": 317.2,
+   "execs": 659060,
+   "verdict": "PASS",
+   "detail": "no failure in 300 s"
+  }
+ ]
+}
