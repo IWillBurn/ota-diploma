@@ -33,6 +33,7 @@ COLUMNS = {
     "ext2-inplace": "+ in-place env (fix)", "vfat-inplace": "+ in-place env (fix)",
     "uefi-esp-inplace": "+ in-place env (fix)",
     "ext4-inplace-rootro": "+ in-place env, read-only root", "ext4-inplace-fsck": "+ in-place env, fsck -y in initramfs",
+    "ext4-redundant": "+ two env copies (ext4)", "vfat-redundant": "+ two env copies (vfat)",
     "stream": "HTTP streaming (verity)", "minver": "min-bundle-version", "nodowngrade": "-N (no downgrade)",
 }
 
@@ -149,17 +150,20 @@ def build(catalog: dict, mvp: dict | None, pilots: dict) -> tuple[list[str], lis
                         res = pilots[(adapter, cfg)]
                         if base in ("window:*", "reorder:*", "crash-replay"):
                             kind = base.split(":")[0] + (" --torn" if torn else "")
-                            r = res.get(kind)
-                            if not r:
-                                continue
-                            if t["id"] in BLOCK_THREATS:
-                                rd = _block_reading(t["id"], r)
-                                if rd:
-                                    got.append(rd[0])
-                                    for k, n in rd[1].items():
-                                        counts[k] = counts.get(k, 0) + n
-                            else:
-                                got.append(r["verdict"])
+                            # the untorn states of a --torn run are ordinary reordering
+                            # states: they count for the prefix/reordering threats too
+                            kinds = [kind, "reorder --torn"] if kind == "reorder" else [kind]
+                            for r in (res.get(k) for k in kinds):
+                                if not r:
+                                    continue
+                                if t["id"] in BLOCK_THREATS:
+                                    rd = _block_reading(t["id"], r)
+                                    if rd:
+                                        got.append(rd[0])
+                                        for k, n in rd[1].items():
+                                            counts[k] = counts.get(k, 0) + n
+                                else:
+                                    got.append(r["verdict"])
                         elif base in res:
                             got.append(res[base]["verdict"])
             v = _worst(got)

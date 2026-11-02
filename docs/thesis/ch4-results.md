@@ -81,7 +81,7 @@ A/B-апдейтер испытан в двух вариантах загруз�
 | `pilot-ab-20261101-125344/` | `window` и `reorder` для `uefi-esp`, `uefi-esp-inplace`; `happy:uefi-esp-inplace` | 4.3.6, 4.3.7 |
 | `pilot-ab-20261101-132748/` | `reorder --torn`: `ext4-c5`, `vfat`, `ext4-inplace`, `vfat-inplace`, `uefi-esp-inplace` | 4.3.8 |
 | `full-2026-11-01-v3/` | MVP v3: 9 клиентов (с `naive-lazyroot`), 144 ячейки; событийные точки в `powercut-refresh` | 4.2.4, 4.2.5 |
-| `threat-matrix-2026-11-01/` | сводная матрица «угроза × реализация» обоих уровней (`otabench threats`) | 4.4.1 |
+| `threat-matrix-2026-11-01/`, `threat-matrix-2026-11-02/` | сводная матрица «угроза × реализация» обоих уровней (`otabench threats`); вторая — после экспериментов пп. 4.2.10–4.3.12: 40 угроз, 26 испытаны, 5 клиентов и 19 конфигураций A/B-апдейтеров | 4.4.1 |
 | `pilot-ab-20261101-171703/` | проверка адаптера v2: системные сценарии, `reorder:ext2`, `happy:vfat-inplace`, `happy:uefi-esp-inplace` | 4.3.1, 4.5.1 |
 | `pilot-ab-20261101-173621/`, `-173816/` | `broken-unconfirmed`, `cut-unconfirmed` с детерминированным предусловием | 4.3.1, 4.5.1 |
 | `pilot-ab-20261101-181255/` | RAUC 1.15.2: системные сценарии, `downgrade:minver` | 4.3.9 |

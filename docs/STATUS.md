@@ -1,6 +1,6 @@
 # Состояние работы и как продолжить
 
-Последнее обновление: 01.11.2026, 22:25 (остановка).
+Последнее обновление: 02.11.2026, ~12:30.
 
 ## Что уже сделано
 
@@ -44,14 +44,12 @@
 
 ## С чего продолжить (по приоритету)
 
-Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. **Остановлено 01.11.2026 в 22:25 по просьбе автора** в стабильной точке: все запущенные прогоны завершены и закоммичены, фоновых процессов и ВМ нет; тихая очередь была снята до первых замеров (незаконченный `net-slow:stream` удалён, результата не дал).
+Полный список задач с приоритетами и критериями готовности — **`docs/BACKLOG.md`**. Состояние на 02.11.2026:
 
-1. **Не выполнено — окна на тихом хосте** (одна ВМ за раз, ничего параллельно). Готовый скрипт: `bash bench/scripts/queue_quiet_windows.sh` (ждёт, пока нет `pilot_ab.py`/`replay_state.py`, пишет `P:\vm\pilot-quiet.log`, ~1,5–1,7 ч): `rauc1.15.2-grub net-slow:stream`; `rauc-grub window:ext4-c5,ext4-redundant`; `rauc1.15.2-grub window:ext4-c5,ext4-exponly,ext4-wbonly`; `swupdate-grub window:ext4-c5,vfat` (метки до 90 с); повтор реплея RAUC 1.8 с проверкой живучести (`replay-rauc18-1535b.log`). Затем `bash bench/scripts/queue_rootro_rerun.sh` (~20 мин): `reorder:ext4-inplace-rootro --torn` с повторной загрузкой BRICK — первый прогон содержит ложный BRICK, записанный до правила Р24.
-2. **Глава 4: заготовки в `docs/thesis/drafts/`.** Осталось вписать в `fill_values.json` метки `W_RAUC1152`, `W_SWU` (из окон), `RAUC_SLOW`, `T418_RAUC_SLOW`, `CONCL_RAUC_NET` (из `net-slow:stream`), затем `python fill.py` (0 меток) и `python ch4_patch_b.py`. Остальные метки уже заполнены (B5, fsck, две копии окружения, сетевые сценарии, перестановки SWUpdate).
-3. После этого: вставить `drafts/pilot_new_sections.md` в `docs/pilot-ab.md`; сводная матрица (`otabench threats … --out results/threat-matrix-2026-11-02`, список MVP-прогонов — в истории команд этой сессии: v4 Linux, d1, d2 ×2, tough, d5 ×2); окна в `scored-draft.md`, `swupdate-draft.md` (метка `<<window>>`) и заключение; пересборка Word (`node docs/thesis/tools/build_docx.js`).
-4. Не публиковать черновики в `docs/upstream/` (RAUC, SWUpdate, tuf-conformance, go-tuf, tough, libcsuit) без согласия автора.
-
-Новое с прошлого обновления: TOCTOU (контроль FAIL, апдейтеры PASS); подпись бандла > 2 ГиБ (RAUC 1.8 принимает подмену); tough (4-й клиент TUF); фаззинг метаданных TUF (паника go-tuf v2.4.2, исправлена в master, не выпущена) и конверта SUIT; сетевые атаки на SWUpdate и потоковую установку RAUC (ложное сообщение SWUpdate о неудаче); выпадение из OTA на ext4 (RAUC 1.15.2, 1.8) и у SWUpdate на ext2/vfat; корень только для чтения и fsck в initramfs против OTA-PWR-06; две копии окружения; B5 (всё окно, 222 состояния); ложный BRICK под нагрузкой → повторная загрузка (Р24); пороги сервера по сумме байтов (Р25).
+1. **Сделано 02.11:** окна на свободном хосте (RAUC 1.8 и 1.15.2 — $W \in (4;\ 5]$ с; SWUpdate на ext4 — $(6;\ 8]$ с), `net-slow:stream` (FAIL, настройки нет), повтор корня только для чтения (30 состояний, все OK); повторы сомнительных состояний (`bench/results/replays-2026-11-02/`) — 4 ложных «окружение нечитаемо» (гонка с монтированием `nofail`) опровергнуты, SWUpdate vfat подтверждён; правило **Р26** (`status` ждёт заданий монтирования и fsck); глава 4 (пп. 4.3.9–4.3.12, обсуждение, валидность, выводы) применена из `docs/thesis/drafts/`; `docs/pilot-ab.md` дополнен; матрица `results/threat-matrix-2026-11-02/`; примеры соответствия (`docs/compliance/`, добавлены RAUC 1.15.2 и SWUpdate); заключение, статья, черновики RAUC и SWUpdate.
+2. **Идёт / последнее:** три повтора `window:vfat` для SWUpdate (`bench/scripts/queue_swu_vfat_windows.sh`, журнал `P:\vm\pilot-swu-vfat.log`): меняется ли окно на vfat от прогона к прогону. По итогам — дописать п. 4.3.9 (наблюдение 3), `pilot-ab.md` («Повторы на свободном хосте», п. 4) и черновик SWUpdate.
+3. **Дальше по бэклогу:** B11 (перестановки по всему окну для RAUC 1.15.2 и SWUpdate), D5 (фаззинг с обратной связью, `sw-description`), C2 (Linux/KVM — нужна машина), C6 (Zenodo), E7 (оформление по ГОСТ).
+4. Не публиковать черновики в `docs/upstream/` (RAUC, SWUpdate, tuf-conformance, go-tuf, tough, libcsuit) без согласия автора. Ветку `uefi-esp` не сливать в `main` без решения автора.
 
 ## Проверить перед тем, как писать главы
 * ✅ (01.11) Названия тестов `mcuboot-sim`, `mender-integration`, `aktualizr-tests` в каталоге существуют (сверено с коммитами, см. шапку `threats.yaml`). Что проверяет каждый тест — `docs/external-tests.md` (01.11).
