@@ -1,0 +1,300 @@
+{
+  "started": "20261101-204035",
+  "bench_version": "0.3.0",
+  "host": "Windows 11 + QEMU 11.1 WHPX",
+  "params": {
+    "updater": "swupdate-grub",
+    "only": "net:tamper,net:drop,net:slow,net:endless",
+    "points": 30,
+    "liveness": 3,
+    "window": "0,2,4,6,8,10,20,30",
+    "region": 24,
+    "offsets": "0,1,2,3,4,5,6,8,10,15,20,30",
+    "torn": false,
+    "settle": 0.0,
+    "sample_intervals": 15,
+    "region_at": "end",
+    "work": "",
+    "variant_dir": "P:\\vm\\variants",
+    "keep_disks": false
+  },
+  "git_commit": "cd3e14f",
+  "check_ready_s": 120,
+  "updater": {
+    "adapter": "swupdate-grub",
+    "file": "updaters\\swupdate-grub.yaml",
+    "version": "swupdate 2024.12.1+dfsg-3~bpo12+1",
+    "image": "P:\\vm\\ab-v1-swupdate.qcow2"
+  },
+  "results": {
+    "net:tamper": {
+      "verdict": "PASS",
+      "detail": "tampered download rejected, boot state untouched",
+      "mode": "tamper",
+      "install_rc": 1,
+      "install_s": 57.5,
+      "install_msg": "[ERROR] : SWUPDATE failed [1] Image invalid or corrupted. Not installing ...",
+      "install_tail": "[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/swupdateprog\nChild 330(download) exited, status=1\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/swupdateprog\n[ERROR] : SWUPDATE failed [0] ERROR cpio_utils.c : gunzip_step : 381 : inflate failed (returned -3)\n[ERROR] : SWUPDATE failed [0] ERROR stream_interface.c : extract_files : 319 : Error streaming rootfs.ext4.gz\n[ERROR] : SWUPDATE failed [1] Image invalid or corrupted. Not installing ...",
+      "requests": [
+        {
+          "range": null,
+          "status": 200,
+          "sent": 0,
+          "closed_by": "server",
+          "s": 0.0
+        },
+        {
+          "range": null,
+          "status": 200,
+          "sent": 313999872,
+          "closed_by": "server",
+          "s": 39.1
+        }
+      ],
+      "bytes_past_artifact": 0,
+      "artifact_size": 313999872,
+      "boot_untouched_after_failure": true,
+      "control_install": {
+        "rc": 0,
+        "s": 52.3,
+        "msg": "[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl"
+      },
+      "after_reboot": "B/2",
+      "before": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "A",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "0",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "A",
+        "env": {
+          "ustate": "7",
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "0",
+          "B_TRY": "0",
+          "recovery_status": "in_progress"
+        }
+      },
+      "wall_s": 146.1
+    },
+    "net:drop": {
+      "verdict": "PASS",
+      "detail": "connection cut at 50%: recovered within the same install",
+      "mode": "drop",
+      "install_rc": 0,
+      "install_s": 50.7,
+      "install_msg": "[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl",
+      "install_tail": "[TRACE] : SWUPDATE running :  [network_initializer] : Main thread sleep again !\n[INFO ] : No SWUPDATE running :  Waiting for requests...\n[DEBUG] : SWUPDATE running :  [postupdate] : Running Post-update command\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/swupdateprog\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl\nChild 327(download) exited, status=0\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/swupdateprog\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl",
+      "requests": [
+        {
+          "range": null,
+          "status": 200,
+          "sent": 0,
+          "closed_by": "server",
+          "s": 0.0
+        },
+        {
+          "range": null,
+          "status": 200,
+          "sent": 156999936,
+          "closed_by": "server",
+          "s": 13.6
+        },
+        {
+          "range": "bytes=156999936-",
+          "status": 206,
+          "sent": 156999936,
+          "closed_by": "server",
+          "s": 23.1
+        }
+      ],
+      "bytes_past_artifact": 0,
+      "artifact_size": 313999872,
+      "boot_untouched_after_failure": false,
+      "control_install": null,
+      "after_reboot": "B/2",
+      "before": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "A",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "0",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "B",
+        "env": {
+          "ustate": "1",
+          "B_TRY": "0",
+          "B_OK": "1",
+          "ORDER": "B A",
+          "A_TRY": "0",
+          "A_OK": "1"
+        }
+      },
+      "wall_s": 105.5
+    },
+    "net:slow": {
+      "verdict": "FAIL",
+      "detail": "no abort within 150 s at 64 B/s",
+      "mode": "slow",
+      "install_rc": null,
+      "install_s": 150.1,
+      "install_msg": "still running after 150 s",
+      "install_tail": "",
+      "requests": [
+        {
+          "range": null,
+          "status": 200,
+          "sent": 0,
+          "closed_by": "server",
+          "s": 0.0
+        },
+        {
+          "range": null,
+          "status": 200,
+          "sent": 78512128,
+          "closed_by": "",
+          "s": 152.2
+        }
+      ],
+      "bytes_past_artifact": -235487744,
+      "artifact_size": 313999872,
+      "boot_untouched_after_failure": true,
+      "control_install": {
+        "rc": 0,
+        "s": 44.1,
+        "msg": "[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl"
+      },
+      "after_reboot": "B/2",
+      "before": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "A",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "0",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "A",
+        "env": {
+          "ustate": "7",
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "0",
+          "B_TRY": "0",
+          "recovery_status": "in_progress"
+        }
+      },
+      "wall_s": 233.8
+    },
+    "net:endless": {
+      "verdict": "FAIL",
+      "detail": "still reading after 300 s (3 MiB past the artifact)",
+      "mode": "endless",
+      "install_rc": 1,
+      "install_s": 43.4,
+      "install_msg": "[ERROR] : SWUPDATE failed [0] ERROR channel_curl.c : channel_get_file : 1447 : Channel operation returned error (23): 'Failed writing received data to disk/application'",
+      "install_tail": "[INFO ] : No SWUPDATE running :  Waiting for requests...\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/swupdateprog\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl\nChild 328(download) exited, status=1\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/swupdateprog\n[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl\n[ERROR] : SWUPDATE failed [0] ERROR channel_curl.c : channel_callback_ipc : 202 : Writing into SWUpdate IPC stream failed.\n[ERROR] : SWUPDATE failed [0] ERROR channel_curl.c : channel_get_file : 1447 : Channel operation returned error (23): 'Failed writing received data to disk/application'",
+      "requests": [
+        {
+          "range": null,
+          "status": 200,
+          "sent": 0,
+          "closed_by": "server",
+          "s": 0.0
+        },
+        {
+          "range": null,
+          "status": 200,
+          "sent": 317604352,
+          "closed_by": "client",
+          "s": 40.8
+        }
+      ],
+      "bytes_past_artifact": 3604480,
+      "artifact_size": 313999872,
+      "boot_untouched_after_failure": false,
+      "control_install": {
+        "rc": 0,
+        "s": 38.2,
+        "msg": "[TRACE] : SWUPDATE running :  [unlink_sockets] : unlink socket /tmp/sockinstctrl"
+      },
+      "after_reboot": "B/2",
+      "before": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "A B",
+        "primary": "A",
+        "env": {
+          "ORDER": "A B",
+          "A_OK": "1",
+          "A_TRY": "0",
+          "B_OK": "0",
+          "B_TRY": "0"
+        }
+      },
+      "after": {
+        "slot": "A",
+        "version": "1",
+        "confirmed": true,
+        "env_ok": true,
+        "order": "B A",
+        "primary": "B",
+        "env": {
+          "ustate": "1",
+          "B_TRY": "0",
+          "B_OK": "1",
+          "ORDER": "B A",
+          "A_TRY": "0",
+          "A_OK": "1"
+        }
+      },
+      "wall_s": 111.5
+    }
+  }
+}
