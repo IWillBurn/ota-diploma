@@ -54,8 +54,8 @@ j = s.index("### 4.4.6 Стоимость подключения реализа�
 s = s[:i] + block("UPSTREAM") + "\n\n" + s[j:]
 
 # RQ4 table
-rep("| tuf-js 6.0.1 | клиент | `clients/tuf-js/client.js` | 53 | — |",
-    "| tuf-js 6.0.1 | клиент | `clients/tuf-js/client.js` | 53 | — |\n| tough 0.24.0 | клиент | `clients/tough/src/main.rs` | 105 | — |")
+rep("| tuf-js 6.0.1 | клиент | `clients/tuf-js/client.js` | 58 | — |",
+    "| tuf-js 6.0.1 | клиент | `clients/tuf-js/client.js` | 58 | — |\n| tough 0.24.0 | клиент | `clients/tough/src/main.rs` | 105 | — |")
 rep("| SWUpdate 2024.12.1 + GRUB | устройство | `updaters/swupdate-grub.yaml` | 46 (+39 на 4 варианта) | `build_swupdate_image.py` (101) + гостевые файлы (76) |",
     "| SWUpdate 2024.12.1 + GRUB | устройство | `updaters/swupdate-grub.yaml` | 46 (+39 на 4 варианта; +4 на `install_url`) | `build_swupdate_image.py` (101) + гостевые файлы (76) |\n"
     "| `naive-rauc-grub` (контроль) | устройство | `updaters/naive-rauc-grub.yaml` (`extends: rauc-grub`) | 25 | бандлы RAUC 1.8 |")
