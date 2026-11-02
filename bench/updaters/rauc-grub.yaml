@@ -25,7 +25,12 @@ commands:
   reboot: systemctl reboot
   # Prints key=value lines: slot, version, confirmed, env_ok, order, primary, env.<var>.
   # The grubenv path: system.conf (grub backend), else the custom backend's config.
+  # It first waits for pending mount and fsck jobs: /boot-ab is `nofail`, which systemd
+  # does not order before local-fs.target, so the guest agent may answer while /boot-ab is
+  # still being checked and mounted, and the environment would look unreadable (R26).
   status: |
+    W=0; while [ $W -lt 90 ] && systemctl list-jobs --no-legend 2>/dev/null | grep -qE '\.mount |systemd-fsck'
+    do sleep 1; W=$((W+1)); done; echo "jobs_wait_s=$W"
     E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf)
     [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
     [ -n "$E" ] || E=/boot-ab/grub/grubenv

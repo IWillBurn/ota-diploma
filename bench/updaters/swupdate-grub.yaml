@@ -34,7 +34,9 @@ commands:
     if [ "$S" = A ]; then T=B; else T=A; fi
     swupdate -v -B grub -H otabench:1.0 -k /etc/swupdate/dev.cert.pem -e "stable,copy$T" -d "-u {url}"
   reboot: systemctl reboot
-  status: |
+  status: |  # waits for pending mount and fsck jobs first, as rauc-grub (R26)
+    W=0; while [ $W -lt 90 ] && systemctl list-jobs --no-legend 2>/dev/null | grep -qE '\.mount |systemd-fsck'
+    do sleep 1; W=$((W+1)); done; echo "jobs_wait_s=$W"
     E=/boot-ab/grub/grubenv
     S=$(sed -n 's/.*rauc.slot=\([AB]\).*/\1/p' /proc/cmdline)
     L=$(grub-editenv "$E" list 2>/dev/null)

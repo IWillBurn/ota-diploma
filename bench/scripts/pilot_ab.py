@@ -176,7 +176,7 @@ class Pilot:
     def wait_confirmed(self, vm: VM, slot: str, timeout: float = 90) -> bool:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            st = self.dev.status(vm, 30)
+            st = self.dev.status(vm, 120)  # the command may wait up to 90 s for mounts
             if st["slot"] == slot and st["confirmed"]:
                 return True
             time.sleep(2)
@@ -224,7 +224,8 @@ class Pilot:
              "verdict": v, "slot": pair[0], "version": pair[1], "env_ok": env_ok,
              "rescue": rescue, "diverged": diverged, "boot_slot": first.get("slot"),
              "boot_order": first.get("order"), "os_order": st.get("order"), "boots": len(runs),
-             "brick_retry": retry, "check_s": round(time.monotonic() - t, 1)}
+             "brick_retry": retry, "jobs_wait_s": st.get("jobs_wait_s"),
+             "check_s": round(time.monotonic() - t, 1)}
         tag = f"+{marker}s" if marker is not None else f"{r['phase']:.0%}"
         print(f"    crash@{k} ({tag}{' B' if r['barrier'] else ''}): {v} {pair[0]}/{pair[1]} "
               f"boot=[{first.get('order')}] os=[{st.get('order')}]{' RESCUE' if rescue else ''}"

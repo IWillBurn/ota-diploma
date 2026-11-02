@@ -147,7 +147,7 @@ class Device:
         self.last_output = "\n".join(lines[-8:])
         return rc, time.monotonic() - t, lines[-1] if lines else ""
 
-    def status(self, vm, timeout: float = 60) -> dict:
+    def status(self, vm, timeout: float = 150) -> dict:  # includes up to 90 s of waiting for mounts
         """Normalized device status (keys documented in docs/adapter-protocol.md)."""
         _, out, _ = vm.agent.sh(self.cmd_status, timeout)
         return self.parse_status(out)
@@ -166,6 +166,8 @@ class Device:
                 "env_ok": kv.get("env_ok", "1") == "1",
                 "order": kv.get("order"),
                 "primary": kv.get("primary") or None,
+                # seconds the status command waited for pending mount/fsck jobs (R26)
+                "jobs_wait_s": int(kv["jobs_wait_s"]) if kv.get("jobs_wait_s", "").isdigit() else None,
                 "env": {k[4:]: v for k, v in kv.items() if k.startswith("env.")}}
 
     def slot_digest(self, vm, slot: str, timeout: float = 600) -> str:
