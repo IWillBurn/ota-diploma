@@ -289,8 +289,10 @@ copies of the environment with a sequence counter do not change it.
 Up to +4 s after success *both* views still show the old state (a durability window: the update
 is lost without divergent views); at +5 and +6 s Linux, after journal replay, already sees the new
 environment while GRUB still reads the old one; from +8 s both see the new one, so W ∈ (6; 8] s
-for the bootloader. On vfat the length varies with writeback timing: (4; 5] s in the window run,
-while in a reordering run the environment had not reached the disk 35 s after success.
+for the bootloader. On vfat the window varies between runs: in three of four window runs both views had the new
+environment from +5 s; in the fourth GRUB read the old one until +30 s while Linux saw a
+zero-length `grubenv` from +5 to +30 s, and a state restored from that interval could not be
+updated any more. A reordering run still had no environment on disk 35 s after success.
 
 **Loss of updatability.** On file systems without a journal, the reordering model produced an
 empty or invalid `grubenv` (ext2 1 of 14 states, vfat 4 of 22). On RAUC 1.15.2 with the default

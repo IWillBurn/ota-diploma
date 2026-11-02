@@ -1,0 +1,33 @@
+{
+  "base_end": 1778,
+  "extra": [],
+  "partial": null,
+  "ready": true,
+  "boot_runs": [
+    {
+      "order": "A B",
+      "A_OK": "1",
+      "A_TRY": "1",
+      "B_OK": "0",
+      "B_TRY": "0",
+      "slot": "A",
+      "rescue": false
+    }
+  ],
+  "status": {
+    "slot": "A",
+    "version": "1",
+    "confirmed": false,
+    "env_ok": false,
+    "order": null,
+    "primary": null,
+    "jobs_wait_s": 0,
+    "env": {}
+  },
+  "probe": "total 60\ndrwxr-xr-x 2 root root  4096 Nov  1 16:11 fonts\n-rwxr-xr-x 1 root root  1811 Nov  1 16:11 grub.cfg\n-rwxr-xr-x 1 root root     0 Nov  2 09:11 grubenv\ndrwxr-xr-x 2 root root 45056 Nov  1 16:12 i386-pc\ndrwxr-xr-x 2 root root  8192 Nov  1 16:12 locale\ngrub-editenv: error: invalid environment block.\n---\n0000000\n",
+  "install": {
+    "rc": 1,
+    "s": 63.9,
+    "msg": "[ERROR] : SWUPDATE failed [0] ERROR install_from_file.c : endupdate : 55 : SWUpdate *failed* !"
+  }
+}

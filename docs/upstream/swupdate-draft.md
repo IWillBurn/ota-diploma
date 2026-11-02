@@ -47,9 +47,11 @@ file or the directory. With power cuts emulated from a block-level write log:
   state 35 s after the success report, give Linux an empty `grubenv`, while GRUB still reads
   the previous block and boots the old slot. Restored from the write log on an idle host, the
   final state has a zero-length `grubenv` (`grub-editenv: error: invalid environment block.`)
-  and the next `swupdate` run fails, so the device has left OTA. In another run both views had
-  the new environment from +5 s: on vfat the length of this window depends on when writeback
-  happens to run.
+  and the next `swupdate` run fails, so the device has left OTA. Four window runs on an idle host
+  (power cut at fixed offsets after success): in three, both views have the new environment
+  from +5 s; in the fourth, GRUB reads the old block until +30 s and Linux sees a zero-length
+  `grubenv` from +5 to +30 s — a state restored from +10 s again cannot be updated. On vfat
+  the window is not just longer: for up to ~30 s a power cut leaves the device out of OTA.
 
 Suggested fix: `fsync()` the new file before `rename()`, then `fsync()` the directory (or, as
 GRUB's own `save_env` does, rewrite the existing 1024-byte block in place).
