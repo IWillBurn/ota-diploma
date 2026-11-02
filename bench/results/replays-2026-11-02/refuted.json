@@ -1,0 +1,40 @@
+{
+ "note": "states recorded with an unreadable boot environment that a replay on a quiet host refuted (environment readable, the next install succeeds); see README.md and rule R26",
+ "refuted": [
+  {
+   "run": "20261101-200437",
+   "scenario": "reorder:ext4-c5",
+   "entry": 1339,
+   "label": "only-1339",
+   "replay": "replay-rauc18-1339.json.log"
+  },
+  {
+   "run": "20261101-200437",
+   "scenario": "reorder:ext4-c5",
+   "entry": 1525,
+   "label": "lost-all",
+   "replay": "replay-rauc18-1525.json.log"
+  },
+  {
+   "run": "20261101-200437",
+   "scenario": "reorder:ext4-c5",
+   "entry": 1535,
+   "label": "kept-all",
+   "replay": "replay-rauc18-1535b.json.log"
+  },
+  {
+   "run": "20261101-125344",
+   "scenario": "window:uefi-esp",
+   "entry": 1614,
+   "label": "",
+   "replay": "replay-esp-1614.json.log"
+  },
+  {
+   "run": "20261102-123644",
+   "scenario": "reorder:ext4-c5",
+   "entry": 2126,
+   "label": "all-but-2127",
+   "replay": "replay-rauc1152-2127.json.log"
+  }
+ ]
+}

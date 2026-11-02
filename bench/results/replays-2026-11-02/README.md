@@ -9,6 +9,9 @@
 | `replay-rauc18-1525.json.log` | `lost-all` [1525; 1527], `--base-end 1526` | то же | окружение читаемо, OK, установка проходит |
 | `replay-esp-1614.json.log` | префикс 1614, `--uefi --base-end 1615` | `pilot-ab-20261101-125344` (`window:uefi-esp`) | окружение читаемо, установка проходит |
 | `replay-swu-vfat-2487.json.log` | `kept-all` [2474; 2487], `--base-end 2487` | `pilot-ab-20261101-202805` (`reorder:vfat`, SWUpdate) | `grubenv` 0 байт, `invalid environment block`, `swupdate` отказывает |
+| `replay-rauc1152-2127.json.log` | `all-but-2127` [2100; 2128] = префикс 2127, `--base-end 2127` | `pilot-ab-20261102-123644` (B11, RAUC 1.15.2, всё окно) | окружение читаемо, установка проходит; в прогоне — нечитаемо при `jobs_wait_s=0`: чтение совпало с перезаписью `grubenv` службой подтверждения (уточнение Р26) |
 | `replay-swu-vfat-w3-1777.json.log` | префикс 1777 (метка +10 с), `--base-end 1778` | `pilot-ab-20261102-121115` (`window:vfat`, SWUpdate, 4-й прогон окна) | `grubenv` 0 байт, `invalid environment block`, `swupdate` отказывает (Р26 уже действует, `jobs_wait_s=0`) |
 
 Первые четыре в исходных прогонах получили «окружение нечитаемо» под нагрузкой хоста: агент гостя отвечал раньше, чем смонтирован `/boot-ab` (`nofail`). Исправлено правилом Р26 (`status` ждёт заданий монтирования и fsck). `pilot-quiet.log`, `pilot-q5.log`, `pilot-swu-vfat.log` (три повтора `window:vfat` SWUpdate) — консоль прогонов окон, `net-slow:stream` и `reorder:ext4-inplace-rootro --torn` (результаты — `pilot-ab-20261102-*`).
+
+`refuted.json` — список опровергнутых состояний для `otabench threats|compliance --refuted`: они остаются в модели, но не считаются нечитаемым окружением (OTA-PWR-05). Сырые `pilot.json` не изменяются.

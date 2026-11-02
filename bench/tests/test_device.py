@@ -55,7 +55,9 @@ def test_parse_status_full() -> None:
     st = Device.parse_status("noise\nslot=B\nversion=2\nconfirmed=1\nenv_ok=1\norder=B A\n"
                              "primary=rootfs.1\nenv.ORDER=B A\nenv.X=a=b\n")
     assert st == {"slot": "B", "version": "2", "confirmed": True, "env_ok": True, "order": "B A",
-                  "primary": "rootfs.1", "jobs_wait_s": None, "env": {"ORDER": "B A", "X": "a=b"}}
+                  "primary": "rootfs.1", "jobs_wait_s": None, "env_reread": False,
+                  "env": {"ORDER": "B A", "X": "a=b"}}
+    assert Device.parse_status("env_reread=1\nenv_ok=1")["env_reread"] is True
     assert Device.parse_status("jobs_wait_s=7\nenv_ok=1")["jobs_wait_s"] == 7
 
 

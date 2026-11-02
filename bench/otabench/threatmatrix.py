@@ -89,11 +89,28 @@ def _note(threat: str, c: dict) -> str:
 BLOCK_THREATS = ("OTA-PWR-03", "OTA-PWR-05", "OTA-PWR-06")
 
 
-def load_pilots(paths: list[Path]) -> dict[tuple[str, str], dict[str, dict]]:
-    """(adapter, configuration) -> scenario -> latest result."""
+def load_refuted(paths: list[Path]) -> set[tuple[str, str, int, str]]:
+    """States whose recorded "environment unreadable" a replay on a quiet host refuted:
+    {"refuted": [{"run": "20261102-123644", "scenario": "reorder:ext4-c5", "entry": 2126,
+    "label": "all-but-2127", "replay": "<log>"}, ...]} (results/replays-*/refuted.json)."""
+    out = set()
+    for p in paths:
+        for x in json.loads(p.read_text(encoding="utf-8")).get("refuted", []):
+            out.add((x["run"], x["scenario"], int(x["entry"]), x.get("label") or ""))
+    return out
+
+
+def load_pilots(paths: list[Path], refuted: set | None = None) -> dict[tuple[str, str], dict[str, dict]]:
+    """(adapter, configuration) -> scenario -> latest result. Points listed in `refuted` keep
+    their place but count as readable (env_ok) and carry "refuted": true."""
     runs = []
     for p in paths:
         d = json.loads(p.read_text(encoding="utf-8"))
+        if refuted:
+            for name, r in d.get("results", {}).items():
+                for pt in _points(r) if isinstance(r, dict) else []:
+                    if (d.get("started", ""), name, pt.get("entry"), pt.get("label") or "") in refuted:
+                        pt["env_ok"], pt["refuted"] = True, True
         runs.append((d.get("started", ""), d))
     out: dict[tuple[str, str], dict[str, dict]] = defaultdict(dict)
     for _, d in sorted(runs, key=lambda x: x[0]):

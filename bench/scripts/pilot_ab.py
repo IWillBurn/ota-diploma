@@ -224,7 +224,7 @@ class Pilot:
              "verdict": v, "slot": pair[0], "version": pair[1], "env_ok": env_ok,
              "rescue": rescue, "diverged": diverged, "boot_slot": first.get("slot"),
              "boot_order": first.get("order"), "os_order": st.get("order"), "boots": len(runs),
-             "brick_retry": retry, "jobs_wait_s": st.get("jobs_wait_s"),
+             "brick_retry": retry, "jobs_wait_s": st.get("jobs_wait_s"), "env_reread": st.get("env_reread"),
              "check_s": round(time.monotonic() - t, 1)}
         tag = f"+{marker}s" if marker is not None else f"{r['phase']:.0%}"
         print(f"    crash@{k} ({tag}{' B' if r['barrier'] else ''}): {v} {pair[0]}/{pair[1]} "

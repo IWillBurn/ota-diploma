@@ -1,0 +1,247 @@
+{
+ "version": "v2.4.2",
+ "budget_s": 180,
+ "parallel": 2,
+ "trials": 10,
+ "summary": {
+  "FuzzParse": {
+   "found": "10/10",
+   "median_s": 17.86,
+   "min_s": 8.51,
+   "max_s": 71.58,
+   "defects": [
+    "ed25519 key length"
+   ]
+  },
+  "FuzzRootUpdate": {
+   "found": "10/10",
+   "median_s": 18.35,
+   "min_s": 17.12,
+   "max_s": 171.66,
+   "defects": [
+    "ed25519 key length"
+   ]
+  },
+  "FuzzTimestampSecond": {
+   "found": "10/10",
+   "median_s": 15.16,
+   "min_s": 5.86,
+   "max_s": 175.01,
+   "defects": [
+    "trustedmetadata.go:144"
+   ]
+  }
+ },
+ "rows": [
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 1,
+   "found": true,
+   "time_s": 172.57,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 2,
+   "found": true,
+   "time_s": 8.11,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 3,
+   "found": true,
+   "time_s": 20.07,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 4,
+   "found": true,
+   "time_s": 18.39,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 5,
+   "found": true,
+   "time_s": 7.74,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 6,
+   "found": true,
+   "time_s": 5.86,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 7,
+   "found": true,
+   "time_s": 175.01,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 8,
+   "found": true,
+   "time_s": 15.16,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 9,
+   "found": true,
+   "time_s": 7.33,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzTimestampSecond",
+   "trial": 10,
+   "found": true,
+   "time_s": 5.88,
+   "defect": "trustedmetadata.go:144"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 1,
+   "found": true,
+   "time_s": 10.12,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 2,
+   "found": true,
+   "time_s": 40.8,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 3,
+   "found": true,
+   "time_s": 8.51,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 4,
+   "found": true,
+   "time_s": 9.91,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 5,
+   "found": true,
+   "time_s": 71.58,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 6,
+   "found": true,
+   "time_s": 17.86,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 7,
+   "found": true,
+   "time_s": 9.85,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 8,
+   "found": true,
+   "time_s": 11.27,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 9,
+   "found": true,
+   "time_s": 50.07,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzParse",
+   "trial": 10,
+   "found": true,
+   "time_s": 20.55,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 1,
+   "found": true,
+   "time_s": 25.43,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 2,
+   "found": true,
+   "time_s": 18.35,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 3,
+   "found": true,
+   "time_s": 18.03,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 4,
+   "found": true,
+   "time_s": 17.79,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 5,
+   "found": true,
+   "time_s": 18.28,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 6,
+   "found": true,
+   "time_s": 18.41,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 7,
+   "found": true,
+   "time_s": 17.12,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 8,
+   "found": true,
+   "time_s": 18.12,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 9,
+   "found": true,
+   "time_s": 19.39,
+   "defect": "ed25519 key length"
+  },
+  {
+   "target": "FuzzRootUpdate",
+   "trial": 10,
+   "found": true,
+   "time_s": 171.66,
+   "defect": "ed25519 key length"
+  }
+ ]
+}

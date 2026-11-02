@@ -168,6 +168,8 @@ class Device:
                 "primary": kv.get("primary") or None,
                 # seconds the status command waited for pending mount/fsck jobs (R26)
                 "jobs_wait_s": int(kv["jobs_wait_s"]) if kv.get("jobs_wait_s", "").isdigit() else None,
+                # the first read found no environment, a second one 3 s later did (R26)
+                "env_reread": kv.get("env_reread") == "1",
                 "env": {k[4:]: v for k, v in kv.items() if k.startswith("env.")}}
 
     def slot_digest(self, vm, slot: str, timeout: float = 600) -> str:

@@ -28,8 +28,11 @@ commands:
   # It first waits for pending mount and fsck jobs: /boot-ab is `nofail`, which systemd
   # does not order before local-fs.target, so the guest agent may answer while /boot-ab is
   # still being checked and mounted, and the environment would look unreadable (R26).
+  # It also waits for the boot-confirmation service, which rewrites grubenv (truncate +
+  # write), and reads the environment a second time before calling it unreadable: a read
+  # that races with that rewrite sees an empty file once (R26, 02.11.2026).
   status: |
-    W=0; while [ $W -lt 90 ] && systemctl list-jobs --no-legend 2>/dev/null | grep -qE '\.mount |systemd-fsck'
+    W=0; while [ $W -lt 90 ] && systemctl list-jobs --no-legend 2>/dev/null | grep -qE '\.mount |systemd-fsck|otabench-mark-good'
     do sleep 1; W=$((W+1)); done; echo "jobs_wait_s=$W"
     E=$(sed -n 's/^grubenv=//p' /etc/rauc/system.conf)
     [ -n "$E" ] || E=$(sed -n 's/^env=//p' /etc/otabench-bootenv.conf 2>/dev/null)
@@ -38,6 +41,13 @@ commands:
     if grep -qx 'redundant=1' /etc/otabench-bootenv.conf 2>/dev/null
     then L=$(/usr/local/sbin/otabench-bootenv dump 2>/dev/null)  # the current of two copies
     else L=$(grub-editenv "$E" list 2>/dev/null); fi
+    if ! printf '%s\n' "$L" | grep -q '^ORDER='; then
+      sleep 3
+      if grep -qx 'redundant=1' /etc/otabench-bootenv.conf 2>/dev/null
+      then L=$(/usr/local/sbin/otabench-bootenv dump 2>/dev/null)
+      else L=$(grub-editenv "$E" list 2>/dev/null); fi
+      printf '%s\n' "$L" | grep -q '^ORDER=' && echo env_reread=1
+    fi
     get() { printf '%s\n' "$L" | sed -n "s/^$1=//p"; }
     echo "slot=$S"
     echo "version=$(cat /etc/otabench-version 2>/dev/null)"
