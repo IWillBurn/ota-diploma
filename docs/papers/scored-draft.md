@@ -1,8 +1,8 @@
 # otabench: An Executable Cross-Ecosystem Benchmark for the Security and Fault Tolerance of Software Update Systems
 
 *Draft for ACM SCORED 2027 (≈10 pages, ACM two-column). Status: full text of all sections; numbers
-marked **[rerun]** come from runs under host load and are being repeated on a quiet host; numbers
-marked **[pending]** wait for runs in progress. Bracketed citations [x] refer to the reference list
+marked **[pending]** wait for runs in progress. Windows after success were measured on a quiet
+host (one VM at a time); load had inflated them. Bracketed citations [x] refer to the reference list
 at the end; the thesis list (`docs/thesis/references.md`) has the full bibliographic data.*
 
 ## Abstract
@@ -269,7 +269,7 @@ before install completion (region); reordering and tearing: bounded subsets in t
 | RAUC 1.8, ext4 | 17/45 DEGRADED (12 view divergence, 5 rescue) | 11/16 divergence | 10/18 divergence |
 | RAUC 1.8, ext2 | 0/24 (region) | 1/14 env unreadable | — |
 | RAUC 1.8, vfat | 0/24 (region) | 4/22 env unreadable | 0/11 |
-| RAUC 1.8, UEFI ESP | 1/24 env unreadable (region) | 2/20 env unreadable | — |
+| RAUC 1.8, UEFI ESP | 0/24 (region) | 2/20 env unreadable | — |
 | RAUC 1.15.2, ext4 / vfat / ESP | 18/49 DEGRADED, **1 env unreadable at install start** | 11/26 / 4/28 / 2/28 | — |
 | RAUC + in-place writer (ext4, ext2, vfat, ESP) | 0 | 0 | 0–2 BRICK per variant (running slot, §6.3) |
 | SWUpdate, ext4 / ext2 | 7/46 DEGRADED (1 divergence, 6 rescue) | 0/18 / **20/50 env unreadable** | — |
@@ -280,13 +280,17 @@ W ∈ (4; 5] s. Eight configurations establish the mechanism: the window is the 
 `commit=1/5/30`, shrinks to (0; 1] s with `vm.dirty_writeback_centisecs=100` alone, is unchanged
 with `dirty_expire_centisecs=100` alone, and disappears without a journal (ext2, vfat). GRUB does
 not replay the ext4 journal and reads the old inode of the rewritten file until writeback moves
-the metadata home. RAUC 1.15.2 still writes through `grub-editenv` and shows the same divergence
-states; its window length **[rerun]**.
+the metadata home. RAUC 1.15.2 still writes through `grub-editenv`, shows the same divergence
+states and the same window: measured with 1 s steps, one VM and no other load, W ∈ (4; 5] s,
+(0; 1] s with the writeback period alone set to 1 s, (4; 5] s with the expiry age alone. Two
+copies of the environment with a sequence counter do not change it.
 
 **Window after success (SWUpdate).** SWUpdate writes `grubenv.new` and renames it without fsync.
-At +0, +2 and +4 s after success *both* views still show the old state, from +6 s both show the
-new one: the update is lost consistently rather than with divergent views **[rerun on a quiet
-host]**.
+Up to +4 s after success *both* views still show the old state (a durability window: the update
+is lost without divergent views); at +5 and +6 s Linux, after journal replay, already sees the new
+environment while GRUB still reads the old one; from +8 s both see the new one, so W ∈ (6; 8] s
+for the bootloader. On vfat the length varies with writeback timing: (4; 5] s in the window run,
+while in a reordering run the environment had not reached the disk 35 s after success.
 
 **Loss of updatability.** On file systems without a journal, the reordering model produced an
 empty or invalid `grubenv` (ext2 1 of 14 states, vfat 4 of 22). On RAUC 1.15.2 with the default
@@ -295,8 +299,8 @@ slot bad by rewriting `grubenv`: restored from the trace, the file has zero leng
 back, and `rauc install` fails (`grub-editenv failed`) — ext4 had committed the truncation before
 the new data, the classic zero-length window of delayed allocation. SWUpdate's rename without
 fsync left an unreadable environment in 20 of 50 states on ext2, also in prefix states. In
-the UEFI layout recommended by RAUC's documentation, with `grubenv` on the ESP, even the prefix
-model produced one. Such a device boots, but every further `rauc install` fails with
+the UEFI layout recommended by RAUC's documentation, with `grubenv` on the ESP, the reordering
+model produced two. Such a device boots, but every further `rauc install` fails with
 `grub-editenv` errors: it has silently dropped out of OTA (OTA-PWR-05). Liveness checks from
 restored states confirmed this.
 

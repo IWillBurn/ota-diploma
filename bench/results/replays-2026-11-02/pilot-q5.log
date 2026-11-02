@@ -1,0 +1,66 @@
+== reorder:ext4-inplace-rootro
+    variant ext4-inplace-rootro: ext4   rw,relatime | 500 | 3000
+    crash@1040 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ kept-all in [1038, 1041] (volatile=2)
+    crash@1038 (98% B): OK A/1 boot=[A B] os=[A B]
+      ^ lost-all in [1038, 1041] (volatile=2)
+    crash@1039 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ only-1039 in [1038, 1041] (volatile=2)
+    crash@1040 (99%): OK A/1 boot=[A B] os=[A B]
+      ^ only-1040 in [1038, 1041] (volatile=2)
+    crash@1039 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1039-1of2 in [1038, 1041] (volatile=2)
+    crash@1040 (99%): OK A/1 boot=[A B] os=[A B]
+      ^ torn-1040-1of4 in [1038, 1041] (volatile=2)
+    crash@1040 (99%): OK A/1 boot=[A B] os=[A B]
+      ^ torn-1040-2of4 in [1038, 1041] (volatile=2)
+    crash@1042 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ kept-all in [1041, 1043] (volatile=1)
+    crash@1041 (99% B): OK B/2 boot=[B A] os=[B A]
+      ^ lost-all in [1041, 1043] (volatile=1)
+    crash@1042 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1042-1of2 in [1041, 1043] (volatile=1)
+    crash@1045 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ kept-all in [1043, 1046] (volatile=2)
+    crash@1043 (99% B): OK B/2 boot=[B A] os=[B A]
+      ^ lost-all in [1043, 1046] (volatile=2)
+    crash@1044 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ only-1044 in [1043, 1046] (volatile=2)
+    crash@1045 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ only-1045 in [1043, 1046] (volatile=2)
+    crash@1044 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1044-1of8 in [1043, 1046] (volatile=2)
+    crash@1044 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1044-4of8 in [1043, 1046] (volatile=2)
+    crash@1045 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1045-1of48 in [1043, 1046] (volatile=2)
+    crash@1045 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1045-24of48 in [1043, 1046] (volatile=2)
+    crash@1047 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ kept-all in [1046, 1048] (volatile=1)
+    crash@1046 (99% B): OK B/2 boot=[B A] os=[B A]
+      ^ lost-all in [1046, 1048] (volatile=1)
+    crash@1047 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1047-1of8 in [1046, 1048] (volatile=1)
+    crash@1047 (99%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1047-4of8 in [1046, 1048] (volatile=1)
+    crash@1049 (100%): OK B/2 boot=[B A] os=[B A]
+      ^ kept-all in [1048, 1050] (volatile=1)
+    crash@1048 (100% B): OK B/2 boot=[B A] os=[B A]
+      ^ lost-all in [1048, 1050] (volatile=1)
+    crash@1049 (100%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1049-1of56 in [1048, 1050] (volatile=1)
+    crash@1049 (100%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1049-28of56 in [1048, 1050] (volatile=1)
+    crash@1051 (100%): OK B/2 boot=[B A] os=[B A]
+      ^ kept-all in [1050, 1052] (volatile=1)
+    crash@1050 (100% B): OK B/2 boot=[B A] os=[B A]
+      ^ lost-all in [1050, 1052] (volatile=1)
+    crash@1051 (100%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1051-1of8 in [1050, 1052] (volatile=1)
+    crash@1051 (100%): OK B/2 boot=[B A] os=[B A]
+      ^ torn-1051-4of8 in [1050, 1052] (volatile=1)
+   PASS  30 states in 6 barrier intervals: {'OK': 30, 'DEGRADED': 0, 'INCONSISTENT': 0, 'BRICK': 0}; non-prefix states only: {'OK': 24, 'DEGRADED': 0, 'INCONSISTENT': 0, 'BRICK': 0}  (641.7s)
+
+results: P:\Projects\ota-diploma\bench\results\pilot-ab-20261102-112559\pilot.json
+exit 0 Mon, Nov  2, 2026 11:36:41 AM

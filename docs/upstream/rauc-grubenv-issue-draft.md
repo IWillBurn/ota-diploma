@@ -4,8 +4,8 @@
 > Current RAUC: reproduced 2026-11-01 on RAUC 1.15.2 built from the release tarball
 > (`results/pilot-ab-20261101-183354/`): ext4 11 of 26 reordering states with GRUB/OS
 > disagreement, vfat 4 of 28 and ESP 2 of 28 with an unreadable grubenv, the in-place
-> backend 0 of 24 on vfat. The window length on 1.15.2 was measured under host load and
-> is being repeated. UEFI with grubenv on the ESP: reproduced
+> backend 0 of 24 on vfat. On a quiet host (one VM, 2026-11-02) the window on 1.15.2 is the
+> same as on 1.8, W in (4; 5] s. UEFI with grubenv on the ESP: reproduced
 > 2026-11-01 (OVMF, unsigned GRUB on the ESP; torn grubenv → `rauc install` refuses;
 > the in-place backend removes it) — see docs/pilot-ab.md «Проверка на UEFI».
 > Checked 2026-11-01: no existing RAUC issue on grubenv power-loss robustness
@@ -34,19 +34,19 @@ following the documented `ORDER`/`<slot>_OK`/`<slot>_TRY` scheme. We see two eff
    No brick, but bootloader and OS disagree and the update is silently not applied.
 2. **vfat or ext2 holds grubenv (no journal), including the ESP on UEFI as the GRUB
    integration docs suggest: an unreadable file.** If power is lost during the rewrite
-   (on the ESP even without reordering of unflushed writes; with reordering also on ext2),
+   (when the disk cache reorders unflushed writes: vfat, the ESP, ext2),
    grubenv can end up empty (0 bytes) or as an invalid environment block. The device
    still boots (GRUB falls back to defaults or reads the old block), but
    `rauc status` cannot determine the primary, and every `rauc install` fails immediately:
    `Failed marking slot rootfs.1 non-bootable: grub backend: Failed to run grub-editenv`.
    The device has dropped out of OTA until someone repairs the environment.
 
-3. **Even ext4 can end with an empty grubenv.** Restored crash states show a zero-length
-   grubenv on ext4 with default settings: on RAUC 1.15.2 right at the start of an install (when
-   the target slot is marked bad), on RAUC 1.8 at the final rewrite (one of 222 states of a
-   reordering model over the whole install, and it is a plain in-order prefix state). ext4 has
-   committed the truncation before the new data got blocks — the known zero-length window of
-   delayed allocation. From the 1.15.2 state `rauc install` fails (`Failed getting primary slot:
+3. **Even ext4 can end with an empty grubenv.** A restored crash state shows a zero-length
+   grubenv on ext4 with default settings on RAUC 1.15.2, right at the start of an install (when
+   the target slot is marked bad); it is a plain in-order prefix state. ext4 has committed the
+   truncation before the new data got blocks — the known zero-length window of delayed
+   allocation. (On RAUC 1.8 we did not hit it: neither 45 prefix points nor 222 reordering
+   states over the whole install.) From the 1.15.2 state `rauc install` fails (`Failed getting primary slot:
    grub backend: grub-editenv failed`): the device left OTA on the default configuration.
 
 A custom backend (`bootloader=custom`) with the same variables, which rewrites the
@@ -69,8 +69,8 @@ Reproduction scripts and data: (link to the otabench repository once public).
 
 ## Notes for the author (not part of the issue)
 * Evidence: `docs/pilot-ab.md`, sections «Механизм окна», «Модель перестановок», «Исправление».
-* Before posting: (1) ~~repeat with current RAUC~~ done on 1.15.2 (window length still to be
-  re-measured on a quiet host); (2) ~~UEFI GRUB with grubenv on the real ESP~~ done;
+* Before posting: (1) ~~repeat with current RAUC~~ done on 1.15.2 (window re-measured on a quiet
+  host 2026-11-02: same as 1.8); (2) ~~UEFI GRUB with grubenv on the real ESP~~ done;
   (3) Linux/KVM host — not available, say so in the issue. Our reordering model emulates a volatile disk cache;
   say so explicitly if asked whether real eMMC shows it.
 * No @-handles in the issue.
